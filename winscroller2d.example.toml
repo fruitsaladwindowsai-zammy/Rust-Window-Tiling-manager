@@ -1,0 +1,373 @@
+# WinScroller 2D configuration — Niri scrolling columns/stacks + Hyprscroll2D infinite 2D grid
+# Live-reloaded automatically when saved.
+
+[layout]
+# Small outer gap / edge peek (in pixels) around cells while utilizing the full screen.
+peek_x = 8
+peek_y = 8
+
+# Optional: auto-shrink unfocused windows and expand only the focused window.
+auto_expand_focused = false
+focused_peek_x = 8
+focused_peek_y = 8
+
+# Small gaps between adjacent 2D grid cells.
+gap_x = 8
+gap_y = 8
+
+# Gap between windows stacked vertically inside the same cell (Niri consume/expel mode).
+stack_gap = 8
+
+# Discrete width and height presets as fractions of (viewport - 2 * peek).
+width_steps = [0.50, 0.67, 0.85, 1.00]
+height_steps = [0.50, 0.67, 0.85, 1.00]
+
+# 0-based default indices into width_steps / height_steps.
+default_width_step = 3   # 1.00 (same full size as highlighted window)
+default_height_step = 3  # 1.00 (same full size as highlighted window)
+
+# Where newly opened tiled windows spawn:
+# "right_of_focus" | "below_focus" | "rightmost_in_row" | "stack_in_current_cell" | "neighbor_4way"
+new_window_placement = "right_of_focus"
+
+# Camera centering behavior:
+# "always" (Hyprscroll2D / Niri center-always) | "on_overflow" (Niri minimal scroll)
+focus_centering = "always"
+
+# Expand a lone window on a workspace to fill the viewport.
+expand_single_window = false
+single_window_margin = 12
+
+# Preserve empty spatial holes when moving windows into empty 2D coordinates.
+preserve_holes = true
+
+# Automatically compact completely empty rows and columns when windows move or close.
+auto_compact_empty = false
+
+# Prevent peeking windows from bleeding onto an adjacent monitor.
+clip_cross_monitor_edges = true
+
+# Render live DWM thumbnails in Win+O (`false` resizes actual windows smoothly as fallback).
+overview_thumbnails = true
+
+# Scrollable Win+O grid bounds & drag viewport-edge autoscroll speed (px/sec).
+overview_min_width = 0.25
+overview_min_height = 0.25
+overview_autoscroll_speed = 900.0
+
+# Debounced hover-focus when resting the cursor on an edge-peeking window.
+hover_focus_peeks = true
+hover_focus_delay_ms = 150
+center_cursor_on_peek = false
+
+# Precision Touchpad continuous 2D panning (3-finger pan / 4-finger overview toggle).
+three_finger_pan = true
+gesture_pan_sensitivity = 1.0
+
+# Persist workspace coordinates, cell presets, and per-workspace lattice toggles in state.json.
+persist_state = true
+restore_timeout_secs = 45
+
+[animation]
+enabled = true
+animate_resize = true
+stiffness = 260.0
+damping_ratio = 0.72
+fps = 120
+snap_epsilon_px = 0.5
+
+[appearance]
+enable_win11_border = true
+active_border_color = "#7AA2F7"
+inactive_border_color = "#2F334D"
+blur_mode = "pure_blur"
+overview_alpha = 0
+
+[workspaces]
+names = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+per_monitor_workspaces = true
+dynamic_empty_workspace = true
+
+# Window rules (match case-insensitive substrings of exe / class / title)
+[[rules]]
+exe = "Taskmgr.exe"
+float = true
+
+[[rules]]
+exe = "SnippingTool.exe"
+float = true
+
+[[rules]]
+exe = "ScreenClippingHost.exe"
+ignore = true
+
+[[rules]]
+class = "#32770"
+float = true
+
+[[rules]]
+title = "Picture-in-Picture"
+float = true
+
+# Keybindings (WH_KEYBOARD_LL intercepts Win/* cleanly without losing Win+L/Win+E/Win+R)
+[[bindings]]
+keys = "Win+Left"
+action = "focus"
+direction = "left"
+
+[[bindings]]
+keys = "Win+Right"
+action = "focus"
+direction = "right"
+
+[[bindings]]
+keys = "Win+Up"
+action = "focus"
+direction = "up"
+
+[[bindings]]
+keys = "Win+Down"
+action = "focus"
+direction = "down"
+
+[[bindings]]
+keys = "Win+Shift+Left"
+action = "move_window"
+direction = "left"
+
+[[bindings]]
+keys = "Win+Shift+Right"
+action = "move_window"
+direction = "right"
+
+[[bindings]]
+keys = "Win+Shift+Up"
+action = "move_window"
+direction = "up"
+
+[[bindings]]
+keys = "Win+Shift+Down"
+action = "move_window"
+direction = "down"
+
+[[bindings]]
+keys = "Win+Ctrl+Left"
+action = "pan_camera"
+direction = "left"
+
+[[bindings]]
+keys = "Win+Ctrl+Right"
+action = "pan_camera"
+direction = "right"
+
+[[bindings]]
+keys = "Win+Ctrl+Up"
+action = "pan_camera"
+direction = "up"
+
+[[bindings]]
+keys = "Win+Ctrl+Down"
+action = "pan_camera"
+direction = "down"
+
+[[bindings]]
+keys = "Win+C"
+action = "center_camera"
+
+[[bindings]]
+keys = "Win+Equal"
+action = "resize_width"
+delta = 1
+
+[[bindings]]
+keys = "Win+Minus"
+action = "resize_width"
+delta = -1
+
+[[bindings]]
+keys = "Win+Shift+Equal"
+action = "resize_height"
+delta = 1
+
+[[bindings]]
+keys = "Win+Shift+Minus"
+action = "resize_height"
+delta = -1
+
+[[bindings]]
+keys = "Win+Alt+R"
+action = "cycle_width_preset"
+
+[[bindings]]
+keys = "Win+Alt+Shift+R"
+action = "cycle_height_preset"
+
+[[bindings]]
+keys = "Win+Comma"
+action = "consume_into_cell"
+direction = "right"
+
+[[bindings]]
+keys = "Win+Period"
+action = "expel_from_cell"
+direction = "right"
+
+[[bindings]]
+keys = "Win+W"
+action = "toggle_cell_stack_mode"
+
+[[bindings]]
+keys = "Win+F"
+action = "toggle_maximize_cell"
+
+[[bindings]]
+keys = "Win+Shift+F"
+action = "toggle_fullscreen"
+
+[[bindings]]
+keys = "Win+Shift+Space"
+action = "toggle_floating"
+
+[[bindings]]
+keys = "Win+O"
+action = "toggle_overview"
+
+[[bindings]]
+keys = "Win+Shift+Q"
+action = "close_focused"
+
+[[bindings]]
+keys = "Win+Alt+Left"
+action = "focus_monitor"
+direction = "left"
+
+[[bindings]]
+keys = "Win+Alt+Right"
+action = "focus_monitor"
+direction = "right"
+
+[[bindings]]
+keys = "Win+Alt+Shift+Left"
+action = "move_to_monitor"
+direction = "left"
+
+[[bindings]]
+keys = "Win+Alt+Shift+Right"
+action = "move_to_monitor"
+direction = "right"
+
+[[bindings]]
+keys = "Win+PageUp"
+action = "switch_workspace_relative"
+delta = -1
+
+[[bindings]]
+keys = "Win+PageDown"
+action = "switch_workspace_relative"
+delta = 1
+
+[[bindings]]
+keys = "Win+Alt+1"
+action = "switch_workspace"
+index = 0
+
+[[bindings]]
+keys = "Win+Alt+2"
+action = "switch_workspace"
+index = 1
+
+[[bindings]]
+keys = "Win+Alt+3"
+action = "switch_workspace"
+index = 2
+
+[[bindings]]
+keys = "Win+Alt+4"
+action = "switch_workspace"
+index = 3
+
+[[bindings]]
+keys = "Win+Alt+5"
+action = "switch_workspace"
+index = 4
+
+[[bindings]]
+keys = "Win+Alt+6"
+action = "switch_workspace"
+index = 5
+
+[[bindings]]
+keys = "Win+Alt+7"
+action = "switch_workspace"
+index = 6
+
+[[bindings]]
+keys = "Win+Alt+8"
+action = "switch_workspace"
+index = 7
+
+[[bindings]]
+keys = "Win+Alt+9"
+action = "switch_workspace"
+index = 8
+
+[[bindings]]
+keys = "Win+Alt+Shift+1"
+action = "move_to_workspace"
+index = 0
+
+[[bindings]]
+keys = "Win+Alt+Shift+2"
+action = "move_to_workspace"
+index = 1
+
+[[bindings]]
+keys = "Win+Alt+Shift+3"
+action = "move_to_workspace"
+index = 2
+
+[[bindings]]
+keys = "Win+Alt+Shift+4"
+action = "move_to_workspace"
+index = 3
+
+[[bindings]]
+keys = "Win+Alt+Shift+5"
+action = "move_to_workspace"
+index = 4
+
+[[bindings]]
+keys = "Win+Alt+Shift+6"
+action = "move_to_workspace"
+index = 5
+
+[[bindings]]
+keys = "Win+Alt+Shift+7"
+action = "move_to_workspace"
+index = 6
+
+[[bindings]]
+keys = "Win+Alt+Shift+8"
+action = "move_to_workspace"
+index = 7
+
+[[bindings]]
+keys = "Win+Alt+Shift+9"
+action = "move_to_workspace"
+index = 8
+
+[[bindings]]
+keys = "Win+Alt+L"
+action = "toggle_workspace_layout"
+
+[[bindings]]
+keys = "Win+Alt+S"
+action = "open_settings"
+
+[[bindings]]
+keys = "Win+Shift+P"
+action = "toggle_pause"
+
+[[bindings]]
+keys = "Win+Shift+Escape"
+action = "quit"

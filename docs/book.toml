@@ -1,0 +1,16 @@
+[book]
+title = "WinScroller 2D"
+description = "Native Windows 10/11 2D Scrolling & Tiling Window Manager written in Rust"
+authors = ["WinScroller 2D contributors"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+# Set your GitHub repository URL after pushing to enable the top-right repo icon and edit links:
+# git-repository-url = "https://github.com/<your-username>/<your-repo>"
+# edit-url-template = "https://github.com/<your-username>/<your-repo>/edit/main/docs/{path}"
