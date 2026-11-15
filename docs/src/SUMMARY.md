@@ -5,9 +5,13 @@
 # User Guide
 
 - [Getting Started](./getting-started.md)
-- [Keybindings & Gestures](./keyboard-shortcuts.md)
+- [Keybindings & Shortcuts](./keyboard-shortcuts.md)
+- [Touchpad Gestures](./touchpad.md)
 - [Overview Mode (Win+O)](./overview-mode.md)
+- [Multi-Monitor & Extended Displays](./multi-monitor.md)
+- [Administrator & Elevated Apps](./admin-apps.md)
 - [Configuration](./configuration.md)
+- [CLI & IPC Scripting](./ipc-scripting.md)
 
 # Releases & Project Info
 

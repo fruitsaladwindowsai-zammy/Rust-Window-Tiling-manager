@@ -96,6 +96,7 @@ Complete keyboard, overview mouse/drag, Precision Touchpad, and tray reference: 
 
 | Document | Contents |
 |----------|----------|
+| [Official Wiki](wiki/Home.md) | Comprehensive guides, core concepts, multi-monitor, admin apps & FAQ |
 | [KEYBINDINGS.md](KEYBINDINGS.md) | Complete shortcuts, overview interactions, touchpad gestures & custom binding syntax |
 | [CONFIGURATION.md](CONFIGURATION.md) | Complete `winscroller2d.toml` schema, defaults, clamps & window rules |
 | [USAGE.md](USAGE.md) | CLI flags, IPC `msg` commands, tray icon & Settings UI guide |
