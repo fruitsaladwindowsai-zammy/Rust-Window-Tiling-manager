@@ -1,6 +1,6 @@
 use winscroller2d_core::{
     Action, Config, Coord, Direction, FocusCentering, GridWorkspace, IRect, LayoutConfig,
-    MonitorInfo, WindowInfo, WorkspaceManager,
+    MonitorInfo, WindowInfo, WindowRule, WorkspaceManager,
 };
 
 fn area_1080p() -> IRect {
@@ -284,7 +284,12 @@ fn smooth_camera_converges_and_keeps_focused_put_on_offscreen_resize() {
 
 #[test]
 fn workspace_manager_dynamic_workspaces_and_rules() {
-    let cfg = Config::default();
+    let mut cfg = Config::default();
+    cfg.rules.push(WindowRule {
+        exe: Some("CustomFloatApp.exe".into()),
+        float: true,
+        ..Default::default()
+    });
     let mon = MonitorInfo {
         id: 1,
         name: "PRIMARY".into(),
@@ -304,23 +309,23 @@ fn workspace_manager_dynamic_workspaces_and_rules() {
         ..Default::default()
     }));
 
-    // Taskmgr should float automatically.
+    // Window matching custom floating rule should float.
     assert!(mgr.add_window(WindowInfo {
         id: 100,
-        title: "Task Manager".into(),
-        process_name: "Taskmgr.exe".into(),
-        class_name: "TaskManagerWindow".into(),
+        title: "Floating Tool".into(),
+        process_name: "CustomFloatApp.exe".into(),
+        class_name: "FloatingWindowClass".into(),
         rect: IRect::new(100, 100, 800, 600),
         monitor_id: Some(1),
         ..Default::default()
     }));
 
-    // Normal tiled app.
+    // Normal tiled app (including Task Manager, following identical tiling pattern).
     assert!(mgr.add_window(WindowInfo {
         id: 101,
-        title: "Terminal".into(),
-        process_name: "WindowsTerminal.exe".into(),
-        class_name: "CASCADIA_HOSTING_WINDOW_CLASS".into(),
+        title: "Task Manager".into(),
+        process_name: "Taskmgr.exe".into(),
+        class_name: "TaskManagerWindow".into(),
         rect: IRect::new(0, 0, 800, 600),
         monitor_id: Some(1),
         ..Default::default()
@@ -332,6 +337,10 @@ fn workspace_manager_dynamic_workspaces_and_rules() {
         .windows
         .iter()
         .any(|w| w.id == 100 && w.floating));
+    assert!(snap.workspaces[0]
+        .windows
+        .iter()
+        .any(|w| w.id == 101 && !w.floating));
 
     // Switching workspace cloaks workspace 0 windows in frame plan.
     mgr.dispatch(Action::SwitchWorkspace { index: 1 });
