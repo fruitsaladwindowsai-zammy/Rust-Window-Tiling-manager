@@ -28,6 +28,11 @@
 
 ---
 
+
+<img width="538" height="228" alt="image" src="https://github.com/user-attachments/assets/d003ac2a-175d-4e44-be82-2e8ba727c6bf" />
+
+Showing the CPU and RAM Usage 
+
 ## Quick Start (Clean Windows Machine)
 
 ### 1. Install Prerequisites *(skip if Rust + C++ Build Tools are already installed)*
