@@ -1355,6 +1355,22 @@ impl GridWorkspace {
         true
     }
 
+    /// Reset all cells to clean preset geometries (clearing manual overrides and snaps).
+    pub fn retile(&mut self, config: &LayoutConfig) {
+        let def_w = config.default_width_step.min(config.width_steps.len().saturating_sub(1));
+        let def_h = config.default_height_step.min(config.height_steps.len().saturating_sub(1));
+        for cell in self.cells.values_mut() {
+            cell.custom_width_frac = None;
+            cell.custom_height_frac = None;
+            cell.manual_override = false;
+            cell.maximized = false;
+            cell.height_step = def_h;
+            if cell.windows.len() <= 1 {
+                cell.width_step = def_w;
+            }
+        }
+    }
+
     /// Recompute band geometry, update camera spring target, step spring physics, and return window placements.
     ///
     /// Returns `(placements, still_animating)`.

@@ -108,6 +108,7 @@ impl VsyncPacer {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_active(&self) -> bool {
         let (lock, _) = &*self.state;
         lock.lock().is_ok_and(|g| g.active && !g.stop)

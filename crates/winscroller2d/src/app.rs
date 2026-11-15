@@ -17,8 +17,8 @@ use crate::win32::vdesktop::VirtualDesktopTracker;
 use crate::win32::window::{
     center_cursor_in_window, close_os_window, enumerate_manageable_windows,
     enumerate_manageable_windows_opts, focus_os_window, get_foreground_window_id, hwnd_to_id,
-    id_to_hwnd, is_manageable_window, is_valid_window, is_window_zoomed,
-    read_visible_window_rect, read_window_info, read_window_title, set_cloak, shell_open_file,
+    id_to_hwnd, is_manageable_window, is_valid_window,
+    read_window_info, read_window_title, set_cloak, shell_open_file,
     WindowApplier,
 };
 use crate::win32::{
@@ -659,7 +659,6 @@ fn execute_action(st: &mut AppState, ctrl_hwnd: HWND, action: Action) {
             st.mgr.on_foreground_changed(fg);
         }
         reconcile_windows(st, ctrl_hwnd);
-        capture_external_snaps(st);
     }
     if matches!(action, Action::ToggleOverview | Action::Retile) && !st.mgr.overview_open {
         sync_os_desktop_state(st, ctrl_hwnd);
@@ -944,7 +943,6 @@ fn handle_win_event(
                     }
                 }
             } else if is_manageable_window(target_hwnd, st.own_pid, false) {
-                capture_external_snaps(st);
                 if let Some(mut info) = read_window_info(target_hwnd) {
                     info.desktop_id = st.vdesktop.window_desktop_id(target_hwnd);
                     if st.mgr.add_window(info) {
@@ -980,7 +978,6 @@ fn handle_win_event(
         }
         WinEventKind::Foreground => {
             st.hover.reset();
-            capture_external_snaps(st);
             sync_os_desktop_state(st, ctrl_hwnd);
             if let Some(did) = st.vdesktop.window_desktop_id(target_hwnd) {
                 if st.mgr.is_managed(id) {
@@ -990,7 +987,6 @@ fn handle_win_event(
             if st.mgr.on_foreground_changed(id) {
                 apply_frame_now(st, ctrl_hwnd, true);
             } else if is_manageable_window(target_hwnd, st.own_pid, false) {
-                capture_external_snaps(st);
                 if let Some(mut info) = read_window_info(target_hwnd) {
                     info.desktop_id = st.vdesktop.window_desktop_id(target_hwnd);
                     if st.mgr.add_window(info) {
@@ -1018,41 +1014,9 @@ fn handle_win_event(
                         }
                     }
                 }
-                if capture_window_snap_from_os(st, id, target_hwnd, 16) {
-                    apply_frame_now(st, ctrl_hwnd, true);
-                    refresh_overview_if_open(st);
-                    schedule_state_save(st, ctrl_hwnd);
-                    return;
-                }
-                let mut moved_dir = None;
-                let snap = st.mgr.snapshot();
-                if let Some(mon) = snap
-                    .monitors
-                    .iter()
-                    .find(|m| m.is_focused)
-                    .or_else(|| snap.monitors.first())
-                {
-                    let (wx, wy, ww, wh) = mon.work_area;
-                    let mut pt: windows_sys::Win32::Foundation::POINT = unsafe { zeroed() };
-                    if unsafe {
-                        windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut pt) != 0
-                    } {
-                        if pt.x < wx + (ww * 20) / 100 {
-                            moved_dir = Some(winscroller2d_core::Direction::Left);
-                        } else if pt.x > wx + (ww * 80) / 100 {
-                            moved_dir = Some(winscroller2d_core::Direction::Right);
-                        } else if pt.y < wy + (wh * 18) / 100 {
-                            moved_dir = Some(winscroller2d_core::Direction::Up);
-                        } else if pt.y > wy + (wh * 82) / 100 {
-                            moved_dir = Some(winscroller2d_core::Direction::Down);
-                        }
-                    }
-                }
-                if let Some(dir) = moved_dir {
-                    execute_action(st, ctrl_hwnd, Action::MoveWindow { direction: dir });
-                } else {
-                    apply_frame_now(st, ctrl_hwnd, true);
-                }
+                // Enforce tiling frame immediately so accidental drags or OS Aero Snap
+                // cannot break any window out of the tiling layout.
+                apply_frame_now(st, ctrl_hwnd, true);
             }
         }
         WinEventKind::NameChange => {
@@ -1060,56 +1024,6 @@ fn handle_win_event(
                 st.mgr.update_window_title(id, read_window_title(target_hwnd));
             }
         }
-    }
-}
-
-fn capture_window_snap_from_os(
-    st: &mut AppState,
-    id: u64,
-    hwnd: HWND,
-    min_delta_px: i32,
-) -> bool {
-    if !st.mgr.is_managed(id) || st.mgr.is_floating(id) || st.mgr.overview_open {
-        return false;
-    }
-    if is_window_zoomed(hwnd) {
-        return !st.mgr.is_window_maximized(id) && st.mgr.record_window_maximized(id, true);
-    }
-    let Some(prev) = st.applier.last_target_rect(id) else {
-        return false;
-    };
-    let Some(vis) = read_visible_window_rect(hwnd) else {
-        return false;
-    };
-    if (vis.w - prev.w).abs() <= min_delta_px && (vis.h - prev.h).abs() <= min_delta_px {
-        return false;
-    }
-    let Some((max_w, max_h)) = st.mgr.window_max_cell_size(id) else {
-        return false;
-    };
-    let wf = vis.w as f64 / max_w.max(1.0);
-    let hf = vis.h as f64 / max_h.max(1.0);
-    st.mgr.record_window_snap(id, wf, hf)
-}
-
-fn capture_external_snaps(st: &mut AppState) {
-    if st.mgr.overview_open || st.pacer.is_active() {
-        return;
-    }
-    let ids = st.mgr.all_managed_windows();
-    let min_age = std::time::Duration::from_millis(300);
-    for id in ids {
-        if st.mgr.is_floating(id) || st.mgr.is_cloaked_by_wm(id) {
-            continue;
-        }
-        let Some((_rect, cloaked)) = st.applier.settled_target_rect(id, min_age) else {
-            continue;
-        };
-        if cloaked {
-            continue;
-        }
-        let hwnd = id_to_hwnd(id);
-        let _ = capture_window_snap_from_os(st, id, hwnd, 64);
     }
 }
 
@@ -1154,7 +1068,7 @@ fn sync_os_desktop_state(st: &mut AppState, ctrl_hwnd: HWND) -> bool {
 }
 
 fn reconcile_windows(st: &mut AppState, ctrl_hwnd: HWND) {
-    capture_external_snaps(st);
+    sync_os_desktop_state(st, ctrl_hwnd);
     sync_os_desktop_state(st, ctrl_hwnd);
 
     let mut changed = false;

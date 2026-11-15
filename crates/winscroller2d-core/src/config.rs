@@ -368,6 +368,12 @@ fn default_rules() -> Vec<WindowRule> {
             ignore: true,
             ..Default::default()
         },
+        WindowRule {
+            exe: Some("ShareX.exe".into()),
+            title: Some("Region capture".into()),
+            ignore: true,
+            ..Default::default()
+        },
     ]
 }
 

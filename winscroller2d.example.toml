@@ -93,6 +93,11 @@ dynamic_empty_workspace = true
 exe = "ScreenClippingHost.exe"
 ignore = true
 
+[[rules]]
+exe = "ShareX.exe"
+title = "Region capture"
+ignore = true
+
 # Keybindings (WH_KEYBOARD_LL intercepts Win/* cleanly without losing Win+L/Win+E/Win+R)
 [[bindings]]
 keys = "Win+Left"

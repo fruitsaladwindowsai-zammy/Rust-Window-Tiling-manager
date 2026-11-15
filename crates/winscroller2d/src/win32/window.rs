@@ -256,6 +256,20 @@ pub fn is_manageable_window(hwnd: HWND, own_pid: u32, already_cloaked_by_wm: boo
             return false;
         }
 
+        let proc_name = read_process_name(hwnd);
+        if proc_name.eq_ignore_ascii_case("ScreenClippingHost.exe") {
+            return false;
+        }
+        if proc_name.eq_ignore_ascii_case("ShareX.exe") {
+            let title = read_window_title(hwnd);
+            if title.eq_ignore_ascii_case("Region capture")
+                || class_name.contains("RegionCapture")
+                || (ex_style & windows_sys::Win32::UI::WindowsAndMessaging::WS_EX_TRANSPARENT) != 0
+            {
+                return false;
+            }
+        }
+
         let mut rc: RECT = zeroed();
         if GetWindowRect(hwnd, &mut rc) == 0 {
             return false;
@@ -279,6 +293,7 @@ pub fn is_manageable_window(hwnd: HWND, own_pid: u32, already_cloaked_by_wm: boo
     }
 }
 
+#[allow(dead_code)]
 pub fn read_visible_window_rect(hwnd: HWND) -> Option<IRect> {
     unsafe {
         if IsWindow(hwnd) == 0 {
@@ -298,6 +313,7 @@ pub fn read_visible_window_rect(hwnd: HWND) -> Option<IRect> {
     }
 }
 
+#[allow(dead_code)]
 pub fn is_window_zoomed(hwnd: HWND) -> bool {
     unsafe { IsWindow(hwnd) != 0 && IsZoomed(hwnd) != 0 }
 }
@@ -417,10 +433,12 @@ impl WindowApplier {
         }
     }
 
+    #[allow(dead_code)]
     pub fn last_target_rect(&self, id: WindowId) -> Option<IRect> {
         self.states.get(&id).and_then(|s| s.target_rect)
     }
 
+    #[allow(dead_code)]
     pub fn settled_target_rect(&self, id: WindowId, min_age: Duration) -> Option<(IRect, bool)> {
         let s = self.states.get(&id)?;
         let rect = s.target_rect?;

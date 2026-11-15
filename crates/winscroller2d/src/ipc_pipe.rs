@@ -4,6 +4,12 @@ use winscroller2d_core::{IpcRequest, IpcResponse};
 use windows_sys::Win32::Foundation::{
     CloseHandle, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE,
 };
+use windows_sys::Win32::Security::{
+    InitializeSecurityDescriptor, SetSecurityDescriptorDacl, SECURITY_ATTRIBUTES,
+    SECURITY_DESCRIPTOR,
+};
+
+const SECURITY_DESCRIPTOR_REVISION: u32 = 1;
 use windows_sys::Win32::Storage::FileSystem::{
     CreateFileW, FlushFileBuffers, ReadFile, WriteFile, FILE_ATTRIBUTE_NORMAL, OPEN_EXISTING,
     PIPE_ACCESS_DUPLEX,
@@ -30,6 +36,22 @@ pub fn spawn_ipc_server(
         .spawn(move || {
             let pipe_w = to_wide(PIPE_NAME);
             loop {
+                // Initialize a NULL DACL security descriptor so non-elevated user clients
+                // can communicate with an elevated daemon without Access Denied (UIPI).
+                let mut sd: SECURITY_DESCRIPTOR = unsafe { std::mem::zeroed() };
+                unsafe {
+                    InitializeSecurityDescriptor(
+                        &mut sd as *mut _ as *mut _,
+                        SECURITY_DESCRIPTOR_REVISION,
+                    );
+                    SetSecurityDescriptorDacl(&mut sd as *mut _ as *mut _, 1, std::ptr::null_mut(), 0);
+                }
+                let mut sa = SECURITY_ATTRIBUTES {
+                    nLength: std::mem::size_of::<SECURITY_ATTRIBUTES>() as u32,
+                    lpSecurityDescriptor: &mut sd as *mut _ as *mut _,
+                    bInheritHandle: 0,
+                };
+
                 let pipe: HANDLE = unsafe {
                     CreateNamedPipeW(
                         pipe_w.as_ptr(),
@@ -39,7 +61,7 @@ pub fn spawn_ipc_server(
                         65536,
                         65536,
                         0,
-                        std::ptr::null(),
+                        &mut sa,
                     )
                 };
                 if pipe == INVALID_HANDLE_VALUE {

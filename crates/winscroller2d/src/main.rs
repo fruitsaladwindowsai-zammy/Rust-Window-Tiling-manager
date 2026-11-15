@@ -4,6 +4,15 @@ mod win32;
 
 use winscroller2d_core::{Action, Direction, IpcRequest, IpcResponse};
 use std::path::PathBuf;
+use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
+use windows_sys::Win32::Security::{
+    GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
+};
+use windows_sys::Win32::System::Threading::{
+    GetCurrentProcess, GetExitCodeProcess, OpenProcessToken, WaitForSingleObject, INFINITE,
+};
+use windows_sys::Win32::UI::Shell::{ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW};
+use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOW;
 
 fn main() {
     install_panic_hook();
@@ -44,6 +53,8 @@ fn run_cli(args: &[String]) -> Result<(), String> {
     let mut config_override: Option<PathBuf> = None;
     let mut mode_validate = false;
     let mut mode_init = false;
+    let mut mode_replace = false;
+    let mut no_elevate = false;
 
     let mut i = 0;
     while i < args.len() {
@@ -60,6 +71,12 @@ fn run_cli(args: &[String]) -> Result<(), String> {
                 i += 1;
                 let path = args.get(i).ok_or("--config requires a path")?;
                 config_override = Some(PathBuf::from(path));
+            }
+            "-r" | "--replace" => {
+                mode_replace = true;
+            }
+            "--no-elevate" | "--non-elevated" => {
+                no_elevate = true;
             }
             "--validate" => {
                 mode_validate = true;
@@ -90,9 +107,106 @@ fn run_cli(args: &[String]) -> Result<(), String> {
     }
 
     if matches!(ipc_pipe::send_ipc_request(&IpcRequest::Ping), Ok(IpcResponse::Pong)) {
-        return Err("WinScroller 2D is already running (use `winscroller2d msg ...` to control it)".into());
+        if mode_replace {
+            println!("[winscroller2d] existing instance detected, requesting graceful shutdown...");
+            let _ = ipc_pipe::send_ipc_request(&IpcRequest::Run {
+                action: Action::Quit,
+            });
+            let start = std::time::Instant::now();
+            while start.elapsed() < std::time::Duration::from_secs(3) {
+                std::thread::sleep(std::time::Duration::from_millis(150));
+                if ipc_pipe::send_ipc_request(&IpcRequest::Ping).is_err() {
+                    break;
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(200));
+        } else {
+            return Err("WinScroller 2D is already running (use `winscroller2d msg ...` to control it, or `winscroller2d --replace` to restart)".into());
+        }
     }
+
+    if !no_elevate && !is_elevated() {
+        println!("[winscroller2d] elevating to administrator to manage all windows and hotkeys...");
+        return relaunch_elevated(args);
+    }
+
     app::run_daemon(path)
+}
+
+pub fn is_elevated() -> bool {
+    unsafe {
+        let mut token: HANDLE = std::ptr::null_mut();
+        let current_proc = GetCurrentProcess();
+        if OpenProcessToken(current_proc, TOKEN_QUERY, &mut token) == 0 {
+            return false;
+        }
+        let mut elevation: TOKEN_ELEVATION = std::mem::zeroed();
+        let mut ret_len: u32 = 0;
+        let ok = GetTokenInformation(
+            token,
+            TokenElevation,
+            &mut elevation as *mut _ as *mut _,
+            std::mem::size_of::<TOKEN_ELEVATION>() as u32,
+            &mut ret_len,
+        );
+        CloseHandle(token);
+        ok != 0 && elevation.TokenIsElevated != 0
+    }
+}
+
+fn relaunch_elevated(args: &[String]) -> Result<(), String> {
+    let exe = std::env::current_exe().map_err(|e| format!("cannot determine executable path: {e}"))?;
+    let exe_w = win32::to_wide(exe.to_string_lossy().as_ref());
+    let verb_w = win32::to_wide("runas");
+
+    let mut param_str = String::new();
+    for arg in args {
+        if !param_str.is_empty() {
+            param_str.push(' ');
+        }
+        if arg.contains(' ') || arg.contains('\t') || arg.is_empty() {
+            param_str.push('"');
+            param_str.push_str(&arg.replace('"', "\\\""));
+            param_str.push('"');
+        } else {
+            param_str.push_str(arg);
+        }
+    }
+    let params_w = win32::to_wide(&param_str);
+
+    let mut sei: SHELLEXECUTEINFOW = unsafe { std::mem::zeroed() };
+    sei.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+    sei.lpVerb = verb_w.as_ptr();
+    sei.lpFile = exe_w.as_ptr();
+    sei.lpParameters = if param_str.is_empty() {
+        std::ptr::null()
+    } else {
+        params_w.as_ptr()
+    };
+    sei.nShow = SW_SHOW;
+
+    let ok = unsafe { ShellExecuteExW(&mut sei) };
+    if ok == 0 {
+        let err = unsafe { windows_sys::Win32::Foundation::GetLastError() };
+        if err == 1223 {
+            return Err("elevation request was cancelled by user (UAC prompt dismissed)".into());
+        }
+        return Err(format!("failed to relaunch as administrator (Win32 error {err})"));
+    }
+
+    if !sei.hProcess.is_null() {
+        unsafe {
+            WaitForSingleObject(sei.hProcess, INFINITE);
+            let mut code: u32 = 0;
+            GetExitCodeProcess(sei.hProcess, &mut code);
+            CloseHandle(sei.hProcess);
+            if code != 0 {
+                std::process::exit(code as i32);
+            }
+        }
+    }
+    Ok(())
 }
 
 fn run_msg_command(args: &[String]) -> Result<(), String> {
@@ -294,6 +408,8 @@ fn print_help() {
          \twinscroller2d msg <COMMAND> [ARGS...]\n\n\
          OPTIONS:\n\
          \t-c, --config <PATH>   Use a custom winscroller2d.toml config path\n\
+         \t-r, --replace         Replace running instance if already active\n\
+         \t    --no-elevate      Run non-elevated (skip automatic Administrator elevation)\n\
          \t    --init-config     Create the default winscroller2d.toml and exit\n\
          \t    --validate        Validate config syntax and exit\n\
          \t-V, --version         Print version\n\

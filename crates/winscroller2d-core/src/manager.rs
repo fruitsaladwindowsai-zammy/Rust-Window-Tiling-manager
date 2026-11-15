@@ -1051,6 +1051,11 @@ impl WorkspaceManager {
                 effects.quit = true;
             }
             Action::Retile => {
+                for ws in &mut self.workspaces {
+                    ws.retile(&self.config.layout);
+                }
+                self.state_dirty = true;
+                effects.state_dirty = true;
                 effects.layout_dirty = true;
             }
             Action::ToggleOverview => {
