@@ -2,14 +2,14 @@
 # Live-reloaded automatically when saved.
 
 [layout]
-# Small outer gap / edge peek (in pixels) around cells while utilizing the full screen.
-peek_x = 8
-peek_y = 8
+# Clean borders: 0px edge peek so non-visible windows are cleanly cloaked with zero corner artifacts.
+peek_x = 0
+peek_y = 0
 
 # Optional: auto-shrink unfocused windows and expand only the focused window.
 auto_expand_focused = false
-focused_peek_x = 8
-focused_peek_y = 8
+focused_peek_x = 0
+focused_peek_y = 0
 
 # Small gaps between adjacent 2D grid cells.
 gap_x = 8

@@ -18,13 +18,14 @@ use crate::win32::window::{
     center_cursor_in_window, close_os_window, enumerate_manageable_windows,
     enumerate_manageable_windows_opts, focus_os_window, get_foreground_window_id, hwnd_to_id,
     id_to_hwnd, is_manageable_window, is_minimized, is_valid_window, is_window_zoomed,
-    read_visible_window_rect, read_window_info, read_window_title, shell_open_file, WindowApplier,
+    read_visible_window_rect, read_window_info, read_window_title, set_cloak, shell_open_file,
+    WindowApplier,
 };
 use crate::win32::{
     to_wide, VsyncPacer, TIMER_DISPLAY_SYNC_ID, TIMER_HOVER_FOCUS_ID, TIMER_PERSIST_SAVE_ID,
     WM_APP_ACTION, WM_APP_APPLY_LIVE_CONFIG, WM_APP_IPC_NOTIFY, WM_APP_OVERVIEW_CMD,
-    WM_APP_RELOAD_CONFIG, WM_APP_TRAY, WM_APP_VDESKTOP_CHANGED, WM_APP_VSYNC_STEP,
-    WM_APP_WIN_EVENT,
+    WM_APP_RELOAD_CONFIG, WM_APP_TRAY, WM_APP_VDESKTOP_CHANGED,
+    WM_APP_VSYNC_STEP, WM_APP_WIN_EVENT,
 };
 use winscroller2d_core::config::parse_hex_colorref;
 use winscroller2d_core::{
@@ -37,6 +38,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::time::Instant;
 use windows_sys::Win32::Foundation::{BOOL, HWND, LPARAM, LRESULT, TRUE, WPARAM};
+use windows_sys::Win32::Graphics::Gdi::{MonitorFromWindow, MONITOR_DEFAULTTONEAREST};
 use windows_sys::Win32::System::Console::SetConsoleCtrlHandler;
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
@@ -244,9 +246,17 @@ pub fn run_daemon(config_path: PathBuf) -> Result<(), String> {
         }
     }
 
-    // Guaranteed cleanup so all cloaked windows and borders are restored on exit.
+    // Guaranteed cleanup so all cloaked windows and borders are restored and centered on exit.
     with_app(|st| {
-        st.applier.restore_all();
+        let extra_ids: Vec<_> = st
+            .mgr
+            .snapshot()
+            .workspaces
+            .into_iter()
+            .flat_map(|w| w.windows)
+            .map(|w| w.id)
+            .collect();
+        st.applier.restore_all(&extra_ids);
     });
     APP_STATE.with(|cell| {
         *cell.borrow_mut() = None;
@@ -457,6 +467,21 @@ unsafe extern "system" fn controller_wnd_proc(
                                 },
                             );
                         }
+                        OverviewCommand::SplitHorizontal {
+                            window_id,
+                            target_window_id,
+                            on_left,
+                        } => {
+                            execute_action(
+                                st,
+                                hwnd,
+                                Action::SplitWindowHorizontal {
+                                    window_id,
+                                    target_window_id,
+                                    on_left,
+                                },
+                            );
+                        }
                         OverviewCommand::CloseWindow { window_id } => {
                             close_os_window(window_id);
                         }
@@ -577,7 +602,15 @@ unsafe extern "system" fn controller_wnd_proc(
                 }
             }
             with_app(|st| {
-                st.applier.restore_all();
+                let extra_ids: Vec<_> = st
+                    .mgr
+                    .snapshot()
+                    .workspaces
+                    .into_iter()
+                    .flat_map(|w| w.windows)
+                    .map(|w| w.id)
+                    .collect();
+                st.applier.restore_all(&extra_ids);
             });
             unsafe {
                 DestroyWindow(hwnd);
@@ -625,10 +658,26 @@ fn execute_action(st: &mut AppState, ctrl_hwnd: HWND, action: Action) {
         st.tray.update_status(paused);
         st.hover.reset();
         if paused {
-            st.applier.restore_all();
+            let extra_ids: Vec<_> = st
+                .mgr
+                .snapshot()
+                .workspaces
+                .into_iter()
+                .flat_map(|w| w.windows)
+                .map(|w| w.id)
+                .collect();
+            st.applier.restore_all(&extra_ids);
             if let Some(ref mut ov) = st.overview {
                 ov.hide();
             }
+        }
+    }
+
+    if let Some((win_id, ref target_desktop)) = effects.moved_to_desktop {
+        let whwnd = id_to_hwnd(win_id);
+        st.vdesktop.move_window_to_desktop(whwnd, target_desktop);
+        if target_desktop != st.mgr.active_os_desktop() {
+            set_cloak(whwnd, true);
         }
     }
 
@@ -945,6 +994,21 @@ fn handle_win_event(
         }
         WinEventKind::MoveSizeEnd => {
             if st.mgr.is_managed(id) && !st.mgr.is_floating(id) {
+                let hmon = unsafe { MonitorFromWindow(target_hwnd, MONITOR_DEFAULTTONEAREST) } as usize as u64;
+                if let Some(owner_mon) = st.mgr.monitor_owning_window(id) {
+                    if owner_mon != hmon {
+                        if let Some(target_ws) = st.mgr.active_workspace_for_monitor(hmon) {
+                            if let Some(target_desktop) = st.mgr.move_window_to_workspace(id, target_ws) {
+                                st.vdesktop.move_window_to_desktop(target_hwnd, &target_desktop);
+                            }
+                            st.mgr.set_focused_monitor(hmon);
+                            apply_frame_now(st, ctrl_hwnd, true);
+                            refresh_overview_if_open(st);
+                            schedule_state_save(st, ctrl_hwnd);
+                            return;
+                        }
+                    }
+                }
                 if capture_window_snap_from_os(st, id, target_hwnd, 16) {
                     apply_frame_now(st, ctrl_hwnd, true);
                     refresh_overview_if_open(st);

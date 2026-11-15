@@ -111,7 +111,7 @@ pub struct Cell {
 }
 
 impl Cell {
-    fn new(window_id: WindowId, width_step: usize, height_step: usize) -> Self {
+    pub(crate) fn new(window_id: WindowId, width_step: usize, height_step: usize) -> Self {
         Self {
             windows: vec![window_id],
             active_idx: 0,
@@ -457,6 +457,28 @@ impl GridWorkspace {
         }
     }
 
+    pub fn shift_cols_right_from(&mut self, start_col: i32) {
+        let mut to_move: Vec<Coord> = self
+            .cells
+            .keys()
+            .copied()
+            .filter(|c| c.col >= start_col)
+            .collect();
+        to_move.sort_by_key(|c| -c.col);
+        for old_coord in to_move {
+            if let Some(cell) = self.cells.remove(&old_coord) {
+                let new_coord = Coord::new(old_coord.col + 1, old_coord.row);
+                for &wid in &cell.windows {
+                    self.loc.insert(wid, new_coord);
+                }
+                if self.camera_coord == old_coord {
+                    self.camera_coord = new_coord;
+                }
+                self.cells.insert(new_coord, cell);
+            }
+        }
+    }
+
     pub fn remove_window(&mut self, id: WindowId) -> bool {
         self.remove_window_with_compact(id, false)
     }
@@ -564,14 +586,14 @@ impl GridWorkspace {
         if let Some(cell) = self.cells.get_mut(&origin) {
             if cell.windows.len() > 1 {
                 match dir {
-                    Direction::Up if cell.active_idx > 0 => {
+                    Direction::Left | Direction::Up if cell.active_idx > 0 => {
                         cell.active_idx -= 1;
                         let target = cell.active_window();
                         self.focused = Some(target);
                         self.follow_focused();
                         return Some(target);
                     }
-                    Direction::Down if cell.active_idx + 1 < cell.windows.len() => {
+                    Direction::Right | Direction::Down if cell.active_idx + 1 < cell.windows.len() => {
                         cell.active_idx += 1;
                         let target = cell.active_window();
                         self.focused = Some(target);
@@ -1107,6 +1129,7 @@ impl GridWorkspace {
             if let Some(dest_cell) = self.cells.get_mut(&dest) {
                 dest_cell.windows.push(window_id);
                 dest_cell.active_idx = dest_cell.windows.len() - 1;
+                dest_cell.stack_mode = StackMode::Split;
             } else {
                 self.cells.insert(dest, Cell::new(window_id, w_step, h_step));
             }
@@ -1150,6 +1173,7 @@ impl GridWorkspace {
                 if let Some(dest_cell) = self.cells.get_mut(&dest) {
                     dest_cell.windows.push(window_id);
                     dest_cell.active_idx = dest_cell.windows.len() - 1;
+                    dest_cell.stack_mode = StackMode::Split;
                 }
                 self.loc.insert(window_id, dest);
                 if vacated_empty && (!preserve_holes || config.auto_compact_empty) {
@@ -1223,6 +1247,111 @@ impl GridWorkspace {
         self.camera_coord = actual_dest;
         self.camera_pan_offset = (0.0, 0.0);
         self.camera_manual_pan = false;
+        true
+    }
+
+    /// Split `window_id` horizontally with `target_win_id`, snapping both into the same view side-by-side (50% each).
+    pub fn split_window_horizontal(
+        &mut self,
+        window_id: WindowId,
+        target_win_id: WindowId,
+        on_left: bool,
+        config: &LayoutConfig,
+    ) -> bool {
+        if window_id == target_win_id {
+            return false;
+        }
+        if !self.contains_window(window_id) || !self.contains_window(target_win_id) {
+            return false;
+        }
+
+        // 1. Remove window_id from wherever it currently is.
+        if let Some(pos) = self.floating.iter().position(|&w| w == window_id) {
+            self.floating.remove(pos);
+        } else if let Some(coord) = self.loc.remove(&window_id) {
+            if let Some(cell) = self.cells.get_mut(&coord) {
+                if let Some(idx) = cell.windows.iter().position(|&w| w == window_id) {
+                    cell.windows.remove(idx);
+                    if cell.windows.is_empty() {
+                        self.cells.remove(&coord);
+                        if config.auto_compact_empty {
+                            self.compact_empty_bands_at(coord, true);
+                        }
+                    } else if cell.active_idx >= cell.windows.len() {
+                        cell.active_idx = cell.windows.len() - 1;
+                    }
+                }
+            }
+        }
+
+        // 2. Locate target_win_id now.
+        let Some(&target_coord) = self.loc.get(&target_win_id) else {
+            return false;
+        };
+
+        // 3. Add window_id to target_coord's cell side-by-side horizontally.
+        if let Some(cell) = self.cells.get_mut(&target_coord) {
+            let target_idx = cell
+                .windows
+                .iter()
+                .position(|&w| w == target_win_id)
+                .unwrap_or(0);
+            let insert_idx = if on_left { target_idx } else { target_idx + 1 };
+            cell.windows.insert(insert_idx, window_id);
+            cell.active_idx = insert_idx;
+            cell.stack_mode = StackMode::Split;
+            cell.custom_width_frac = None;
+            cell.custom_height_frac = None;
+        } else {
+            let w_step = config.default_width_step.min(config.width_steps.len().saturating_sub(1));
+            let h_step = config.default_height_step.min(config.height_steps.len().saturating_sub(1));
+            self.cells.insert(target_coord, Cell::new(window_id, w_step, h_step));
+        }
+
+        self.loc.insert(window_id, target_coord);
+        self.focused = Some(window_id);
+        self.camera_coord = target_coord;
+        self.camera_pan_offset = (0.0, 0.0);
+        self.camera_manual_pan = false;
+        true
+    }
+
+    /// Automatically repair any cells containing multiple vertically-stacked windows,
+    /// unpacking them into clean horizontal side-by-side columns.
+    pub fn unpack_stacked_cells(&mut self, config: &LayoutConfig) -> bool {
+        let multi_coords: Vec<Coord> = self
+            .cells
+            .iter()
+            .filter(|(_, c)| c.windows.len() > 1)
+            .map(|(&coord, _)| coord)
+            .collect();
+        if multi_coords.is_empty() {
+            return false;
+        }
+
+        let w_step = config.default_width_step.min(config.width_steps.len().saturating_sub(1));
+        let h_step = config.default_height_step.min(config.height_steps.len().saturating_sub(1));
+
+        for coord in multi_coords {
+            let Some(cell) = self.cells.get_mut(&coord) else {
+                continue;
+            };
+            let remaining: Vec<WindowId> = cell.windows.drain(1..).collect();
+            cell.active_idx = 0;
+            cell.custom_width_frac = Some(0.5);
+            cell.custom_height_frac = Some(1.0);
+
+            for (idx, win_id) in remaining.into_iter().enumerate() {
+                let new_col = coord.col + 1 + idx as i32;
+                self.shift_cols_right_from(new_col);
+                let new_coord = Coord::new(new_col, coord.row);
+                let mut new_cell = Cell::new(win_id, w_step, h_step);
+                new_cell.custom_width_frac = Some(0.5);
+                new_cell.custom_height_frac = Some(1.0);
+                self.cells.insert(new_coord, new_cell);
+                self.loc.insert(win_id, new_coord);
+            }
+        }
         true
     }
 
@@ -1458,18 +1587,25 @@ impl GridWorkspace {
             let cell_y = (screen_cy - ch / 2.0).round() as i32;
             let cell_w = cw.round() as i32;
             let cell_h = ch.round() as i32;
-            let cell_rect = IRect::new(cell_x, cell_y, cell_w.max(1), cell_h.max(1));
+            let mut cell_rect = IRect::new(cell_x, cell_y, cell_w.max(1), cell_h.max(1));
             self.last_cell_rects.insert(coord, cell_rect);
 
             let cell_visible = cell_rect.intersects(area);
-            let clip_to = if config.clip_cross_monitor_edges
-                && cell_visible
-                && other_monitors.iter().any(|m| cell_rect.intersects(*m))
-            {
+            let overlaps_other = !other_monitors.is_empty()
+                && other_monitors.iter().any(|m| cell_rect.intersects(*m));
+            let clip_to = if config.clip_cross_monitor_edges && cell_visible && overlaps_other {
                 Some(area)
             } else {
                 None
             };
+
+            // When bordering adjacent displays in extend mode, clamp target rect strictly within
+            // this display's work area so that coordinates NEVER spill over onto the other monitor.
+            if clip_to.is_some() {
+                if let Some(inter) = cell_rect.intersection(area) {
+                    cell_rect = inter;
+                }
+            }
 
             let stack_len = cell.windows.len();
             match cell.stack_mode {
@@ -1487,25 +1623,24 @@ impl GridWorkspace {
                     }
                 }
                 _ => {
+                    // Split horizontally across available width so snapped apps form one full view side-by-side
                     let gap = config.stack_gap.max(0);
                     let total_gap = gap * (stack_len as i32 - 1).max(0);
-                    let avail_h = (cell_rect.h - total_gap).max(stack_len as i32);
-                    let base_h = avail_h / stack_len as i32;
-                    let rem_h = avail_h % stack_len as i32;
-                    let mut cur_y = cell_rect.y;
+                    let avail_w = (cell_rect.w - total_gap).max(stack_len as i32);
+                    let base_w = avail_w / stack_len as i32;
+                    let rem_w = avail_w % stack_len as i32;
+                    let mut cur_x = cell_rect.x;
                     for (idx, &win_id) in cell.windows.iter().enumerate() {
-                        let extra = if (idx as i32) < rem_h { 1 } else { 0 };
-                        let win_h = (base_h + extra).max(1);
-                        let win_rect = IRect::new(cell_rect.x, cur_y, cell_rect.w, win_h);
+                        let extra = if (idx as i32) < rem_w { 1 } else { 0 };
+                        let win_w = (base_w + extra).max(1);
+                        let mut win_rect = IRect::new(cur_x, cell_rect.y, win_w, cell_rect.h);
                         let win_visible = win_rect.intersects(area);
-                        let win_clip = if config.clip_cross_monitor_edges
-                            && win_visible
-                            && other_monitors.iter().any(|m| win_rect.intersects(*m))
-                        {
-                            Some(area)
-                        } else {
-                            None
-                        };
+                        let win_clip = clip_to;
+                        if win_clip.is_some() {
+                            if let Some(inter) = win_rect.intersection(area) {
+                                win_rect = inter;
+                            }
+                        }
                         placements.push(WindowPlacement {
                             window_id: win_id,
                             rect: win_rect,
@@ -1515,7 +1650,7 @@ impl GridWorkspace {
                             stack_index: idx,
                             stack_len,
                         });
-                        cur_y += win_h + gap;
+                        cur_x += win_w + gap;
                     }
                 }
             }

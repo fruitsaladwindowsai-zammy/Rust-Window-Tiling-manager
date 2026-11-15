@@ -99,11 +99,11 @@ pub struct LayoutConfig {
 impl Default for LayoutConfig {
     fn default() -> Self {
         Self {
-            peek_x: 8,
-            peek_y: 8,
+            peek_x: 0,
+            peek_y: 0,
             auto_expand_focused: false,
-            focused_peek_x: 8,
-            focused_peek_y: 8,
+            focused_peek_x: 0,
+            focused_peek_y: 0,
             gap_x: 8,
             gap_y: 8,
             stack_gap: 8,

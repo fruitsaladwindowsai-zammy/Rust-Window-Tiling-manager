@@ -9,7 +9,8 @@ use winscroller2d_core::{IRect, WindowCommand, WindowId, WindowInfo};
 use windows_sys::Win32::Foundation::{CloseHandle, BOOL, HWND, LPARAM, RECT, TRUE};
 use windows_sys::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DwmSetWindowAttribute, DWMWA_CLOAK, DWMWA_CLOAKED};
 use windows_sys::Win32::Graphics::Gdi::{
-    CreateRectRgn, DeleteObject, MonitorFromWindow, SetWindowRgn, HRGN, MONITOR_DEFAULTTONEAREST,
+    CreateRectRgn, DeleteObject, GetMonitorInfoW, MonitorFromWindow, SetWindowRgn, HRGN,
+    MONITORINFO, MONITOR_DEFAULTTONEAREST,
 };
 use windows_sys::Win32::System::Threading::{
     AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW,
@@ -21,8 +22,8 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
     GetWindowLongPtrW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
     IsWindow, IsWindowVisible, IsZoomed, PostMessageW, SetCursorPos, SetForegroundWindow,
     ShowWindow, ASFW_ANY, GA_ROOT, GWL_EXSTYLE, GWL_STYLE, GW_OWNER, HDWP, SWP_ASYNCWINDOWPOS,
-    SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE, WM_CLOSE, WS_CHILD, WS_EX_APPWINDOW,
-    WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, SetWindowPos,
+    SW_RESTORE, WM_CLOSE, WS_CHILD, WS_EX_APPWINDOW, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
 };
 
 const IGNORED_CLASSES: &[&str] = &[
@@ -409,10 +410,69 @@ impl WindowApplier {
         }
     }
 
-    pub fn restore_all(&mut self) {
-        let ids: Vec<WindowId> = self.states.keys().copied().collect();
+    /// Restore all managed windows to clean, visible, and centered positions in monitor work area on exit.
+    pub fn restore_all(&mut self, extra_ids: &[WindowId]) {
+        let mut ids: Vec<WindowId> = self.states.keys().copied().collect();
+        for &id in extra_ids {
+            if !ids.contains(&id) {
+                ids.push(id);
+            }
+        }
         for id in ids {
-            self.forget(id);
+            let _prev = self.states.remove(&id);
+            let hwnd = id_to_hwnd(id);
+            unsafe {
+                if IsWindow(hwnd) != 0 {
+                    set_cloak(hwnd, false);
+                    SetWindowRgn(hwnd, std::ptr::null_mut(), 1);
+                    set_dwm_border_color(hwnd, DWMWA_COLOR_DEFAULT);
+
+                    if IsIconic(hwnd) == 0 {
+                        let hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                        let mut mi: MONITORINFO = zeroed();
+                        mi.cbSize = size_of::<MONITORINFO>() as u32;
+                        let (wx, wy, ww, wh) = if GetMonitorInfoW(hmon, &mut mi as *mut _ as *mut _) != 0 {
+                            (
+                                mi.rcWork.left,
+                                mi.rcWork.top,
+                                (mi.rcWork.right - mi.rcWork.left).max(640),
+                                (mi.rcWork.bottom - mi.rcWork.top).max(480),
+                            )
+                        } else {
+                            (0, 0, 1920, 1080)
+                        };
+
+                        let mut rc: RECT = zeroed();
+                        GetWindowRect(hwnd, &mut rc);
+                        let cur_w = rc.right - rc.left;
+                        let cur_h = rc.bottom - rc.top;
+
+                        let target_w = if cur_w >= 400 && cur_w <= ww {
+                            cur_w
+                        } else {
+                            (ww * 82 / 100).clamp(640, ww)
+                        };
+                        let target_h = if cur_h >= 300 && cur_h <= wh {
+                            cur_h
+                        } else {
+                            (wh * 82 / 100).clamp(480, wh)
+                        };
+
+                        let target_x = wx + (ww - target_w) / 2;
+                        let target_y = wy + (wh - target_h) / 2;
+
+                        SetWindowPos(
+                            hwnd,
+                            std::ptr::null_mut(),
+                            target_x,
+                            target_y,
+                            target_w,
+                            target_h,
+                            SWP_NOACTIVATE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW,
+                        );
+                    }
+                }
+            }
         }
     }
 
@@ -467,12 +527,24 @@ impl WindowApplier {
                     } else {
                         FrameMargins::default()
                     };
-                    let actual = IRect::new(
+                    let mut actual = IRect::new(
                         target.x - m.left,
                         target.y - m.top,
                         (target.w + m.left + m.right).max(1),
                         (target.h + m.top + m.bottom).max(1),
                     );
+                    if let Some(clip_screen) = cmd.clip_to {
+                        let eff_x = (target.x - m.left).max(clip_screen.x);
+                        let eff_y = (target.y - m.top).max(clip_screen.y);
+                        let eff_r = (target.right() + m.right).min(clip_screen.right());
+                        let eff_b = (target.bottom() + m.bottom).min(clip_screen.bottom());
+                        actual = IRect::new(
+                            eff_x,
+                            eff_y,
+                            (eff_r - eff_x).max(1),
+                            (eff_b - eff_y).max(1),
+                        );
+                    }
 
                     let needs_move = state.rect != Some(actual);
                     if needs_move {
@@ -520,7 +592,8 @@ impl WindowApplier {
                     }
 
                     // Cross-monitor edge clipping so peek strips never spill onto adjacent screens.
-                    if state.clipped != cmd.clip_to {
+                    let clip_dirty = state.clipped != cmd.clip_to || (needs_move && cmd.clip_to.is_some());
+                    if clip_dirty {
                         match cmd.clip_to {
                             Some(clip_screen) => {
                                 let local_left = (clip_screen.x - actual.x).max(0);
@@ -568,6 +641,35 @@ impl WindowApplier {
                 EndDeferWindowPos(hdwp);
             }
 
+            // Verify post-positioning bounds against clip_to.
+            // On Windows 10/11 DWM, DirectComposition applications (Chrome, Edge, VS Code, Discord, etc.)
+            // bypass SetWindowRgn. If an application's WM_GETMINMAXINFO minimum track size forces it to
+            // spill over the monitor boundary into an adjacent display, cloak it immediately so it NEVER
+            // bleeds onto the adjacent monitor.
+            for cmd in commands {
+                if !cmd.visible || cmd.rect.is_none() {
+                    continue;
+                }
+                if let Some(clip_screen) = cmd.clip_to {
+                    let hwnd = id_to_hwnd(cmd.window_id);
+                    let mut post_rc: RECT = zeroed();
+                    if GetWindowRect(hwnd, &mut post_rc) != 0 {
+                        let spills = post_rc.right > clip_screen.right() + 8
+                            || post_rc.left < clip_screen.x - 8
+                            || post_rc.bottom > clip_screen.bottom() + 8
+                            || post_rc.top < clip_screen.y - 8;
+                        if spills {
+                            set_cloak(hwnd, true);
+                            if let Some(state) = self.states.get_mut(&cmd.window_id) {
+                                state.cloaked = true;
+                            }
+                            cloak_updates.push((cmd.window_id, true));
+                            to_uncloak.retain(|(wid, _)| *wid != cmd.window_id);
+                        }
+                    }
+                }
+            }
+
             // Uncloak only after EndDeferWindowPos has committed the new screen coordinates.
             for (win_id, hwnd) in to_uncloak {
                 set_cloak(hwnd, false);
@@ -579,7 +681,7 @@ impl WindowApplier {
     }
 }
 
-fn set_cloak(hwnd: HWND, cloak: bool) {
+pub fn set_cloak(hwnd: HWND, cloak: bool) {
     let val: i32 = if cloak { 1 } else { 0 };
     unsafe {
         let _ = DwmSetWindowAttribute(

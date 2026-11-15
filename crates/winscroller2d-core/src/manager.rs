@@ -69,6 +69,7 @@ pub struct DispatchEffects {
     pub open_settings: bool,
     pub state_dirty: bool,
     pub quit: bool,
+    pub moved_to_desktop: Option<(WindowId, String)>,
 }
 
 #[derive(Debug, Clone)]
@@ -596,7 +597,7 @@ impl WorkspaceManager {
             .map(|m| m.info.id)
     }
 
-    fn active_workspace_for_monitor(&self, mon_id: u64) -> Option<usize> {
+    pub fn active_workspace_for_monitor(&self, mon_id: u64) -> Option<usize> {
         self.active_workspace_for(&self.active_os_desktop, mon_id)
     }
 
@@ -637,7 +638,7 @@ impl WorkspaceManager {
             .or_else(|| self.monitors.first().map(|m| m.info.id))
     }
 
-    fn monitor_owning_workspace(&self, ws_id: usize) -> Option<u64> {
+    pub fn monitor_owning_workspace(&self, ws_id: usize) -> Option<u64> {
         if self.config.workspaces.per_monitor_workspaces {
             self.ws_scope.get(&ws_id).and_then(|s| s.monitor_id)
         } else {
@@ -647,6 +648,30 @@ impl WorkspaceManager {
                 .map(|m| m.info.id)
                 .or(self.focused_monitor_id)
         }
+    }
+
+    pub fn monitor_owning_window(&self, win_id: WindowId) -> Option<u64> {
+        let ws_id = self.windows.get(&win_id)?.workspace_id;
+        self.monitor_owning_workspace(ws_id)
+    }
+
+    pub fn move_window_to_workspace(&mut self, win_id: WindowId, target_ws_id: usize) -> Option<String> {
+        self.move_window_to_workspace_id(win_id, target_ws_id)
+    }
+
+    pub fn set_focused_monitor(&mut self, mon_id: u64) {
+        if self.monitors.iter().any(|m| m.info.id == mon_id) {
+            self.focused_monitor_id = Some(mon_id);
+        }
+    }
+
+    pub fn unpack_stacked_cells(&mut self) -> bool {
+        let layout_cfg = self.config.layout.clone();
+        let mut changed = false;
+        for ws in &mut self.workspaces {
+            changed |= ws.unpack_stacked_cells(&layout_cfg);
+        }
+        changed
     }
 
     fn current_workspace_id(&self) -> Option<usize> {
@@ -919,6 +944,10 @@ impl WorkspaceManager {
         }
         self.focused_window_id = Some(id);
         true
+    }
+
+    pub fn focus_window(&mut self, id: WindowId) {
+        self.on_foreground_changed(id);
     }
 
     /// Returns `(max_cell_w, max_cell_h)` for the monitor currently hosting `win_id`.
@@ -1255,7 +1284,9 @@ impl WorkspaceManager {
                     (self.focused_window_id, self.find_monitor_in_direction(direction))
                 {
                     if let Some(target_ws) = self.active_workspace_for_monitor(target_mon) {
-                        self.move_window_to_workspace_id(win_id, target_ws);
+                        if let Some(target_desktop) = self.move_window_to_workspace_id(win_id, target_ws) {
+                            effects.moved_to_desktop = Some((win_id, target_desktop));
+                        }
                         self.focused_monitor_id = Some(target_mon);
                         effects.focus_window = Some(win_id);
                         self.state_dirty = true;
@@ -1316,6 +1347,32 @@ impl WorkspaceManager {
                     }
                 }
             }
+            Action::SplitWindowHorizontal {
+                window_id,
+                target_window_id,
+                on_left,
+            } => {
+                let ws_id = self
+                    .windows
+                    .get(&window_id)
+                    .map(|m| m.workspace_id)
+                    .or_else(|| self.current_workspace_id());
+                if let Some(ws_id) = ws_id {
+                    let layout_cfg = self.config.layout.clone();
+                    let split = self.workspace_mut(ws_id).is_some_and(|ws| {
+                        ws.split_window_horizontal(window_id, target_window_id, on_left, &layout_cfg)
+                    });
+                    if split {
+                        self.focused_window_id = Some(window_id);
+                        if !self.overview_open {
+                            effects.focus_window = Some(window_id);
+                        }
+                        self.state_dirty = true;
+                        effects.state_dirty = true;
+                        effects.layout_dirty = true;
+                    }
+                }
+            }
         }
         effects
     }
@@ -1354,7 +1411,9 @@ impl WorkspaceManager {
         let Some(&target_ws_id) = list.get(slot) else {
             return;
         };
-        self.move_window_to_workspace_id(win_id, target_ws_id);
+        if let Some(target_desktop) = self.move_window_to_workspace_id(win_id, target_ws_id) {
+            effects.moved_to_desktop = Some((win_id, target_desktop));
+        }
         if let Some(mon) = self.monitors.iter_mut().find(|m| m.info.id == mon_id) {
             mon.active_workspace = target_ws_id;
             mon.active_by_desktop
@@ -1367,12 +1426,12 @@ impl WorkspaceManager {
         effects.layout_dirty = true;
     }
 
-    fn move_window_to_workspace_id(&mut self, win_id: WindowId, target_ws_id: usize) {
+    fn move_window_to_workspace_id(&mut self, win_id: WindowId, target_ws_id: usize) -> Option<String> {
         let Some(old_ws_id) = self.windows.get(&win_id).map(|m| m.workspace_id) else {
-            return;
+            return None;
         };
         if old_ws_id == target_ws_id {
-            return;
+            return None;
         }
         let was_floating = self
             .workspace(old_ws_id)
@@ -1406,11 +1465,12 @@ impl WorkspaceManager {
             .map(|s| s.os_desktop.clone());
         if let Some(meta) = self.windows.get_mut(&win_id) {
             meta.workspace_id = target_ws_id;
-            if let Some(d) = target_desktop {
-                meta.os_desktop = d;
+            if let Some(ref d) = target_desktop {
+                meta.os_desktop = d.clone();
             }
         }
         self.maintain_dynamic_empty_workspaces();
+        target_desktop
     }
 
     fn find_monitor_in_direction(&self, dir: Direction) -> Option<u64> {

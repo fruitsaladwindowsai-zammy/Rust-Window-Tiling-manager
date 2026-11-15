@@ -68,6 +68,7 @@ pub enum Action {
     MoveToMonitor { direction: Direction },
     JumpToCell { col: i32, row: i32, window_id: Option<u64> },
     PlaceWindowAt { window_id: u64, col: i32, row: i32, stack: bool },
+    SplitWindowHorizontal { window_id: u64, target_window_id: u64, on_left: bool },
     ToggleOverview,
     TogglePause,
     ToggleWorkspaceLayout,

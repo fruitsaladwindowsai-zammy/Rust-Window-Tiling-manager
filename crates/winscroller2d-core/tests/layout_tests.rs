@@ -18,8 +18,8 @@ fn find_rect(placements: &[winscroller2d_core::WindowPlacement], id: u64) -> &wi
 fn example_toml_parses_cleanly_and_validates() {
     let cfg = Config::from_toml_str(Config::default_toml_template())
         .expect("winscroller2d.example.toml should parse");
-    assert_eq!(cfg.layout.peek_x, 8);
-    assert_eq!(cfg.layout.peek_y, 8);
+    assert_eq!(cfg.layout.peek_x, 0);
+    assert_eq!(cfg.layout.peek_y, 0);
     assert_eq!(cfg.layout.default_width_step, 3);
     assert_eq!(cfg.layout.default_height_step, 3);
     assert!(!cfg.bindings.is_empty());
@@ -134,9 +134,9 @@ fn niri_consume_expel_stack_and_tabbed_cloaking() {
     let p10 = find_rect(&placements, 10);
     let p20 = find_rect(&placements, 20);
     assert!(p10.visible && p20.visible);
-    assert!(p20.rect.y > p10.rect.y);
+    assert!(p20.rect.x > p10.rect.x);
 
-    // Focusing down steps within the cell stack from 10 to 20.
+    // Focusing right or down steps within the cell split from 10 to 20.
     assert_eq!(ws.focus_direction(Direction::Down), Some(20));
 
     // Toggle Tabbed stack mode: only active window (20) is uncloaked.
@@ -479,6 +479,38 @@ fn place_window_at_supports_drag_move_swap_and_stack() {
     assert!(ws.place_window_at(3, Coord::new(1, 0), true, true, &cfg));
     assert_eq!(ws.loc[&3], Coord::new(1, 0));
     assert_eq!(ws.cells[&Coord::new(1, 0)].windows, vec![1, 3]);
+}
+
+#[test]
+fn drag_drop_split_window_horizontal_creates_side_by_side_halves_and_unpacks() {
+    let cfg = LayoutConfig::default();
+    let mut ws = GridWorkspace::new(0, "1");
+    ws.insert_window(101, false, None, None, &cfg);
+    ws.insert_window(102, false, None, None, &cfg);
+
+    // Window 101 is at (0, 0), Window 102 is at (1, 0)
+    assert_eq!(ws.loc[&101], Coord::new(0, 0));
+    assert_eq!(ws.loc[&102], Coord::new(1, 0));
+
+    // Drag Window 102 onto Window 101 on the right half -> snaps horizontally into one view!
+    assert!(ws.split_window_horizontal(102, 101, false, &cfg));
+    assert_eq!(ws.loc[&101], Coord::new(0, 0));
+    assert_eq!(ws.loc[&102], Coord::new(0, 0));
+    assert_eq!(ws.cells[&Coord::new(0, 0)].windows, vec![101, 102]);
+
+    // Verify placements combine to 100% width and full height side-by-side in one view
+    let area = IRect::new(0, 0, 1920, 1080);
+    let (placements, _) = ws.compute_placements(area, &[], &cfg, false, false, 0.016, 260.0, 0.85, 0.5);
+    let p101 = placements.iter().find(|p| p.window_id == 101).unwrap();
+    let p102 = placements.iter().find(|p| p.window_id == 102).unwrap();
+    assert!(p101.visible && p102.visible);
+    // They are side by side: p101 is on left, p102 is on right
+    assert!(p101.rect.x < p102.rect.x);
+    assert_eq!(p101.rect.h, p102.rect.h);
+    // Widths are each ~50% of the viewport (not squashed vertically!)
+    assert!(p101.rect.w >= 850 && p102.rect.w >= 850);
+    assert_eq!(p101.rect.h, 1080);
+    assert_eq!(p102.rect.h, 1080);
 }
 
 #[test]

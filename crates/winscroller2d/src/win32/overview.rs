@@ -24,8 +24,8 @@ use windows_sys::Win32::Graphics::Gdi::{
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-    GetKeyState, ReleaseCapture, SetCapture, VK_DOWN, VK_ESCAPE, VK_LEFT, VK_RETURN, VK_RIGHT,
-    VK_SHIFT, VK_UP,
+    GetKeyState, ReleaseCapture, SetCapture, VK_CONTROL, VK_DOWN, VK_ESCAPE, VK_LEFT, VK_RETURN,
+    VK_RIGHT, VK_SHIFT, VK_UP,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     BringWindowToTop, CreateWindowExW, DefWindowProcW, DestroyWindow, GetForegroundWindow,
@@ -72,6 +72,11 @@ pub enum OverviewCommand {
         col: i32,
         row: i32,
         stack: bool,
+    },
+    SplitHorizontal {
+        window_id: u64,
+        target_window_id: u64,
+        on_left: bool,
     },
     CloseWindow {
         window_id: u64,
@@ -1245,34 +1250,59 @@ fn rebuild_boxes(st: &mut OverviewState) {
         for col in min_col..=max_col {
             let gx = start_x + (col - min_col) * (cell_w + gap);
             let gy = start_y + (row - min_row) * (cell_h + gap);
-            let cell_wins: Vec<_> = tiled
+            let mut cell_wins: Vec<_> = tiled
                 .iter()
                 .filter(|w| w.col == col && w.row == row)
                 .copied()
                 .collect();
-            let active = cell_wins
-                .iter()
-                .find(|w| w.focused)
-                .or(cell_wins.first())
-                .copied()
-                .or_else(|| {
-                    if !floating.is_empty() && row == float_row && col >= float_start_col {
-                        floating.get((col - float_start_col) as usize).copied()
-                    } else {
-                        None
-                    }
+            cell_wins.sort_by_key(|w| w.stack_index);
+
+            if cell_wins.is_empty() {
+                let is_float = !floating.is_empty() && row == float_row && col >= float_start_col;
+                let float_win = if is_float {
+                    floating.get((col - float_start_col) as usize).copied()
+                } else {
+                    None
+                };
+                if !drag_active && float_win.is_none() {
+                    continue;
+                }
+                st.boxes.push(CellBox {
+                    rect: IRect::new(gx, gy, cell_w, cell_h),
+                    col,
+                    row,
+                    window_id: float_win.map(|w| w.id),
+                    stack_len: float_win.map_or(0, |_| 1),
+                    focused: float_win.is_some_and(|w| w.focused),
                 });
-            if !drag_active && active.is_none() {
-                continue;
+            } else if cell_wins.len() == 1 {
+                let w = cell_wins[0];
+                st.boxes.push(CellBox {
+                    rect: IRect::new(gx, gy, cell_w, cell_h),
+                    col,
+                    row,
+                    window_id: Some(w.id),
+                    stack_len: 1,
+                    focused: w.focused,
+                });
+            } else {
+                // Multi-window horizontally snapped view: subdivide width across windows so all thumbnails are visible side-by-side
+                let n = cell_wins.len();
+                let sub_gap = 4;
+                let avail = cell_w - sub_gap * (n as i32 - 1);
+                let sub_w = (avail / n as i32).max(24);
+                for (idx, w) in cell_wins.iter().enumerate() {
+                    let sx = gx + idx as i32 * (sub_w + sub_gap);
+                    st.boxes.push(CellBox {
+                        rect: IRect::new(sx, gy, sub_w, cell_h),
+                        col,
+                        row,
+                        window_id: Some(w.id),
+                        stack_len: n,
+                        focused: w.focused,
+                    });
+                }
             }
-            st.boxes.push(CellBox {
-                rect: IRect::new(gx, gy, cell_w, cell_h),
-                col,
-                row,
-                window_id: active.map(|w| w.id),
-                stack_len: active.map_or(0, |w| w.stack_len),
-                focused: active.is_some_and(|w| w.focused),
-            });
         }
     }
 
@@ -1450,6 +1480,10 @@ fn hit_or_nearest_box(boxes: &[CellBox], sx: i32, sy: i32, mx: i32, my: i32) -> 
 
 fn is_shift_down() -> bool {
     unsafe { (GetKeyState(VK_SHIFT as i32) as u16 & 0x8000) != 0 }
+}
+
+fn is_ctrl_down() -> bool {
+    unsafe { (GetKeyState(VK_CONTROL as i32) as u16 & 0x8000) != 0 }
 }
 
 unsafe extern "system" fn overview_wnd_proc(
@@ -1687,14 +1721,37 @@ unsafe extern "system" fn overview_wnd_proc(
                 if let Some(drag) = drag {
                     if drag.active {
                         if let Some(target) = hit_or_nearest_box(&st.boxes, sx, sy, mx, my) {
-                            if (target.col, target.row) != (drag.source_col, drag.source_row) {
+                            if let Some(target_win_id) = target.window_id {
+                                if target_win_id != drag.window_id {
+                                    if is_ctrl_down() || is_shift_down() {
+                                        return UpAction::Place(
+                                            st.controller_hwnd,
+                                            OverviewCommand::Place {
+                                                window_id: drag.window_id,
+                                                col: target.col,
+                                                row: target.row,
+                                                stack: false,
+                                            },
+                                        );
+                                    }
+                                    let on_left = (mx + sx) < target.rect.center().0;
+                                    return UpAction::Place(
+                                        st.controller_hwnd,
+                                        OverviewCommand::SplitHorizontal {
+                                            window_id: drag.window_id,
+                                            target_window_id: target_win_id,
+                                            on_left,
+                                        },
+                                    );
+                                }
+                            } else if (target.col, target.row) != (drag.source_col, drag.source_row) {
                                 return UpAction::Place(
                                     st.controller_hwnd,
                                     OverviewCommand::Place {
                                         window_id: drag.window_id,
                                         col: target.col,
                                         row: target.row,
-                                        stack: is_shift_down(),
+                                        stack: false,
                                     },
                                 );
                             }
@@ -2400,10 +2457,10 @@ unsafe fn paint_icon_layer(
                     2,
                     false,
                 );
-                let hint = if shift_down {
-                    "Drop to STACK"
-                } else {
+                let hint = if shift_down || is_ctrl_down() {
                     "Drop to SWAP"
+                } else {
+                    "Drop to SNAP"
                 };
                 draw_shadowed_text_argb(
                     pixels,

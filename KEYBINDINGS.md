@@ -57,7 +57,7 @@ WinScroller 2D uses a low-level Windows keyboard hook (`WH_KEYBOARD_LL`) so `Win
 | `Win+F` | `toggle_maximize_cell` | Toggle maximizing the focused cell within the viewport |
 | `Win+Shift+F` | `toggle_fullscreen` | Toggle borderless fullscreen for the focused window |
 | `Win+Shift+Space` | `toggle_floating` | Toggle floating vs. tiled mode for the focused window |
-| `Win+O` | `toggle_overview` | Open or close the dynamic 2D **Win+O** grid overview |
+| `Win+O` | `toggle_overview` | Open or close the interactive 2D **Win+O** grid overview (snapping, moving, closing) |
 | `Win+Shift+Q` | `close_focused` | Close the currently focused window |
 
 ### Multi-Monitor & Virtual Desktop / Workspaces
@@ -93,12 +93,20 @@ When the **Win+O** overview is open, all windows on the active workspace scale d
 | **Hover** over a window card | Highlights the card and smoothly animates the red close button (white `✕`) into the top-right corner |
 | **Click red `✕` button** | Closes that application directly from the overview |
 | **Left-click** a window card | Animates the highlighted window to the front and exits overview |
-| **Drag & Drop** a window card | Reveals drop grid slots, scales down cards while dragging, and moves/swaps the window to the target cell |
-| **`Shift` + Drag & Drop** | Stacks the dragged window into the target cell (`stack: true`) |
+| **Drag & Drop** onto another window | **Snaps** the two windows horizontally (50% / 50% width, 100% height) into one combined view |
+| **Drag & Drop** onto an empty slot | Moves the window into that new coordinate as a standalone cell |
+| **`Shift` / `Ctrl` + Drag & Drop** onto a window | Swaps the two windows' positions |
+| **Snapped views in overview** | Snapped views display both windows side-by-side as sub-cards with live thumbnails, icons, and individual close buttons |
 | **Left-click** an empty slot | Jumps camera/focus to that empty grid coordinate and closes overview |
 | `Left` / `Right` / `Up` / `Down` | Move overview highlight cursor across grid coordinates |
 | `Enter` | Focus the highlighted cell and animate it to the front |
 | `Esc` or **Right-click** | Dismiss overview without changing focus |
+
+---
+
+## Clean Borders & Clean Exit
+- **Clean Display Borders:** 0px edge peek margin (`peek_x = 0, peek_y = 0`) guarantees that non-visible workspace columns and rows are cleanly cloaked with zero title bar slivers or edge artifacts in screen corners.
+- **Clean Exit Centering:** When exiting WinScroller 2D (`Win+Shift+Escape` or system tray exit), all managed windows are cleanly uncloaked, unclipped, and centered in the monitor work area.
 
 ---
 

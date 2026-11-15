@@ -144,6 +144,21 @@ impl VirtualDesktopTracker {
             None
         }
     }
+
+    /// Moves a native OS window to the specified Windows virtual desktop GUID.
+    pub fn move_window_to_desktop(&self, hwnd: HWND, desktop_id_str: &str) -> bool {
+        if self.vdm.is_null() || hwnd.is_null() {
+            return false;
+        }
+        let Some(guid) = string_to_guid(desktop_id_str) else {
+            return false;
+        };
+        let hr = unsafe {
+            let vtbl = &*(*self.vdm).vtbl;
+            (vtbl.move_window_to_desktop)(self.vdm as *mut c_void, hwnd, &guid)
+        };
+        hr >= 0
+    }
 }
 
 impl Drop for VirtualDesktopTracker {
@@ -336,6 +351,41 @@ fn guid_to_string(g: &GUID) -> String {
     )
 }
 
+pub fn string_to_guid(s: &str) -> Option<GUID> {
+    let clean = s.trim_matches(|c| c == '{' || c == '}');
+    let parts: Vec<&str> = clean.split('-').collect();
+    if parts.len() != 5 {
+        return None;
+    }
+    if parts[0].len() != 8
+        || parts[1].len() != 4
+        || parts[2].len() != 4
+        || parts[3].len() != 4
+        || parts[4].len() != 12
+    {
+        return None;
+    }
+    let data1 = u32::from_str_radix(parts[0], 16).ok()?;
+    let data2 = u16::from_str_radix(parts[1], 16).ok()?;
+    let data3 = u16::from_str_radix(parts[2], 16).ok()?;
+    let d3 = parts[3];
+    let d4 = parts[4];
+    let b0 = u8::from_str_radix(&d3[0..2], 16).ok()?;
+    let b1 = u8::from_str_radix(&d3[2..4], 16).ok()?;
+    let b2 = u8::from_str_radix(&d4[0..2], 16).ok()?;
+    let b3 = u8::from_str_radix(&d4[2..4], 16).ok()?;
+    let b4 = u8::from_str_radix(&d4[4..6], 16).ok()?;
+    let b5 = u8::from_str_radix(&d4[6..8], 16).ok()?;
+    let b6 = u8::from_str_radix(&d4[8..10], 16).ok()?;
+    let b7 = u8::from_str_radix(&d4[10..12], 16).ok()?;
+    Some(GUID {
+        data1,
+        data2,
+        data3,
+        data4: [b0, b1, b2, b3, b4, b5, b6, b7],
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -354,5 +404,13 @@ mod tests {
         let list = parse_guid_list(&raw);
         assert_eq!(list.len(), 1);
         assert_eq!(list[0], "12345678-9abc-def0-0102-030405060708");
+    }
+
+    #[test]
+    fn guid_string_roundtrips() {
+        let original = "12345678-9abc-def0-0102-030405060708";
+        let guid = string_to_guid(original).expect("valid guid");
+        let formatted = guid_to_string(&guid);
+        assert_eq!(original, formatted);
     }
 }
