@@ -364,28 +364,8 @@ pub fn parse_hex_colorref(s: &str) -> Option<u32> {
 fn default_rules() -> Vec<WindowRule> {
     vec![
         WindowRule {
-            exe: Some("Taskmgr.exe".into()),
-            float: true,
-            ..Default::default()
-        },
-        WindowRule {
-            exe: Some("SnippingTool.exe".into()),
-            float: true,
-            ..Default::default()
-        },
-        WindowRule {
             exe: Some("ScreenClippingHost.exe".into()),
             ignore: true,
-            ..Default::default()
-        },
-        WindowRule {
-            class: Some("#32770".into()), // Standard Win32 Open/Save/Confirm dialogs
-            float: true,
-            ..Default::default()
-        },
-        WindowRule {
-            title: Some("Picture-in-Picture".into()),
-            float: true,
             ..Default::default()
         },
     ]

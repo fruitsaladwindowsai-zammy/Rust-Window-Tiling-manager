@@ -104,6 +104,7 @@ impl VirtualDesktopTracker {
         read_registry_desktop_state()
     }
 
+    #[allow(dead_code)]
     pub fn is_window_on_current_desktop(&self, hwnd: HWND) -> Option<bool> {
         if self.vdm.is_null() || hwnd.is_null() {
             return None;

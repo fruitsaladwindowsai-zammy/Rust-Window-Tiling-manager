@@ -17,7 +17,7 @@ use crate::win32::vdesktop::VirtualDesktopTracker;
 use crate::win32::window::{
     center_cursor_in_window, close_os_window, enumerate_manageable_windows,
     enumerate_manageable_windows_opts, focus_os_window, get_foreground_window_id, hwnd_to_id,
-    id_to_hwnd, is_manageable_window, is_minimized, is_valid_window, is_window_zoomed,
+    id_to_hwnd, is_manageable_window, is_valid_window, is_window_zoomed,
     read_visible_window_rect, read_window_info, read_window_title, set_cloak, shell_open_file,
     WindowApplier,
 };
@@ -44,7 +44,7 @@ use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW, KillTimer,
     PostMessageW, PostQuitMessage, RegisterClassExW, SetTimer, TranslateMessage, MSG, WM_CLOSE,
-    WM_DESTROY, WM_DISPLAYCHANGE, WM_SETTINGCHANGE, WM_TIMER, WNDCLASSEXW, WS_OVERLAPPEDWINDOW,
+    WM_DESTROY, WM_DISPLAYCHANGE, WM_HOTKEY, WM_SETTINGCHANGE, WM_TIMER, WNDCLASSEXW, WS_OVERLAPPEDWINDOW,
 };
 
 const CONTROLLER_CLASS: &str = "WinScroller2dControllerWindow";
@@ -63,6 +63,7 @@ struct AppState {
     touchpad: TouchpadTracker,
     hover: HoverFocusTracker,
     vdesktop: VirtualDesktopTracker,
+    hotkey_hook: HotkeyHook,
     ipc_rx: mpsc::Receiver<PendingIpc>,
     pacer: VsyncPacer,
     last_tick: Instant,
@@ -202,7 +203,7 @@ pub fn run_daemon(config_path: PathBuf) -> Result<(), String> {
     spawn_config_watcher(config_path.clone(), ctrl_hwnd as usize);
 
     let _event_listener = WinEventListener::install(ctrl_hwnd);
-    let _hotkey_hook = HotkeyHook::install(ctrl_hwnd, &config.bindings)?;
+    let hotkey_hook = HotkeyHook::install(ctrl_hwnd, &config.bindings)?;
     let pacer = VsyncPacer::new(ctrl_hwnd, WM_APP_VSYNC_STEP);
 
     APP_STATE.with(|cell| {
@@ -218,6 +219,7 @@ pub fn run_daemon(config_path: PathBuf) -> Result<(), String> {
             touchpad,
             hover: HoverFocusTracker::default(),
             vdesktop,
+            hotkey_hook,
             ipc_rx,
             pacer,
             last_tick: Instant::now(),
@@ -366,6 +368,16 @@ unsafe extern "system" fn controller_wnd_proc(
     lparam: LPARAM,
 ) -> LRESULT {
     match msg {
+        WM_HOTKEY => {
+            let id = wparam as i32;
+            if id >= 1000 {
+                let slot = (id - 1000) as usize;
+                if let Some(action) = hotkeys::get_action_by_slot(slot) {
+                    with_app(|st| execute_action(st, hwnd, action));
+                }
+            }
+            0
+        }
         WM_APP_ACTION => {
             let slot = wparam;
             let generation = lparam as u64;
@@ -631,7 +643,22 @@ unsafe extern "system" fn controller_wnd_proc(
 }
 
 fn execute_action(st: &mut AppState, ctrl_hwnd: HWND, action: Action) {
+    static LAST_ACTION: std::sync::Mutex<Option<(Action, Instant)>> = std::sync::Mutex::new(None);
+    if let Ok(mut guard) = LAST_ACTION.lock() {
+        let now = Instant::now();
+        if let Some((ref last_act, last_time)) = *guard {
+            if *last_act == action && now.duration_since(last_time).as_millis() < 160 {
+                return;
+            }
+        }
+        *guard = Some((action.clone(), now));
+    }
+
     if matches!(action, Action::ToggleOverview) && !st.mgr.overview_open {
+        if let Some(fg) = get_foreground_window_id() {
+            st.mgr.on_foreground_changed(fg);
+        }
+        reconcile_windows(st, ctrl_hwnd);
         capture_external_snaps(st);
     }
     if matches!(action, Action::ToggleOverview | Action::Retile) && !st.mgr.overview_open {
@@ -807,7 +834,7 @@ fn sync_overview(st: &mut AppState, open: bool) {
 fn reload_config(st: &mut AppState, ctrl_hwnd: HWND) {
     match load_config_file(&st.config_path) {
         Ok(cfg) => {
-            hotkeys::reload_bindings(&cfg.bindings);
+            st.hotkey_hook.reload(&cfg.bindings);
             st.mgr.update_config(cfg);
             if let Some(ref mut ov) = st.overview {
                 ov.update_options(overview_options(&st.mgr.config));
@@ -825,7 +852,7 @@ fn reload_config(st: &mut AppState, ctrl_hwnd: HWND) {
 }
 
 fn apply_live_config(st: &mut AppState, ctrl_hwnd: HWND, cfg: Config) {
-    hotkeys::reload_bindings(&cfg.bindings);
+    st.hotkey_hook.reload(&cfg.bindings);
     match cfg.to_toml_string() {
         Ok(toml_text) => {
             IGNORE_NEXT_WATCH_RELOAD.store(true, Ordering::SeqCst);
@@ -930,15 +957,7 @@ fn handle_win_event(
         }
         WinEventKind::Destroy | WinEventKind::Hide | WinEventKind::MinimizeStart => {
             if st.mgr.is_managed(id) {
-                if kind == WinEventKind::Hide
-                    && st.vdesktop.is_window_on_current_desktop(target_hwnd) == Some(false)
-                {
-                    return;
-                }
-                let should_remove = kind == WinEventKind::Destroy
-                    || kind == WinEventKind::Hide
-                    || !is_valid_window(id)
-                    || is_minimized(id);
+                let should_remove = kind == WinEventKind::Destroy || !is_valid_window(id);
                 if should_remove && st.mgr.remove_window(id) {
                     st.applier.forget(id);
                     apply_frame_now(st, ctrl_hwnd, true);
@@ -949,23 +968,13 @@ fn handle_win_event(
         }
         WinEventKind::Cloaked => {
             sync_os_desktop_state(st, ctrl_hwnd);
-            if st.mgr.is_managed(id) && !st.mgr.is_cloaked_by_wm(id) {
-                // Keep windows cloaked because they live on another OS virtual desktop.
-                if st.vdesktop.is_window_on_current_desktop(target_hwnd) == Some(false) {
-                    if let Some(did) = st.vdesktop.window_desktop_id(target_hwnd) {
-                        if st.mgr.move_window_to_os_desktop(id, &did) {
-                            apply_frame_now(st, ctrl_hwnd, true);
-                            refresh_overview_if_open(st);
-                            schedule_state_save(st, ctrl_hwnd);
-                        }
+            if st.mgr.is_managed(id) {
+                if let Some(did) = st.vdesktop.window_desktop_id(target_hwnd) {
+                    if st.mgr.move_window_to_os_desktop(id, &did) {
+                        apply_frame_now(st, ctrl_hwnd, true);
+                        refresh_overview_if_open(st);
+                        schedule_state_save(st, ctrl_hwnd);
                     }
-                    return;
-                }
-                if st.mgr.remove_window(id) {
-                    st.applier.forget(id);
-                    apply_frame_now(st, ctrl_hwnd, true);
-                    refresh_overview_if_open(st);
-                    schedule_state_save(st, ctrl_hwnd);
                 }
             }
         }
@@ -1147,14 +1156,12 @@ fn sync_os_desktop_state(st: &mut AppState, ctrl_hwnd: HWND) -> bool {
 fn reconcile_windows(st: &mut AppState, ctrl_hwnd: HWND) {
     capture_external_snaps(st);
     sync_os_desktop_state(st, ctrl_hwnd);
-    let active_desktop = st.mgr.active_os_desktop().to_string();
 
     let mut changed = false;
     let managed = st.mgr.all_managed_windows();
     for id in managed {
         let hwnd = id_to_hwnd(id);
-        let cloaked_by_wm = st.mgr.is_cloaked_by_wm(id);
-        if !is_valid_window(id) || is_minimized(id) {
+        if !is_valid_window(id) {
             if st.mgr.remove_window(id) {
                 st.applier.forget(id);
                 changed = true;
@@ -1163,14 +1170,6 @@ fn reconcile_windows(st: &mut AppState, ctrl_hwnd: HWND) {
         }
         if let Some(win_did) = st.vdesktop.window_desktop_id(hwnd) {
             if st.mgr.move_window_to_os_desktop(id, &win_did) {
-                changed = true;
-            }
-        }
-        let on_active_desktop = st.mgr.window_desktop_id(id) == Some(active_desktop.as_str())
-            && st.vdesktop.is_window_on_current_desktop(hwnd) != Some(false);
-        if on_active_desktop && !cloaked_by_wm && !is_manageable_window(hwnd, st.own_pid, false) {
-            if st.mgr.remove_window(id) {
-                st.applier.forget(id);
                 changed = true;
             }
         }

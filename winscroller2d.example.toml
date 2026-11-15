@@ -90,24 +90,8 @@ dynamic_empty_workspace = true
 
 # Window rules (match case-insensitive substrings of exe / class / title)
 [[rules]]
-exe = "Taskmgr.exe"
-float = true
-
-[[rules]]
-exe = "SnippingTool.exe"
-float = true
-
-[[rules]]
 exe = "ScreenClippingHost.exe"
 ignore = true
-
-[[rules]]
-class = "#32770"
-float = true
-
-[[rules]]
-title = "Picture-in-Picture"
-float = true
 
 # Keybindings (WH_KEYBOARD_LL intercepts Win/* cleanly without losing Win+L/Win+E/Win+R)
 [[bindings]]

@@ -2272,6 +2272,21 @@ unsafe fn paint_overview(hwnd: HWND) {
                     continue;
                 }
 
+                // Solid card backdrop for every managed window
+                let card_fill_a = (190.0 * open_t).round() as u8;
+                let card_border_a = (140.0 * open_t).round() as u8;
+                draw_rounded_card(
+                    pixels,
+                    w,
+                    h,
+                    card,
+                    10,
+                    (26, 30, 42, card_fill_a),
+                    (65, 75, 98, card_border_a),
+                    1,
+                    false,
+                );
+
                 if is_drag_source && active_drag.is_some() {
                     draw_rounded_card(
                         pixels,
@@ -2443,6 +2458,50 @@ unsafe fn paint_icon_layer(
                 (dest.bottom - dest.top).max(16),
             );
             let selected = st.cursor == (b.col, b.row);
+
+            let has_thumb = st.thumbs.contains_key(&win_id);
+            if !has_thumb && !is_drop_target && card_alpha > 10 {
+                draw_rounded_card(
+                    pixels,
+                    w,
+                    h,
+                    dest_r,
+                    6,
+                    (32, 38, 52, (230.0 * (card_alpha as f64 / 255.0)).round() as u8),
+                    (70, 80, 105, card_alpha),
+                    1,
+                    false,
+                );
+                let title_str = st
+                    .snapshot
+                    .as_ref()
+                    .and_then(|s| s.windows.iter().find(|w| w.id == win_id))
+                    .map(|w| w.title.as_str())
+                    .unwrap_or("");
+                if !title_str.is_empty() && card_alpha > 20 {
+                    let title_r = IRect::new(
+                        dest_r.x + 12,
+                        dest_r.y + (dest_r.h / 3) - 14,
+                        (dest_r.w - 24).max(10),
+                        28,
+                    );
+                    draw_shadowed_text_argb(
+                        pixels,
+                        w,
+                        h,
+                        icon_surf.scratch.hdc,
+                        scratch_pixels,
+                        icon_surf.scratch.w,
+                        icon_surf.scratch.h,
+                        icon_surf.title_font,
+                        title_r,
+                        title_str,
+                        (230, 238, 252),
+                        card_alpha,
+                        DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX,
+                    );
+                }
+            }
 
             if is_drop_target {
                 let drop_rgb = if shift_down { (122, 162, 247) } else { (247, 184, 104) };
