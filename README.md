@@ -22,6 +22,10 @@
 
 > **Tip:** Drop a short screen recording (e.g., `docs/assets/overview-demo.gif`) here after capturing your desktop in **Win+O** mode.
 
+
+
+<img width="538" height="228" alt="image" src="https://github.com/user-attachments/assets/3acf5db2-99d1-44a9-a5a5-633bd832bd9d" />
+
 ---
 
 ## Quick Start (Clean Windows Machine)
