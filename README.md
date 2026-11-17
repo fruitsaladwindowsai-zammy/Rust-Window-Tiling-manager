@@ -4,6 +4,7 @@
 
 ![Platform: Windows 10 / 11](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6?style=flat-square)
 ![Rust Edition 2024](https://img.shields.io/badge/rust-Edition%202024-orange?style=flat-square)
+[![Windows CI](https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/actions/workflows/ci.yml)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Architecture: Native Win32 + DWM](https://img.shields.io/badge/backend-Win32%20%2B%20DWM%20%2B%20HID-5C6BC0?style=flat-square)
 
@@ -192,6 +193,19 @@ Remove-Item -Force "$env:APPDATA\WinScroller2D\state.json" -ErrorAction Silently
 - **Persistent Snap Memory** – Saves snapped window sizes, coordinates, and per-workspace lattice toggles in `state.json` across sibling snaps, overviews, and restarts.
 - **Spring Physics & Native Inputs** – Hardware-paced `120 Hz` underdamped springs, Windows 11 `DWMWA_BORDER_COLOR`, debounced hover-focus on edge peeks, Precision Touchpad 3-finger pan / 4-finger overview swipe, `WH_KEYBOARD_LL` Start-Menu suppression, and `winscroller2d msg` named-pipe IPC.
 
+### 🏆 Feature Comparison: WinScroller 2D vs. Other Window Managers
+
+| Feature | WinScroller 2D | Komorebi | GlazeWM | Niri | Windows 11 Snap |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Target Platform** | **Windows 10 / 11** | Windows 10 / 11 | Windows 10 / 11 | Linux (Wayland only) | Windows 11 |
+| **Grid Topology** | **Unbounded 2D Infinite Sparse Canvas** | Screen-bound BSP / Columns | Screen-bound BSP / Columns | 1D Infinite Horizontal Ribbon | 2–4 Static Screen Zones |
+| **Live Overview** | **Interactive 2D Acrylic Canvas (`Win+O`)** | ❌ None | ❌ None | Workspaces Overview | Windows Task View (no canvas) |
+| **Drag-to-Snap Dual View** | **Drag onto window to combine into split scroll** | ❌ (Keyboard only) | ❌ (Keyboard only) | ❌ | Static 2-split |
+| **Smooth Motion** | **120 Hz Underdamped Mass-Spring Physics** | Instant cut / linear lerp | Instant cut / linear lerp | Smooth springs | Fixed OS transition |
+| **Admin App Control** | **Automatic UIPI Elevation (Task Mgr, Admin PS)** | Requires service/task | Requires manual elevation | N/A (Root/User) | Full OS integration |
+| **Display Boundary Isolation** | **0px Edge Margin (Zero Corner Spillover)** | Border adjustments | Border adjustments | Native Wayland crop | Native OS crop |
+| **Runtime Architecture** | **Single Standalone Rust Binary (Zero Deps)** | Multi-process daemon + AHK | Standalone Rust | Wayland compositor | Closed-source OS shell |
+
 ---
 
 ## Essential Keybindings
@@ -225,6 +239,8 @@ Complete keyboard, overview mouse/drag, Precision Touchpad, and tray reference: 
 | [RELEASE_NOTES.md](RELEASE_NOTES.md) | Detailed `v0.1.0` release notes |
 | [CHANGELOG.md](CHANGELOG.md) | Version changelog |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Workspace structure, testing (`cargo test --workspace`) & PR guidelines |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Contributor Covenant v2.1 community standard & pledge |
+| [SECURITY.md](SECURITY.md) | Vulnerability disclosure policy & UIPI integrity model |
 | [docs/](docs/README.md) | Source for the mdBook GitHub Pages documentation site |
 
 ---
