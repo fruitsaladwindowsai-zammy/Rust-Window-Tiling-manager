@@ -1,10 +1,9 @@
-name: Deploy Website & Documentation to GitHub Pages
+name: Deploy Documentation to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths:
-      - 'website/**'
       - 'docs/**'
       - '.github/workflows/gh-pages.yml'
   workflow_dispatch:
@@ -33,20 +32,13 @@ jobs:
       - name: Build mdBook documentation
         run: mdbook build docs
 
-      - name: Stage GitHub Pages site
-        run: |
-          mkdir -p _site
-          cp -r website/* _site/
-          mkdir -p _site/docs
-          cp -r docs/book/* _site/docs/
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: docs/book
 
   deploy:
     environment:

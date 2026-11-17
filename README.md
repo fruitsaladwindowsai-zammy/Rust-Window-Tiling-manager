@@ -5,12 +5,12 @@
 ![Platform: Windows 10 / 11](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6?style=flat-square)
 ![Rust Edition 2024](https://img.shields.io/badge/rust-Edition%202024-orange?style=flat-square)
 [![Windows CI](https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/actions/workflows/ci.yml)
-[![Website & Live Simulator](https://img.shields.io/badge/website-Live%20Simulator%20%26%20Showcase-00f5d4?style=flat-square&logo=googlechrome&logoColor=black)](https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/)
+[![Documentation](https://img.shields.io/badge/docs-mdBook%20Manual-00f5d4?style=flat-square&logo=gitbook&logoColor=black)](https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Architecture: Native Win32 + DWM](https://img.shields.io/badge/backend-Win32%20%2B%20DWM%20%2B%20HID-5C6BC0?style=flat-square)
 
-> 🌐 **Experience the Live Interactive Showcase & 2D Simulator**:  
-> Test WinScroller 2D directly in your browser with our interactive grid simulator, 120Hz mass-spring physics lab, and live configuration studio:  
+> 📖 **Official Documentation & Guides**:  
+> Read the complete interactive guides, multi-monitor configuration, and architecture internals:  
 > [**fruitsaladwindowsai-zammy.github.io/Winscroller-2D**](https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/)
 
 ```text

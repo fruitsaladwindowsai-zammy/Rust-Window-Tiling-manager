@@ -74,4 +74,4 @@ spring_damping = 21.0       # Higher = less overshoot; Lower = more bounce (rang
 min_frame_interval_ms = 8   # Clamps to max 125 FPS on high-refresh monitors
 ```
 
-You can test different stiffness and damping values interactively in the [Live Physics Lab on our website](https://fruitsaladwindowsai-zammy.github.io/Rust-Window-Tiling-manager/#physics-lab).
+You can fine-tune stiffness and damping values interactively by pressing `Win+Alt+S` to open the Live Settings overlay.

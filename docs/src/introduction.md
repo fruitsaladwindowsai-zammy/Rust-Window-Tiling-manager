@@ -4,9 +4,9 @@
 
 WinScroller 2D merges **Niri-style** scrolling columns and cell stacks with **Hyprscroll2D** infinite 2D grids and an interactive **Win+O dynamic overview** — powered directly by native Win32, DWM, and HID APIs.
 
-> 🌐 **Interactive Website & Live 2D Simulator**:  
-> Experience WinScroller 2D directly in your browser with real-time grid simulation, 120Hz spring physics lab, and interactive configuration studio:  
-> [**https://fruitsaladwindowsai-zammy.github.io/Rust-Window-Tiling-manager/**](https://fruitsaladwindowsai-zammy.github.io/Rust-Window-Tiling-manager/)
+> 📖 **Official mdBook Documentation & Guides**:  
+> Read the complete interactive guides, multi-monitor configuration, and architecture internals:  
+> [**https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/**](https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/)
 
 ---
 
