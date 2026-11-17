@@ -6,28 +6,13 @@
 
 ## 🎨 Visual Aesthetics & Layout
 
+![Overview Demo](assets/overview-demo.gif)
+
 When you press **`Win + O`**:
 
-```text
- ┌─────────────────────────── Live Overview Canvas ───────────────────────────┐
- │                                                                             │
- │    ┌────────────────┐         ┌────────────────┐         ┌────────────────┐ │
- │    │                │ [X]     │                │ [X]     │                │ │
- │    │    Thumbnail   │         │    Thumbnail   │         │    Thumbnail   │ │
- │    │    (VS Code)   │         │   (PowerShell) │         │    (Browser)   │ │
- │    │                │         │                │         │                │ │
- │    └──────[Logo]────┘         └──────[Logo]────┘         └──────[Logo]────┘ │
- │          Col 0                      Col 1                      Col 2        │
- │                                                                             │
- │                               ┌────────────────┐                            │
- │                               │                │                            │
- │                               │    Thumbnail   │  ◄── Drag any thumbnail    │
- │                               │    (Preview)   │      to reorder or snap    │
- │                               │                │                            │
- │                               └──────[Logo]────┘                            │
- │                                     Col 1, Row 1                            │
- └─────────────────────────────────────────────────────────────────────────────┘
-```
+| Live Acrylic Overview | Overview Selection & Cards |
+|:---:|:---:|
+| ![Overview Mode](assets/overview-mode.jpg) | ![Overview Navigation](assets/overview-navigation.jpg) |
 
 * **Wallpaper Acrylic Blur**: A snapshot of your current wallpaper is smoothly blurred using native GDI/DWM Gaussian filtering (`pure_blur` or `acrylic_clear`), free of washed-out white veils or overly dark tints.
 * **Live DWM Thumbnails**: Applications display real-time live video thumbnails via Windows Desktop Window Manager (`DwmRegisterThumbnail`).
@@ -39,6 +24,8 @@ When you press **`Win + O`**:
 
 ## 🖱️ Drag-and-Drop & Horizontal Split Snapping
 
+![Tiling and Snapping Demo](assets/tiling-snap-demo.gif)
+
 Overview mode includes full mouse interaction designed for effortless organization:
 
 ### 1. Reordering Cells
@@ -49,6 +36,11 @@ Overview mode includes full mouse interaction designed for effortless organizati
 * **How it works**: Grab any window thumbnail and **drop it directly onto another window**.
 * **Result**: Both applications immediately snap together into a **horizontal side-by-side view** ($50\% / 50\%$ width each) within the same view!
 * **Infinite Scroll**: You can now scroll smoothly in 2D between your dual-app views, single-app views, and terminal stacks!
+
+| Dual-App Snapped Horizontal Split View |
+|:---:|
+| ![Split Horizontal Snap](assets/split-horizontal-snap.png) |
+
 * **Directional Placement**:
   * Dropping on the **left half** of the target window places the dragged app on the left.
   * Dropping on the **right half** places the dragged app on the right.

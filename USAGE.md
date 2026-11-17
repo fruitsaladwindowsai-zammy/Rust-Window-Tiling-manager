@@ -1,16 +1,110 @@
-# Usage Guide
+# Usage & Installation Guide
 
-## Running WinScroller 2D
+## Installation & First-Time Setup
 
+### 1. Prerequisites (Clean Windows 10 / 11 Machine)
+Windows does not include Git or Rust by default. In an Administrator PowerShell prompt, install the required toolchains:
 ```powershell
-# Build release binary
-cargo build --release
+# 1. Install Git for Windows (Enables 'git clone')
+winget install --id Git.Git --accept-package-agreements --accept-source-agreements
 
-# Launch (run as Administrator if you also need to tile/intercept elevated UAC windows)
+# 2. Install Rust toolchain (Rustup)
+winget install --id Rustlang.Rustup --accept-package-agreements --accept-source-agreements
+
+# 3. Install MSVC C++ Build Tools (Required to link native Windows Win32/DWM APIs)
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
+*Restart your PowerShell terminal after installation so that `git`, `cargo`, and `rustc` are available on your PATH.*
+
+### 2. Download the Source Code
+
+#### Option A: Clone with Git (Recommended)
+```powershell
+git clone https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager.git
+cd "Rust-Window-Tiling-manager"
+```
+
+*If the repository requires GitHub authentication, clone with GitHub CLI or SSH:*
+```powershell
+# Using GitHub CLI:
+winget install --id GitHub.cli
+gh auth login
+gh repo clone fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager
+cd "Rust-Window-Tiling-manager"
+
+# Or using SSH:
+git clone git@github.com:fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager.git
+cd "Rust-Window-Tiling-manager"
+```
+
+#### Option B: Download ZIP (No Git Required)
+If you do not have Git installed or cannot use `git clone`, download directly in PowerShell:
+```powershell
+Invoke-WebRequest -Uri "https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/archive/refs/heads/main.zip" -OutFile "$HOME\Downloads\winscroller.zip"
+Expand-Archive -Path "$HOME\Downloads\winscroller.zip" -DestinationPath "$HOME\Projects"
+cd "$HOME\Projects\Rust-Window-Tiling-manager-main"
+```
+
+### 3. Build Release Binary
+```powershell
+cargo build --release
+```
+
+### 4. Initialize & Launch
+```powershell
+# Create default configuration at %APPDATA%\WinScroller2D\winscroller2d.toml
+.\target\release\winscroller2d.exe --init-config
+
+# Validate configuration syntax
+.\target\release\winscroller2d.exe --validate
+
+# Launch (triggers Windows UAC elevation prompt automatically)
 .\target\release\winscroller2d.exe
 ```
 
-On first startup, WinScroller 2D automatically creates `%APPDATA%\WinScroller2D\winscroller2d.toml` from the default template if it does not already exist, places a tray icon in the Windows notification area, and tiles existing windows on each monitor and Windows virtual desktop.
+> [!NOTE]
+> **Why Administrator Elevation is Needed**:
+> WinScroller 2D automatically requests Administrator elevation via UAC. This allows its low-level keyboard hooks (`WH_KEYBOARD_LL`) to navigate across and manage elevated windows (such as Administrator PowerShell and Task Manager) without being silenced by Windows UIPI.
+
+### 5. Running Automatically on Windows Startup
+To launch WinScroller 2D automatically upon logging in:
+```powershell
+$WshShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\WinScroller2D.lnk")
+$Shortcut.TargetPath = "$PWD\target\release\winscroller2d.exe"
+$Shortcut.WorkingDirectory = "$PWD"
+$Shortcut.Save()
+```
+
+---
+
+## Updating to a New Version
+
+When updating WinScroller 2D, the running executable file is locked by the operating system. You must exit the active instance before compiling:
+
+### Step 1: Gracefully Stop the Active Instance
+* Press **`Win + Shift + Escape`**
+* OR run via terminal:
+  ```powershell
+  .\target\release\winscroller2d.exe msg quit
+  ```
+
+### Step 2: Pull Latest Changes & Rebuild
+```powershell
+git pull origin main
+cargo build --release
+```
+
+### Step 3: Restart with Replacement
+```powershell
+.\target\release\winscroller2d.exe --replace
+```
+
+### Step 4: Refresh Workspace Layout (If Migrating)
+```powershell
+# Reset all windows to default clean geometry
+.\target\release\winscroller2d.exe msg retile
+```
 
 ---
 
@@ -26,6 +120,8 @@ winscroller2d msg <COMMAND> [ARGS...]
 | Flag | Description |
 |------|-------------|
 | `-c`, `--config <PATH>` | Use a custom `winscroller2d.toml` path instead of `%APPDATA%\WinScroller2D\winscroller2d.toml` |
+| `-r`, `--replace` | Replace running instance if already active |
+| `--no-elevate` | Run non-elevated (skip automatic Administrator elevation) |
 | `--init-config` | Write the default `winscroller2d.toml` (if missing) and exit |
 | `--validate` | Parse and normalize the configuration file, print validation result, and exit |
 | `-V`, `--version` | Print version (`WinScroller 2D (winscroller2d) 0.1.0`) |

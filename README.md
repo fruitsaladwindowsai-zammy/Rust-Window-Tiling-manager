@@ -20,41 +20,163 @@
   └────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **Tip:** Drop a short screen recording (e.g., `docs/assets/overview-demo.gif`) here after capturing your desktop in **Win+O** mode.
+## Live Demos & Visual Overview
 
+### 🎬 Animated Walkthroughs
 
-
-<img width="538" height="228" alt="image" src="https://github.com/user-attachments/assets/3acf5db2-99d1-44a9-a5a5-633bd832bd9d" />
+| Live 2D Overview (`Win + O`) | 2D Tiling & Split-Horizontal Snapping |
+|:---:|:---:|
+| ![Overview Demo](docs/assets/overview-demo.gif) | ![Tiling and Snapping Demo](docs/assets/tiling-snap-demo.gif) |
+| *Zoom out into full 2D grid over acrylic blur, live DWM thumbnails & app badges* | *Infinite 2D scrolling, neighbor peeking, and drag-to-split dual-app views* |
 
 ---
 
+### 📸 Screenshots Gallery
 
-<img width="538" height="228" alt="image" src="https://github.com/user-attachments/assets/d003ac2a-175d-4e44-be82-2e8ba727c6bf" />
+| Dynamic `Win + O` Overview | Centered Tiling with Infinite Canvas |
+|:---:|:---:|
+| ![Overview Mode](docs/assets/overview-mode.jpg) | ![Tiled Workspace](docs/assets/tiled-workspace.jpg) |
 
-Showing the CPU and RAM Usage 
+| Snapped Dual-App Horizontal Split | Layout Preset Selector HUD |
+|:---:|:---:|
+| ![Split Horizontal Snap](docs/assets/split-horizontal-snap.png) | ![Layout Presets](docs/assets/layout-presets.png) |
 
-## Quick Start (Clean Windows Machine)
+| Multi-Monitor Extended Mode (Zero Spillover) | 2D Infinite Scrolling Workspace |
+|:---:|:---:|
+| ![Dual Monitor](docs/assets/dual-monitor.png) | ![2D Infinite Scroll](docs/assets/2d-infinite-scroll.jpg) |
 
-### 1. Install Prerequisites *(skip if Rust + C++ Build Tools are already installed)*
+--- 
+
+## Installation Guide (Step-by-Step)
+
+### 1. Prerequisites (Clean Windows 10 / 11 Machine)
+Windows does **not** include Git or Rust by default. On a new or different PC, open an **Administrator PowerShell** prompt and run:
 
 ```powershell
+# 1. Install Git for Windows (Enables 'git clone' in PowerShell)
+winget install --id Git.Git --accept-package-agreements --accept-source-agreements
+
+# 2. Install Rust toolchain (Rustup)
 winget install --id Rustlang.Rustup --accept-package-agreements --accept-source-agreements
+
+# 3. Install MSVC C++ Build Tools (Required to link native Win32/DWM APIs)
 winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-### 2. Build & Run
+> [!IMPORTANT]
+> **Restart Your Terminal**: After running the `winget` commands above, **close and reopen** your PowerShell window so that `git`, `cargo`, and `rustc` environment variables are active on your `PATH`.
+>
+> *(Optional: Enable long path support in Git: `git config --global core.longpaths true`)*
 
+### 2. Download the Source Code
+
+#### Option A: Clone with Git (Recommended)
 ```powershell
-git clone https://github.com/<your-username>/winscroller2d.git
-cd winscroller2d
+git clone https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager.git
+cd "Rust-Window-Tiling-manager"
+```
+
+*If the repository requires GitHub authentication, clone with GitHub CLI or SSH:*
+```powershell
+# Using GitHub CLI:
+winget install --id GitHub.cli
+gh auth login
+gh repo clone fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager
+cd "Rust-Window-Tiling-manager"
+
+# Or using SSH:
+git clone git@github.com:fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager.git
+cd "Rust-Window-Tiling-manager"
+```
+
+#### Option B: Download ZIP (No Git Required)
+If you do not have Git installed or cannot use `git clone`, download and extract directly in PowerShell:
+```powershell
+Invoke-WebRequest -Uri "https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/archive/refs/heads/main.zip" -OutFile "$HOME\Downloads\winscroller.zip"
+Expand-Archive -Path "$HOME\Downloads\winscroller.zip" -DestinationPath "$HOME\Projects"
+cd "$HOME\Projects\Rust-Window-Tiling-manager-main"
+```
+
+---
+
+### 3. Build & Initialize
+```powershell
+# Compile with release optimizations
 cargo build --release
+
+# Create default configuration at %APPDATA%\WinScroller2D\winscroller2d.toml
 .\target\release\winscroller2d.exe --init-config
+
+# Validate configuration syntax
+.\target\release\winscroller2d.exe --validate
+```
+
+### 4. Run WinScroller 2D
+```powershell
 .\target\release\winscroller2d.exe
 ```
 
-* First launch creates `%APPDATA%\WinScroller2D\winscroller2d.toml` (auto-reloaded on save) and adds a system tray icon.
-* Press **`Win+Alt+S`** for the live graphical Settings window, or **`Win+Shift+Escape`** at any time to exit and restore all windows.
-* Before rebuilding `--release`, exit any running `winscroller2d.exe` first (`Win+Shift+Escape`).
+> [!NOTE]
+> **Automatic Administrator Elevation**:
+> When started, WinScroller 2D automatically requests Administrator elevation via Windows UAC if not already running in an elevated prompt. Click **Yes** on the UAC prompt. This gives WinScroller 2D High Integrity Level so its low-level keyboard hooks can intercept shortcuts across **all** windows (including Administrator PowerShell and Task Manager) without being blocked by Windows UIPI.
+
+### 5. Optional: Add to PATH & Run on Windows Startup
+To launch or control WinScroller 2D from any terminal:
+```powershell
+# Copy binary to Cargo bin folder (already in PATH)
+Copy-Item .\target\release\winscroller2d.exe "$env:USERPROFILE\.cargo\bin\" -Force
+```
+
+To have WinScroller 2D start automatically when Windows boots:
+```powershell
+# Create startup shortcut in shell:startup
+$WshShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\WinScroller2D.lnk")
+$Shortcut.TargetPath = "$PWD\target\release\winscroller2d.exe"
+$Shortcut.WorkingDirectory = "$PWD"
+$Shortcut.Save()
+```
+
+---
+
+## Updating WinScroller 2D
+
+When updating to the latest version, Windows locks the running `.exe` file. Follow these steps for a clean update:
+
+### Step 1: Gracefully Exit the Running Instance
+*Before rebuilding, you must exit any active WinScroller 2D daemon, otherwise `cargo build` will fail with `Access is denied (os error 5)`.*
+
+* Via keyboard: Press **`Win + Shift + Escape`**
+* OR via terminal:
+  ```powershell
+  .\target\release\winscroller2d.exe msg quit
+  ```
+
+### Step 2: Pull the Latest Changes
+```powershell
+git pull origin main
+```
+
+### Step 3: Rebuild the Release Binary
+```powershell
+cargo build --release
+```
+*(Optional: verify with `cargo test --workspace` to ensure all 24 unit/layout tests pass).*
+
+### Step 4: Restart with Replacement
+```powershell
+.\target\release\winscroller2d.exe --replace
+```
+
+### Step 5: (Optional) Retile or Reset Stale Layout Cache
+If updating between releases or if any window appears with outdated dimensions:
+```powershell
+# Reset all workspaces to standard clean geometry presets
+.\target\release\winscroller2d.exe msg retile
+
+# Or delete stale saved state if you want a completely fresh grid
+Remove-Item -Force "$env:APPDATA\WinScroller2D\state.json" -ErrorAction SilentlyContinue
+```
 
 ---
 
