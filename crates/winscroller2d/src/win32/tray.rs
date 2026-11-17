@@ -1,14 +1,14 @@
-use crate::win32::{to_wide, WM_APP_TRAY};
+use crate::win32::{WM_APP_TRAY, to_wide};
 use std::mem::{size_of, zeroed};
 use windows_sys::Win32::Foundation::{HWND, POINT};
 use windows_sys::Win32::UI::Shell::{
-    Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY,
-    NOTIFYICONDATAW,
+    NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NOTIFYICONDATAW,
+    Shell_NotifyIconW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    AppendMenuW, CreatePopupMenu, DestroyMenu, GetCursorPos, LoadIconW, SetForegroundWindow,
-    TrackPopupMenu, IDI_APPLICATION, MF_CHECKED, MF_SEPARATOR, MF_STRING, MF_UNCHECKED,
-    TPM_BOTTOMALIGN, TPM_LEFTALIGN, TPM_RETURNCMD, WM_LBUTTONDBLCLK, WM_RBUTTONUP,
+    AppendMenuW, CreatePopupMenu, DestroyMenu, GetCursorPos, IDI_APPLICATION, LoadIconW,
+    MF_CHECKED, MF_SEPARATOR, MF_STRING, MF_UNCHECKED, SetForegroundWindow, TPM_BOTTOMALIGN,
+    TPM_LEFTALIGN, TPM_RETURNCMD, TrackPopupMenu, WM_LBUTTONDBLCLK, WM_RBUTTONUP,
 };
 
 pub const TRAY_CMD_OVERVIEW: usize = 1001;
@@ -22,7 +22,12 @@ pub const TRAY_CMD_TOGGLE_WS_LAYOUT: usize = 1008;
 
 /// Shows the tray context menu (or handles double-click) without borrowing `AppState`
 /// across the modal `TrackPopupMenu` loop, avoiding timer/WinEvent `RefCell` re-entrancy.
-pub fn popup_tray_menu(hwnd: HWND, lparam: isize, paused: bool, ws_floating: bool) -> Option<usize> {
+pub fn popup_tray_menu(
+    hwnd: HWND,
+    lparam: isize,
+    paused: bool,
+    ws_floating: bool,
+) -> Option<usize> {
     let msg = (lparam & 0xFFFF) as u32;
     if msg == WM_LBUTTONDBLCLK {
         return Some(TRAY_CMD_OVERVIEW);
@@ -46,7 +51,12 @@ pub fn popup_tray_menu(hwnd: HWND, lparam: isize, paused: bool, ws_floating: boo
         append(
             TRAY_CMD_TOGGLE_WS_LAYOUT,
             "Workspace 2D Lattice Mode\tWin+Alt+L",
-            MF_STRING | if !ws_floating { MF_CHECKED } else { MF_UNCHECKED },
+            MF_STRING
+                | if !ws_floating {
+                    MF_CHECKED
+                } else {
+                    MF_UNCHECKED
+                },
         );
         append(
             TRAY_CMD_PAUSE,
@@ -59,7 +69,11 @@ pub fn popup_tray_menu(hwnd: HWND, lparam: isize, paused: bool, ws_floating: boo
         );
         append(TRAY_CMD_RETILE, "Retile / Sync Windows", MF_STRING);
         AppendMenuW(menu, MF_SEPARATOR, 0, std::ptr::null());
-        append(TRAY_CMD_OPEN_CONFIG, "Open Config (winscroller2d.toml)", MF_STRING);
+        append(
+            TRAY_CMD_OPEN_CONFIG,
+            "Open Config (winscroller2d.toml)",
+            MF_STRING,
+        );
         append(TRAY_CMD_RELOAD_CONFIG, "Reload Config", MF_STRING);
         AppendMenuW(menu, MF_SEPARATOR, 0, std::ptr::null());
         append(TRAY_CMD_EXIT, "Exit && Restore Windows", MF_STRING);
@@ -77,11 +91,7 @@ pub fn popup_tray_menu(hwnd: HWND, lparam: isize, paused: bool, ws_floating: boo
             std::ptr::null(),
         );
         DestroyMenu(menu);
-        if cmd > 0 {
-            Some(cmd as usize)
-        } else {
-            None
-        }
+        if cmd > 0 { Some(cmd as usize) } else { None }
     }
 }
 

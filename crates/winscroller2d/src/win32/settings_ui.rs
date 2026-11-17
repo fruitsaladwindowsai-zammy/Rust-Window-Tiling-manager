@@ -1,23 +1,23 @@
-use crate::win32::overview::{draw_rounded_card, draw_text_argb, CachedSurface};
-use crate::win32::{to_wide, WM_APP_APPLY_LIVE_CONFIG};
+use crate::win32::overview::{CachedSurface, draw_rounded_card, draw_text_argb};
+use crate::win32::{WM_APP_APPLY_LIVE_CONFIG, to_wide};
 use std::cell::RefCell;
 use std::mem::{size_of, zeroed};
 use std::sync::{Mutex, OnceLock};
 use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::Graphics::Gdi::{
-    BeginPaint, BitBlt, EndPaint, InvalidateRect, DT_CENTER, DT_END_ELLIPSIS, DT_LEFT,
-    DT_NOPREFIX, DT_SINGLELINE, DT_VCENTER, PAINTSTRUCT, SRCCOPY,
+    BeginPaint, BitBlt, DT_CENTER, DT_END_ELLIPSIS, DT_LEFT, DT_NOPREFIX, DT_SINGLELINE,
+    DT_VCENTER, EndPaint, InvalidateRect, PAINTSTRUCT, SRCCOPY,
 };
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
     ReleaseCapture, SetCapture, VK_BACK, VK_ESCAPE, VK_RETURN, VK_TAB,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    AllowSetForegroundWindow, BringWindowToTop, CreateWindowExW, DefWindowProcW, DestroyWindow,
-    LoadCursorW, PostMessageW, RegisterClassExW, SetForegroundWindow, SetWindowPos, ShowWindow,
-    ASFW_ANY, HWND_TOPMOST, IDC_ARROW, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, SW_HIDE, WM_CHAR,
-    WM_ERASEBKGND, WM_KEYDOWN, WM_KILLFOCUS, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WM_PAINT,
-    WNDCLASSEXW, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
+    ASFW_ANY, AllowSetForegroundWindow, BringWindowToTop, CreateWindowExW, DefWindowProcW,
+    DestroyWindow, HWND_TOPMOST, IDC_ARROW, LoadCursorW, PostMessageW, RegisterClassExW, SW_HIDE,
+    SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, SetForegroundWindow, SetWindowPos, ShowWindow,
+    WM_CHAR, WM_ERASEBKGND, WM_KEYDOWN, WM_KILLFOCUS, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE,
+    WM_PAINT, WNDCLASSEXW, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
 };
 use winscroller2d_core::{Config, IRect, NewWindowPlacement, OverviewBlurMode};
 
@@ -220,15 +220,7 @@ impl SettingsWindow {
         });
         unsafe {
             AllowSetForegroundWindow(ASFW_ANY);
-            SetWindowPos(
-                self.hwnd,
-                HWND_TOPMOST,
-                x,
-                y,
-                WIN_W,
-                WIN_H,
-                SWP_SHOWWINDOW,
-            );
+            SetWindowPos(self.hwnd, HWND_TOPMOST, x, y, WIN_W, WIN_H, SWP_SHOWWINDOW);
             BringWindowToTop(self.hwnd);
             SetForegroundWindow(self.hwnd);
             InvalidateRect(self.hwnd, std::ptr::null(), 0);
@@ -289,36 +281,48 @@ fn apply_edit_value(cfg: &mut Config, field: EditField, raw: &str) -> bool {
     }
     match field {
         EditField::PeekX => {
-            let Ok(v) = s.parse::<i32>() else { return false };
+            let Ok(v) = s.parse::<i32>() else {
+                return false;
+            };
             cfg.layout.peek_x = v.clamp(0, 256);
         }
         EditField::PeekY => {
-            let Ok(v) = s.parse::<i32>() else { return false };
+            let Ok(v) = s.parse::<i32>() else {
+                return false;
+            };
             cfg.layout.peek_y = v.clamp(0, 256);
         }
         EditField::Gap => {
-            let Ok(v) = s.parse::<i32>() else { return false };
+            let Ok(v) = s.parse::<i32>() else {
+                return false;
+            };
             let clamped = v.clamp(0, 64);
             cfg.layout.gap_x = clamped;
             cfg.layout.gap_y = clamped;
             cfg.layout.stack_gap = clamped;
         }
         EditField::Stiff => {
-            let Ok(v) = s.parse::<f64>() else { return false };
+            let Ok(v) = s.parse::<f64>() else {
+                return false;
+            };
             if !v.is_finite() {
                 return false;
             }
             cfg.animation.stiffness = v.clamp(80.0, 600.0);
         }
         EditField::Damp => {
-            let Ok(v) = s.parse::<f64>() else { return false };
+            let Ok(v) = s.parse::<f64>() else {
+                return false;
+            };
             if !v.is_finite() {
                 return false;
             }
             cfg.animation.damping_ratio = ((v * 100.0).round() / 100.0).clamp(0.50, 1.20);
         }
         EditField::MinW => {
-            let Ok(v) = s.parse::<f64>() else { return false };
+            let Ok(v) = s.parse::<f64>() else {
+                return false;
+            };
             if !v.is_finite() {
                 return false;
             }
@@ -327,7 +331,9 @@ fn apply_edit_value(cfg: &mut Config, field: EditField, raw: &str) -> bool {
             cfg.layout.overview_min_height = frac;
         }
         EditField::HoverDelay => {
-            let Ok(v) = s.parse::<u64>() else { return false };
+            let Ok(v) = s.parse::<u64>() else {
+                return false;
+            };
             cfg.layout.hover_focus_delay_ms = v.min(2000);
         }
     }
@@ -780,7 +786,11 @@ unsafe fn paint_settings(hwnd: HWND) {
                 WIN_H,
                 close_btn,
                 6,
-                if close_hov { (190, 68, 78, 230) } else { (48, 56, 78, 200) },
+                if close_hov {
+                    (190, 68, 78, 230)
+                } else {
+                    (48, 56, 78, 200)
+                },
                 (92, 108, 145, 200),
                 1,
                 false,
@@ -824,22 +834,105 @@ unsafe fn paint_settings(hwnd: HWND) {
             };
 
             let rows = [
-                ("Edge Peek X", RowKind::Stepper(SettingAction::PeekXMinus, SettingAction::PeekXPlus, EditField::PeekX, format!("{} px", l.peek_x))),
-                ("Edge Peek Y", RowKind::Stepper(SettingAction::PeekYMinus, SettingAction::PeekYPlus, EditField::PeekY, format!("{} px", l.peek_y))),
-                ("Cell Gap", RowKind::Stepper(SettingAction::GapMinus, SettingAction::GapPlus, EditField::Gap, format!("{} px", l.gap_x))),
-                ("New Window Placement", RowKind::Cycle(SettingAction::CyclePlacement, placement_label.into())),
-                ("Auto-Compact Empty Bands", RowKind::Toggle(SettingAction::ToggleCompact, l.auto_compact_empty)),
-                ("Auto-Expand Focused", RowKind::Toggle(SettingAction::ToggleAutoExpand, l.auto_expand_focused)),
-                ("Spring Stiffness", RowKind::Stepper(SettingAction::StiffMinus, SettingAction::StiffPlus, EditField::Stiff, format!("{:.0}", a.stiffness))),
-                ("Spring Damping Ratio", RowKind::Stepper(SettingAction::DampMinus, SettingAction::DampPlus, EditField::Damp, format!("{:.2}", a.damping_ratio))),
-                ("Overview Blur Style", RowKind::Cycle(SettingAction::ToggleBlurMode, blur_label.into())),
-                ("Overview Live Thumbnails", RowKind::Toggle(SettingAction::ToggleOverviewThumbs, l.overview_thumbnails)),
-                ("Overview Min Card Size", RowKind::Stepper(SettingAction::MinWMinus, SettingAction::MinWPlus, EditField::MinW, format!("{:.0}%", l.overview_min_width * 100.0))),
-                ("Hover-Focus Peeks", RowKind::Toggle(SettingAction::ToggleHoverPeeks, l.hover_focus_peeks)),
-                ("Hover Dwell Delay", RowKind::Stepper(SettingAction::HoverDelayMinus, SettingAction::HoverDelayPlus, EditField::HoverDelay, format!("{} ms", l.hover_focus_delay_ms))),
-                ("Center Cursor on Peek", RowKind::Toggle(SettingAction::ToggleCenterCursor, l.center_cursor_on_peek)),
-                ("3-Finger Touchpad Pan", RowKind::Toggle(SettingAction::ToggleThreeFingerPan, l.three_finger_pan)),
-                ("Persist Workspace Grids", RowKind::Toggle(SettingAction::TogglePersist, l.persist_state)),
+                (
+                    "Edge Peek X",
+                    RowKind::Stepper(
+                        SettingAction::PeekXMinus,
+                        SettingAction::PeekXPlus,
+                        EditField::PeekX,
+                        format!("{} px", l.peek_x),
+                    ),
+                ),
+                (
+                    "Edge Peek Y",
+                    RowKind::Stepper(
+                        SettingAction::PeekYMinus,
+                        SettingAction::PeekYPlus,
+                        EditField::PeekY,
+                        format!("{} px", l.peek_y),
+                    ),
+                ),
+                (
+                    "Cell Gap",
+                    RowKind::Stepper(
+                        SettingAction::GapMinus,
+                        SettingAction::GapPlus,
+                        EditField::Gap,
+                        format!("{} px", l.gap_x),
+                    ),
+                ),
+                (
+                    "New Window Placement",
+                    RowKind::Cycle(SettingAction::CyclePlacement, placement_label.into()),
+                ),
+                (
+                    "Auto-Compact Empty Bands",
+                    RowKind::Toggle(SettingAction::ToggleCompact, l.auto_compact_empty),
+                ),
+                (
+                    "Auto-Expand Focused",
+                    RowKind::Toggle(SettingAction::ToggleAutoExpand, l.auto_expand_focused),
+                ),
+                (
+                    "Spring Stiffness",
+                    RowKind::Stepper(
+                        SettingAction::StiffMinus,
+                        SettingAction::StiffPlus,
+                        EditField::Stiff,
+                        format!("{:.0}", a.stiffness),
+                    ),
+                ),
+                (
+                    "Spring Damping Ratio",
+                    RowKind::Stepper(
+                        SettingAction::DampMinus,
+                        SettingAction::DampPlus,
+                        EditField::Damp,
+                        format!("{:.2}", a.damping_ratio),
+                    ),
+                ),
+                (
+                    "Overview Blur Style",
+                    RowKind::Cycle(SettingAction::ToggleBlurMode, blur_label.into()),
+                ),
+                (
+                    "Overview Live Thumbnails",
+                    RowKind::Toggle(SettingAction::ToggleOverviewThumbs, l.overview_thumbnails),
+                ),
+                (
+                    "Overview Min Card Size",
+                    RowKind::Stepper(
+                        SettingAction::MinWMinus,
+                        SettingAction::MinWPlus,
+                        EditField::MinW,
+                        format!("{:.0}%", l.overview_min_width * 100.0),
+                    ),
+                ),
+                (
+                    "Hover-Focus Peeks",
+                    RowKind::Toggle(SettingAction::ToggleHoverPeeks, l.hover_focus_peeks),
+                ),
+                (
+                    "Hover Dwell Delay",
+                    RowKind::Stepper(
+                        SettingAction::HoverDelayMinus,
+                        SettingAction::HoverDelayPlus,
+                        EditField::HoverDelay,
+                        format!("{} ms", l.hover_focus_delay_ms),
+                    ),
+                ),
+                (
+                    "Center Cursor on Peek",
+                    RowKind::Toggle(SettingAction::ToggleCenterCursor, l.center_cursor_on_peek),
+                ),
+                (
+                    "3-Finger Touchpad Pan",
+                    RowKind::Toggle(SettingAction::ToggleThreeFingerPan, l.three_finger_pan),
+                ),
+                (
+                    "Persist Workspace Grids",
+                    RowKind::Toggle(SettingAction::TogglePersist, l.persist_state),
+                ),
             ];
 
             for (idx, (label, kind)) in rows.into_iter().enumerate() {
@@ -887,7 +980,11 @@ unsafe fn paint_settings(hwnd: HWND) {
                                 WIN_H,
                                 rc,
                                 5,
-                                if hov { (74, 102, 165, 255) } else { (44, 52, 74, 255) },
+                                if hov {
+                                    (74, 102, 165, 255)
+                                } else {
+                                    (44, 52, 74, 255)
+                                },
                                 (100, 122, 175, 210),
                                 1,
                                 false,
@@ -907,31 +1004,45 @@ unsafe fn paint_settings(hwnd: HWND) {
                                 255,
                                 DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX,
                             );
-                            buttons_tmp.push(HitButton { rect: rc, action: act });
+                            buttons_tmp.push(HitButton {
+                                rect: rc,
+                                action: act,
+                            });
                         }
                         let active_edit = st.active_edit.as_ref().filter(|e| e.field == field);
                         let edit_hov = st.hovered_edit == Some(field);
-                        let (box_bg, box_border, txt_rgb, display_val) = if let Some(ae) = active_edit {
-                            let bg = if !ae.dirty {
-                                (52, 82, 148, 255)
+                        let (box_bg, box_border, txt_rgb, display_val) =
+                            if let Some(ae) = active_edit {
+                                let bg = if !ae.dirty {
+                                    (52, 82, 148, 255)
+                                } else {
+                                    (28, 36, 56, 255)
+                                };
+                                (
+                                    bg,
+                                    (130, 180, 255, 255),
+                                    (250, 252, 255),
+                                    format!("{}|", ae.buf),
+                                )
                             } else {
-                                (28, 36, 56, 255)
+                                (
+                                    if edit_hov {
+                                        (36, 44, 66, 245)
+                                    } else {
+                                        (24, 28, 42, 235)
+                                    },
+                                    if edit_hov {
+                                        (102, 136, 205, 225)
+                                    } else {
+                                        (68, 82, 118, 170)
+                                    },
+                                    (122, 162, 247),
+                                    val,
+                                )
                             };
-                            (
-                                bg,
-                                (130, 180, 255, 255),
-                                (250, 252, 255),
-                                format!("{}|", ae.buf),
-                            )
-                        } else {
-                            (
-                                if edit_hov { (36, 44, 66, 245) } else { (24, 28, 42, 235) },
-                                if edit_hov { (102, 136, 205, 225) } else { (68, 82, 118, 170) },
-                                (122, 162, 247),
-                                val,
-                            )
-                        };
-                        draw_rounded_card(pixels, WIN_W, WIN_H, r_v, 5, box_bg, box_border, 1, false);
+                        draw_rounded_card(
+                            pixels, WIN_W, WIN_H, r_v, 5, box_bg, box_border, 1, false,
+                        );
                         draw_text_argb(
                             pixels,
                             WIN_W,
@@ -954,13 +1065,21 @@ unsafe fn paint_settings(hwnd: HWND) {
                         let hov = st.hovered == Some(act);
                         let (bg, border, txt) = if on {
                             (
-                                if hov { (72, 168, 114, 255) } else { (56, 140, 94, 245) },
+                                if hov {
+                                    (72, 168, 114, 255)
+                                } else {
+                                    (56, 140, 94, 245)
+                                },
                                 (122, 247, 158, 230),
                                 "ON",
                             )
                         } else {
                             (
-                                if hov { (64, 72, 96, 255) } else { (42, 48, 66, 245) },
+                                if hov {
+                                    (64, 72, 96, 255)
+                                } else {
+                                    (42, 48, 66, 245)
+                                },
                                 (96, 108, 138, 210),
                                 "OFF",
                             )
@@ -981,7 +1100,10 @@ unsafe fn paint_settings(hwnd: HWND) {
                             255,
                             DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX,
                         );
-                        buttons_tmp.push(HitButton { rect: rc, action: act });
+                        buttons_tmp.push(HitButton {
+                            rect: rc,
+                            action: act,
+                        });
                     }
                     RowKind::Cycle(act, txt) => {
                         let rc = IRect::new(WIN_W - 152, ry + 3, 132, ROW_H - 8);
@@ -992,7 +1114,11 @@ unsafe fn paint_settings(hwnd: HWND) {
                             WIN_H,
                             rc,
                             6,
-                            if hov { (66, 92, 152, 255) } else { (44, 54, 80, 255) },
+                            if hov {
+                                (66, 92, 152, 255)
+                            } else {
+                                (44, 54, 80, 255)
+                            },
                             (122, 162, 247, 220),
                             1,
                             false,
@@ -1012,7 +1138,10 @@ unsafe fn paint_settings(hwnd: HWND) {
                             255,
                             DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX,
                         );
-                        buttons_tmp.push(HitButton { rect: rc, action: act });
+                        buttons_tmp.push(HitButton {
+                            rect: rc,
+                            action: act,
+                        });
                     }
                 }
             }
@@ -1022,18 +1151,37 @@ unsafe fn paint_settings(hwnd: HWND) {
             let reset_rc = IRect::new(16, fy, 132, 28);
             let done_rc = IRect::new(WIN_W - 116, fy, 100, 28);
             for (rc, label, act, accent) in [
-                (reset_rc, "Reset Defaults", SettingAction::ResetDefaults, false),
+                (
+                    reset_rc,
+                    "Reset Defaults",
+                    SettingAction::ResetDefaults,
+                    false,
+                ),
                 (done_rc, "Done", SettingAction::CloseWindow, true),
             ] {
                 let hov = st.hovered == Some(act);
                 let fill = if accent {
-                    if hov { (110, 152, 242, 255) } else { (86, 128, 218, 255) }
+                    if hov {
+                        (110, 152, 242, 255)
+                    } else {
+                        (86, 128, 218, 255)
+                    }
                 } else if hov {
                     (66, 76, 104, 255)
                 } else {
                     (46, 54, 76, 255)
                 };
-                draw_rounded_card(pixels, WIN_W, WIN_H, rc, 6, fill, (122, 162, 247, 210), 1, false);
+                draw_rounded_card(
+                    pixels,
+                    WIN_W,
+                    WIN_H,
+                    rc,
+                    6,
+                    fill,
+                    (122, 162, 247, 210),
+                    1,
+                    false,
+                );
                 draw_text_argb(
                     pixels,
                     WIN_W,
@@ -1049,7 +1197,10 @@ unsafe fn paint_settings(hwnd: HWND) {
                     255,
                     DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX,
                 );
-                buttons_tmp.push(HitButton { rect: rc, action: act });
+                buttons_tmp.push(HitButton {
+                    rect: rc,
+                    action: act,
+                });
             }
 
             BitBlt(hdc_screen, 0, 0, WIN_W, WIN_H, surf.main.hdc, 0, 0, SRCCOPY);

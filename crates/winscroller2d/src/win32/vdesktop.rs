@@ -1,20 +1,21 @@
-use crate::win32::{to_wide, WM_APP_VDESKTOP_CHANGED};
+use crate::win32::{WM_APP_VDESKTOP_CHANGED, to_wide};
 use std::ffi::c_void;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
-use windows_sys::core::GUID;
 use windows_sys::Win32::Foundation::{BOOL, HWND};
 use windows_sys::Win32::System::Com::{
-    CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
+    CLSCTX_ALL, COINIT_APARTMENTTHREADED, CoCreateInstance, CoInitializeEx, CoUninitialize,
 };
 use windows_sys::Win32::System::Registry::{
-    RegCloseKey, RegNotifyChangeKeyValue, RegOpenKeyExW, RegQueryValueExW, HKEY,
-    HKEY_CURRENT_USER, KEY_NOTIFY, KEY_READ, REG_BINARY, REG_NOTIFY_CHANGE_LAST_SET,
+    HKEY, HKEY_CURRENT_USER, KEY_NOTIFY, KEY_READ, REG_BINARY, REG_NOTIFY_CHANGE_LAST_SET,
+    RegCloseKey, RegNotifyChangeKeyValue, RegOpenKeyExW, RegQueryValueExW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::PostMessageW;
+use windows_sys::core::GUID;
 
-const VDESKTOP_REG_SUBKEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops";
+const VDESKTOP_REG_SUBKEY: &str =
+    r"Software\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops";
 
 const CLSID_VIRTUAL_DESKTOP_MANAGER: GUID = GUID {
     data1: 0xAA50_9086,
@@ -32,8 +33,7 @@ const IID_IVIRTUAL_DESKTOP_MANAGER: GUID = GUID {
 
 #[repr(C)]
 struct IVirtualDesktopManagerVtbl {
-    query_interface:
-        unsafe extern "system" fn(*mut c_void, *const GUID, *mut *mut c_void) -> i32,
+    query_interface: unsafe extern "system" fn(*mut c_void, *const GUID, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "system" fn(*mut c_void) -> u32,
     release: unsafe extern "system" fn(*mut c_void) -> u32,
     is_window_on_current_virtual_desktop:
@@ -112,17 +112,9 @@ impl VirtualDesktopTracker {
         let mut on_cur: BOOL = 0;
         let hr = unsafe {
             let vtbl = &*(*self.vdm).vtbl;
-            (vtbl.is_window_on_current_virtual_desktop)(
-                self.vdm as *mut c_void,
-                hwnd,
-                &mut on_cur,
-            )
+            (vtbl.is_window_on_current_virtual_desktop)(self.vdm as *mut c_void, hwnd, &mut on_cur)
         };
-        if hr >= 0 {
-            Some(on_cur != 0)
-        } else {
-            None
-        }
+        if hr >= 0 { Some(on_cur != 0) } else { None }
     }
 
     pub fn window_desktop_id(&self, hwnd: HWND) -> Option<String> {
@@ -190,13 +182,7 @@ fn spawn_reg_watcher(ctrl_hwnd: HWND, stop: Arc<AtomicBool>) -> Option<JoinHandl
             while !stop.load(Ordering::Relaxed) {
                 let mut hkey: HKEY = std::ptr::null_mut();
                 let open_rc = unsafe {
-                    RegOpenKeyExW(
-                        HKEY_CURRENT_USER,
-                        subkey.as_ptr(),
-                        0,
-                        KEY_NOTIFY,
-                        &mut hkey,
-                    )
+                    RegOpenKeyExW(HKEY_CURRENT_USER, subkey.as_ptr(), 0, KEY_NOTIFY, &mut hkey)
                 };
                 if open_rc != 0 || hkey.is_null() {
                     std::thread::sleep(std::time::Duration::from_millis(500));
@@ -237,9 +223,7 @@ pub fn read_registry_desktop_state() -> OsDesktopState {
 
     let subkey = to_wide(VDESKTOP_REG_SUBKEY);
     let mut hkey: HKEY = std::ptr::null_mut();
-    let rc = unsafe {
-        RegOpenKeyExW(HKEY_CURRENT_USER, subkey.as_ptr(), 0, KEY_READ, &mut hkey)
-    };
+    let rc = unsafe { RegOpenKeyExW(HKEY_CURRENT_USER, subkey.as_ptr(), 0, KEY_READ, &mut hkey) };
     if rc == 0 && !hkey.is_null() {
         if let Some(raw_ids) = reg_read_binary(hkey, "VirtualDesktopIDs") {
             desktops = parse_guid_list(&raw_ids);

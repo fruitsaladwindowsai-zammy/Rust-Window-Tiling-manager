@@ -2,17 +2,17 @@ use crate::win32::to_wide;
 use std::mem::{size_of, zeroed};
 use windows_sys::Win32::Foundation::{CloseHandle, HWND};
 use windows_sys::Win32::Graphics::Gdi::{
-    CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, SelectObject, BITMAPINFO,
-    BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HBITMAP, HDC,
+    BI_RGB, BITMAPINFO, BITMAPINFOHEADER, CreateCompatibleDC, CreateDIBSection, DIB_RGB_COLORS,
+    DeleteDC, DeleteObject, HBITMAP, HDC, SelectObject,
 };
 use windows_sys::Win32::System::Threading::{
-    OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION,
+    OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION, QueryFullProcessImageNameW,
 };
-use windows_sys::Win32::UI::Shell::{SHGetFileInfoW, SHFILEINFOW, SHGFI_ICON, SHGFI_LARGEICON};
+use windows_sys::Win32::UI::Shell::{SHFILEINFOW, SHGFI_ICON, SHGFI_LARGEICON, SHGetFileInfoW};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    DestroyIcon, DrawIconEx, GetClassLongPtrW, GetWindowThreadProcessId, SendMessageTimeoutW,
-    DI_NORMAL, GCLP_HICON, GCLP_HICONSM, HICON, ICON_BIG, ICON_SMALL, ICON_SMALL2, SMTO_ABORTIFHUNG,
-    WM_GETICON,
+    DI_NORMAL, DestroyIcon, DrawIconEx, GCLP_HICON, GCLP_HICONSM, GetClassLongPtrW,
+    GetWindowThreadProcessId, HICON, ICON_BIG, ICON_SMALL, ICON_SMALL2, SMTO_ABORTIFHUNG,
+    SendMessageTimeoutW, WM_GETICON,
 };
 use winscroller2d_core::IRect;
 
@@ -49,14 +49,7 @@ impl ScratchDib {
 
         let mut ptr: *mut core::ffi::c_void = std::ptr::null_mut();
         let bmp = unsafe {
-            CreateDIBSection(
-                hdc,
-                &bmi,
-                DIB_RGB_COLORS,
-                &mut ptr,
-                std::ptr::null_mut(),
-                0,
-            )
+            CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, &mut ptr, std::ptr::null_mut(), 0)
         };
         if bmp.is_null() || ptr.is_null() {
             unsafe {
@@ -91,17 +84,8 @@ impl Drop for ScratchDib {
 
 fn query_msg_icon(hwnd: HWND, kind: usize) -> Option<HICON> {
     let mut res: usize = 0;
-    let ok = unsafe {
-        SendMessageTimeoutW(
-            hwnd,
-            WM_GETICON,
-            kind,
-            0,
-            SMTO_ABORTIFHUNG,
-            35,
-            &mut res,
-        )
-    };
+    let ok =
+        unsafe { SendMessageTimeoutW(hwnd, WM_GETICON, kind, 0, SMTO_ABORTIFHUNG, 35, &mut res) };
     if ok != 0 && res != 0 {
         Some(res as HICON)
     } else {
@@ -291,7 +275,8 @@ pub fn draw_soft_shadow_circle(
             }
             let existing = dst[row + x as usize];
             if existing == 0 {
-                dst[row + x as usize] = (a << 24) | ((6 * a / 255) << 16) | ((8 * a / 255) << 8) | (14 * a / 255);
+                dst[row + x as usize] =
+                    (a << 24) | ((6 * a / 255) << 16) | ((8 * a / 255) << 8) | (14 * a / 255);
             } else {
                 let inv = 255 - a;
                 let ea = (existing >> 24) & 0xFF;
@@ -380,11 +365,9 @@ pub fn draw_icon_scaled(
                 + ((p01 >> 8) & 0xFF) * w01
                 + ((p11 >> 8) & 0xFF) * w11)
                 >> 16;
-            let sb0 = ((p00 & 0xFF) * w00
-                + (p10 & 0xFF) * w10
-                + (p01 & 0xFF) * w01
-                + (p11 & 0xFF) * w11)
-                >> 16;
+            let sb0 =
+                ((p00 & 0xFF) * w00 + (p10 & 0xFF) * w10 + (p01 & 0xFF) * w01 + (p11 & 0xFF) * w11)
+                    >> 16;
 
             let sr = ((sr0 * a_scale) / 255).min(sa);
             let sg = ((sg0 * a_scale) / 255).min(sa);

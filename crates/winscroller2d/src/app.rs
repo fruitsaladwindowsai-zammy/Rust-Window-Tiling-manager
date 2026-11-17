@@ -1,35 +1,28 @@
-use crate::ipc_pipe::{spawn_ipc_server, PendingIpc};
+use crate::ipc_pipe::{PendingIpc, spawn_ipc_server};
 use crate::win32::dpi::{enable_per_monitor_dpi_v2, enumerate_monitors};
 use crate::win32::events::{WinEventKind, WinEventListener};
 use crate::win32::gestures::{GestureEvent, TouchpadTracker, WM_INPUT_MSG};
 use crate::win32::hotkeys::{self, HotkeyHook};
 use crate::win32::hover::HoverFocusTracker;
 use crate::win32::overview::{
-    drain_overview_commands, OverviewCommand, OverviewOptions, OverviewWindow,
+    OverviewCommand, OverviewOptions, OverviewWindow, drain_overview_commands,
 };
-use crate::win32::settings_ui::{take_pending_live_config, SettingsWindow};
+use crate::win32::settings_ui::{SettingsWindow, take_pending_live_config};
 use crate::win32::tray::{
-    popup_tray_menu, TrayIcon, TRAY_CMD_EXIT, TRAY_CMD_OPEN_CONFIG, TRAY_CMD_OVERVIEW,
-    TRAY_CMD_PAUSE, TRAY_CMD_RELOAD_CONFIG, TRAY_CMD_RETILE, TRAY_CMD_SETTINGS,
-    TRAY_CMD_TOGGLE_WS_LAYOUT,
+    TRAY_CMD_EXIT, TRAY_CMD_OPEN_CONFIG, TRAY_CMD_OVERVIEW, TRAY_CMD_PAUSE, TRAY_CMD_RELOAD_CONFIG,
+    TRAY_CMD_RETILE, TRAY_CMD_SETTINGS, TRAY_CMD_TOGGLE_WS_LAYOUT, TrayIcon, popup_tray_menu,
 };
 use crate::win32::vdesktop::VirtualDesktopTracker;
 use crate::win32::window::{
-    center_cursor_in_window, close_os_window, enumerate_manageable_windows,
+    WindowApplier, center_cursor_in_window, close_os_window, enumerate_manageable_windows,
     enumerate_manageable_windows_opts, focus_os_window, get_foreground_window_id, hwnd_to_id,
-    id_to_hwnd, is_manageable_window, is_valid_window,
-    read_window_info, read_window_title, set_cloak, shell_open_file,
-    WindowApplier,
+    id_to_hwnd, is_manageable_window, is_valid_window, read_window_info, read_window_title,
+    set_cloak, shell_open_file,
 };
 use crate::win32::{
-    to_wide, VsyncPacer, TIMER_DISPLAY_SYNC_ID, TIMER_HOVER_FOCUS_ID, TIMER_PERSIST_SAVE_ID,
-    WM_APP_ACTION, WM_APP_APPLY_LIVE_CONFIG, WM_APP_IPC_NOTIFY, WM_APP_OVERVIEW_CMD,
-    WM_APP_RELOAD_CONFIG, WM_APP_TRAY, WM_APP_VDESKTOP_CHANGED,
-    WM_APP_VSYNC_STEP, WM_APP_WIN_EVENT,
-};
-use winscroller2d_core::config::parse_hex_colorref;
-use winscroller2d_core::{
-    Action, Config, IpcRequest, IpcResponse, PersistedState, WorkspaceManager,
+    TIMER_DISPLAY_SYNC_ID, TIMER_HOVER_FOCUS_ID, TIMER_PERSIST_SAVE_ID, VsyncPacer, WM_APP_ACTION,
+    WM_APP_APPLY_LIVE_CONFIG, WM_APP_IPC_NOTIFY, WM_APP_OVERVIEW_CMD, WM_APP_RELOAD_CONFIG,
+    WM_APP_TRAY, WM_APP_VDESKTOP_CHANGED, WM_APP_VSYNC_STEP, WM_APP_WIN_EVENT, to_wide,
 };
 use std::cell::RefCell;
 use std::mem::{size_of, zeroed};
@@ -38,13 +31,18 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::time::Instant;
 use windows_sys::Win32::Foundation::{BOOL, HWND, LPARAM, LRESULT, TRUE, WPARAM};
-use windows_sys::Win32::Graphics::Gdi::{MonitorFromWindow, MONITOR_DEFAULTTONEAREST};
+use windows_sys::Win32::Graphics::Gdi::{MONITOR_DEFAULTTONEAREST, MonitorFromWindow};
 use windows_sys::Win32::System::Console::SetConsoleCtrlHandler;
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW, KillTimer,
-    PostMessageW, PostQuitMessage, RegisterClassExW, SetTimer, TranslateMessage, MSG, WM_CLOSE,
-    WM_DESTROY, WM_DISPLAYCHANGE, WM_HOTKEY, WM_SETTINGCHANGE, WM_TIMER, WNDCLASSEXW, WS_OVERLAPPEDWINDOW,
+    CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW, KillTimer, MSG,
+    PostMessageW, PostQuitMessage, RegisterClassExW, SetTimer, TranslateMessage, WM_CLOSE,
+    WM_DESTROY, WM_DISPLAYCHANGE, WM_HOTKEY, WM_SETTINGCHANGE, WM_TIMER, WNDCLASSEXW,
+    WS_OVERLAPPEDWINDOW,
+};
+use winscroller2d_core::config::parse_hex_colorref;
+use winscroller2d_core::{
+    Action, Config, IpcRequest, IpcResponse, PersistedState, WorkspaceManager,
 };
 
 const CONTROLLER_CLASS: &str = "WinScroller2dControllerWindow";
@@ -75,7 +73,9 @@ thread_local! {
 
 pub fn default_config_path() -> PathBuf {
     if let Ok(appdata) = std::env::var("APPDATA") {
-        PathBuf::from(appdata).join("WinScroller2D").join("winscroller2d.toml")
+        PathBuf::from(appdata)
+            .join("WinScroller2D")
+            .join("winscroller2d.toml")
     } else {
         PathBuf::from("winscroller2d.toml")
     }
@@ -142,8 +142,9 @@ pub fn ensure_config_exists(path: &Path) -> Result<Config, String> {
     if !path.exists() {
         if let Some(parent) = path.parent() {
             if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| format!("failed creating config directory {}: {e}", parent.display()))?;
+                std::fs::create_dir_all(parent).map_err(|e| {
+                    format!("failed creating config directory {}: {e}", parent.display())
+                })?;
             }
         }
         std::fs::write(path, Config::default_toml_template())
@@ -535,9 +536,9 @@ unsafe extern "system" fn controller_wnd_proc(
                     && st.mgr.config.layout.overview_thumbnails
                     && st.mgr.config.layout.three_finger_pan;
                 let sens = st.mgr.config.layout.gesture_pan_sensitivity;
-                if let Some(ev) = st
-                    .touchpad
-                    .handle_raw_input(lparam, sens, can_desktop_pan || can_overview_pan)
+                if let Some(ev) =
+                    st.touchpad
+                        .handle_raw_input(lparam, sens, can_desktop_pan || can_overview_pan)
                 {
                     match ev {
                         GestureEvent::PanDelta { dx, dy } => {
@@ -714,7 +715,9 @@ fn execute_action(st: &mut AppState, ctrl_hwnd: HWND, action: Action) {
                 .iter()
                 .find(|m| m.is_focused)
                 .or_else(|| snap.monitors.first())
-                .map(|m| winscroller2d_core::IRect::new(m.bounds.0, m.bounds.1, m.bounds.2, m.bounds.3))
+                .map(|m| {
+                    winscroller2d_core::IRect::new(m.bounds.0, m.bounds.1, m.bounds.2, m.bounds.3)
+                })
                 .unwrap_or(winscroller2d_core::IRect::new(0, 0, 1920, 1080))
         };
         if let Some(ref mut sw) = st.settings_win {
@@ -842,7 +845,10 @@ fn reload_config(st: &mut AppState, ctrl_hwnd: HWND) {
                 sw.sync_config(&st.mgr.config);
             }
             apply_frame_now(st, ctrl_hwnd, true);
-            println!("[winscroller2d] reloaded config from {}", st.config_path.display());
+            println!(
+                "[winscroller2d] reloaded config from {}",
+                st.config_path.display()
+            );
         }
         Err(err) => {
             eprintln!("[winscroller2d] keeping previous config; reload error: {err}");
@@ -921,12 +927,7 @@ fn poll_hover_focus(st: &mut AppState, ctrl_hwnd: HWND) {
     }
 }
 
-fn handle_win_event(
-    st: &mut AppState,
-    ctrl_hwnd: HWND,
-    kind: WinEventKind,
-    target_hwnd: HWND,
-) {
+fn handle_win_event(st: &mut AppState, ctrl_hwnd: HWND, kind: WinEventKind, target_hwnd: HWND) {
     let id = hwnd_to_id(target_hwnd);
     match kind {
         WinEventKind::Show | WinEventKind::Uncloaked | WinEventKind::MinimizeEnd => {
@@ -999,12 +1000,16 @@ fn handle_win_event(
         }
         WinEventKind::MoveSizeEnd => {
             if st.mgr.is_managed(id) && !st.mgr.is_floating(id) {
-                let hmon = unsafe { MonitorFromWindow(target_hwnd, MONITOR_DEFAULTTONEAREST) } as usize as u64;
+                let hmon = unsafe { MonitorFromWindow(target_hwnd, MONITOR_DEFAULTTONEAREST) }
+                    as usize as u64;
                 if let Some(owner_mon) = st.mgr.monitor_owning_window(id) {
                     if owner_mon != hmon {
                         if let Some(target_ws) = st.mgr.active_workspace_for_monitor(hmon) {
-                            if let Some(target_desktop) = st.mgr.move_window_to_workspace(id, target_ws) {
-                                st.vdesktop.move_window_to_desktop(target_hwnd, &target_desktop);
+                            if let Some(target_desktop) =
+                                st.mgr.move_window_to_workspace(id, target_ws)
+                            {
+                                st.vdesktop
+                                    .move_window_to_desktop(target_hwnd, &target_desktop);
                             }
                             st.mgr.set_focused_monitor(hmon);
                             apply_frame_now(st, ctrl_hwnd, true);
@@ -1021,7 +1026,8 @@ fn handle_win_event(
         }
         WinEventKind::NameChange => {
             if st.mgr.is_managed(id) {
-                st.mgr.update_window_title(id, read_window_title(target_hwnd));
+                st.mgr
+                    .update_window_title(id, read_window_title(target_hwnd));
             }
         }
     }
@@ -1145,4 +1151,3 @@ fn drain_ipc_requests(st: &mut AppState, ctrl_hwnd: HWND) {
         let _ = pending.reply_tx.send(resp);
     }
 }
-

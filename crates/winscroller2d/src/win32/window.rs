@@ -1,31 +1,33 @@
 use crate::win32::dpi::{
-    get_extended_frame_margins, set_dwm_border_color, FrameMargins, DWMWA_COLOR_DEFAULT,
+    DWMWA_COLOR_DEFAULT, FrameMargins, get_extended_frame_margins, set_dwm_border_color,
 };
 use crate::win32::{from_wide, to_wide};
 use std::collections::HashMap;
 use std::mem::{size_of, zeroed};
 use std::time::{Duration, Instant};
-use winscroller2d_core::{IRect, WindowCommand, WindowId, WindowInfo};
-use windows_sys::Win32::Foundation::{CloseHandle, BOOL, HWND, LPARAM, RECT, TRUE};
-use windows_sys::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DwmSetWindowAttribute, DWMWA_CLOAK, DWMWA_CLOAKED};
+use windows_sys::Win32::Foundation::{BOOL, CloseHandle, HWND, LPARAM, RECT, TRUE};
+use windows_sys::Win32::Graphics::Dwm::{
+    DWMWA_CLOAK, DWMWA_CLOAKED, DwmGetWindowAttribute, DwmSetWindowAttribute,
+};
 use windows_sys::Win32::Graphics::Gdi::{
-    CreateRectRgn, DeleteObject, GetMonitorInfoW, MonitorFromWindow, SetWindowRgn, HRGN,
-    MONITORINFO, MONITOR_DEFAULTTONEAREST,
+    CreateRectRgn, DeleteObject, GetMonitorInfoW, HRGN, MONITOR_DEFAULTTONEAREST, MONITORINFO,
+    MonitorFromWindow, SetWindowRgn,
 };
 use windows_sys::Win32::System::Threading::{
-    AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW,
-    PROCESS_QUERY_LIMITED_INFORMATION,
+    AttachThreadInput, GetCurrentThreadId, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+    QueryFullProcessImageNameW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    AllowSetForegroundWindow, BeginDeferWindowPos, BringWindowToTop, DeferWindowPos,
-    EndDeferWindowPos, EnumWindows, GetAncestor, GetClassNameW, GetForegroundWindow, GetWindow,
-    GetWindowLongPtrW, GetWindowPlacement, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId,
-    IsIconic, IsWindow, IsWindowVisible, IsZoomed, PostMessageW, SetCursorPos, SetForegroundWindow,
-    ShowWindow, ASFW_ANY, GA_ROOT, GWL_EXSTYLE, GWL_STYLE, GW_OWNER, HDWP, SWP_ASYNCWINDOWPOS,
-    SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, SetWindowPos,
-    SW_RESTORE, WINDOWPLACEMENT, WM_CLOSE, WS_CAPTION, WS_CHILD, WS_EX_APPWINDOW,
+    ASFW_ANY, AllowSetForegroundWindow, BeginDeferWindowPos, BringWindowToTop, DeferWindowPos,
+    EndDeferWindowPos, EnumWindows, GA_ROOT, GW_OWNER, GWL_EXSTYLE, GWL_STYLE, GetAncestor,
+    GetClassNameW, GetForegroundWindow, GetWindow, GetWindowLongPtrW, GetWindowPlacement,
+    GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, HDWP, IsIconic, IsWindow,
+    IsWindowVisible, IsZoomed, PostMessageW, SW_RESTORE, SWP_ASYNCWINDOWPOS, SWP_FRAMECHANGED,
+    SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, SetCursorPos, SetForegroundWindow,
+    SetWindowPos, ShowWindow, WINDOWPLACEMENT, WM_CLOSE, WS_CAPTION, WS_CHILD, WS_EX_APPWINDOW,
     WS_EX_TOOLWINDOW, WS_THICKFRAME,
 };
+use winscroller2d_core::{IRect, WindowCommand, WindowId, WindowInfo};
 
 const IGNORED_CLASSES: &[&str] = &[
     "Shell_TrayWnd",
@@ -101,8 +103,7 @@ pub fn focus_os_window(id: WindowId) {
             let target_tid = GetWindowThreadProcessId(hwnd, std::ptr::null_mut());
             let cur_tid = GetCurrentThreadId();
             let attach_fg = fg_tid != 0 && fg_tid != cur_tid;
-            let attach_target =
-                target_tid != 0 && target_tid != cur_tid && target_tid != fg_tid;
+            let attach_target = target_tid != 0 && target_tid != cur_tid && target_tid != fg_tid;
             if attach_fg {
                 AttachThreadInput(cur_tid, fg_tid, 1);
             }
@@ -362,7 +363,10 @@ pub fn enumerate_manageable_windows(own_pid: u32) -> Vec<WindowInfo> {
 
 /// Enumerates all manageable top-level windows across OS virtual desktops on startup
 /// (`include_shell_cloaked = true` includes DWM_CLOAKED_SHELL windows hidden on other desktops).
-pub fn enumerate_manageable_windows_opts(own_pid: u32, include_shell_cloaked: bool) -> Vec<WindowInfo> {
+pub fn enumerate_manageable_windows_opts(
+    own_pid: u32,
+    include_shell_cloaked: bool,
+) -> Vec<WindowInfo> {
     struct Ctx {
         own_pid: u32,
         include_shell_cloaked: bool,
@@ -442,9 +446,7 @@ impl WindowApplier {
     pub fn settled_target_rect(&self, id: WindowId, min_age: Duration) -> Option<(IRect, bool)> {
         let s = self.states.get(&id)?;
         let rect = s.target_rect?;
-        let ready = s
-            .last_applied_at
-            .is_some_and(|t| t.elapsed() >= min_age);
+        let ready = s.last_applied_at.is_some_and(|t| t.elapsed() >= min_age);
         ready.then_some((rect, s.cloaked))
     }
 
@@ -488,16 +490,17 @@ impl WindowApplier {
                         let hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
                         let mut mi: MONITORINFO = zeroed();
                         mi.cbSize = size_of::<MONITORINFO>() as u32;
-                        let (wx, wy, ww, wh) = if GetMonitorInfoW(hmon, &mut mi as *mut _ as *mut _) != 0 {
-                            (
-                                mi.rcWork.left,
-                                mi.rcWork.top,
-                                (mi.rcWork.right - mi.rcWork.left).max(640),
-                                (mi.rcWork.bottom - mi.rcWork.top).max(480),
-                            )
-                        } else {
-                            (0, 0, 1920, 1080)
-                        };
+                        let (wx, wy, ww, wh) =
+                            if GetMonitorInfoW(hmon, &mut mi as *mut _ as *mut _) != 0 {
+                                (
+                                    mi.rcWork.left,
+                                    mi.rcWork.top,
+                                    (mi.rcWork.right - mi.rcWork.left).max(640),
+                                    (mi.rcWork.bottom - mi.rcWork.top).max(480),
+                                )
+                            } else {
+                                (0, 0, 1920, 1080)
+                            };
 
                         let mut rc: RECT = zeroed();
                         GetWindowRect(hwnd, &mut rc);
@@ -653,7 +656,8 @@ impl WindowApplier {
                     }
 
                     // Cross-monitor edge clipping so peek strips never spill onto adjacent screens.
-                    let clip_dirty = state.clipped != cmd.clip_to || (needs_move && cmd.clip_to.is_some());
+                    let clip_dirty =
+                        state.clipped != cmd.clip_to || (needs_move && cmd.clip_to.is_some());
                     if clip_dirty {
                         match cmd.clip_to {
                             Some(clip_screen) => {
@@ -685,13 +689,12 @@ impl WindowApplier {
                 }
 
                 // Windows 11 native colored focus border.
-                let desired_border = border_colors.map(|(active, inactive)| {
-                    if cmd.is_focused {
-                        active
-                    } else {
-                        inactive
-                    }
-                });
+                let desired_border =
+                    border_colors.map(
+                        |(active, inactive)| {
+                            if cmd.is_focused { active } else { inactive }
+                        },
+                    );
                 if state.border_color != desired_border {
                     set_dwm_border_color(hwnd, desired_border.unwrap_or(DWMWA_COLOR_DEFAULT));
                     state.border_color = desired_border;

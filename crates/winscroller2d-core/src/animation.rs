@@ -48,13 +48,7 @@ impl Spring1D {
 
     /// Advance the spring by `dt_secs` with sub-stepping for unconditional stability.
     /// Returns `true` if still moving.
-    pub fn step(
-        &mut self,
-        dt_secs: f64,
-        stiffness: f64,
-        damping_ratio: f64,
-        epsilon: f64,
-    ) -> bool {
+    pub fn step(&mut self, dt_secs: f64, stiffness: f64, damping_ratio: f64, epsilon: f64) -> bool {
         if !self.initialized {
             return false;
         }
@@ -139,13 +133,7 @@ impl CameraAnim {
     }
 
     /// Advance 2D spring animation by `dt_secs`. Returns `true` if still animating.
-    pub fn step(
-        &mut self,
-        dt_secs: f64,
-        stiffness: f64,
-        damping_ratio: f64,
-        epsilon: f64,
-    ) -> bool {
+    pub fn step(&mut self, dt_secs: f64, stiffness: f64, damping_ratio: f64, epsilon: f64) -> bool {
         let ax = self.x.step(dt_secs, stiffness, damping_ratio, epsilon);
         let ay = self.y.step(dt_secs, stiffness, damping_ratio, epsilon);
         ax || ay

@@ -1,26 +1,27 @@
 use crate::win32::WM_APP_ACTION;
 use std::collections::{HashMap, HashSet};
 use std::mem::size_of;
-use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU64, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU8, AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock, RwLock};
 use std::time::Instant;
-use winscroller2d_core::config::KeybindConfig;
-use winscroller2d_core::Action;
 use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-    GetAsyncKeyState, RegisterHotKey, SendInput, UnregisterHotKey, INPUT, INPUT_0, INPUT_KEYBOARD,
-    KEYBDINPUT, KEYEVENTF_KEYUP, MOD_ALT as WIN_MOD_ALT, MOD_CONTROL as WIN_MOD_CONTROL,
-    MOD_NOREPEAT as WIN_MOD_NOREPEAT, MOD_SHIFT as WIN_MOD_SHIFT, MOD_WIN as WIN_MOD_WIN,
-    VK_0, VK_9, VK_A, VK_ADD, VK_BACK, VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE, VK_F1, VK_F12,
-    VK_HOME, VK_INSERT, VK_LCONTROL, VK_LEFT, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_NEXT, VK_OEM_COMMA,
-    VK_OEM_MINUS, VK_OEM_PERIOD, VK_OEM_PLUS, VK_OEM_4, VK_OEM_5, VK_OEM_6, VK_PRIOR, VK_RCONTROL,
-    VK_RETURN, VK_RIGHT, VK_RMENU, VK_RSHIFT, VK_RWIN, VK_SPACE, VK_SUBTRACT, VK_TAB, VK_UP, VK_Z,
+    GetAsyncKeyState, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
+    MOD_ALT as WIN_MOD_ALT, MOD_CONTROL as WIN_MOD_CONTROL, MOD_NOREPEAT as WIN_MOD_NOREPEAT,
+    MOD_SHIFT as WIN_MOD_SHIFT, MOD_WIN as WIN_MOD_WIN, RegisterHotKey, SendInput,
+    UnregisterHotKey, VK_0, VK_9, VK_A, VK_ADD, VK_BACK, VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE,
+    VK_F1, VK_F12, VK_HOME, VK_INSERT, VK_LCONTROL, VK_LEFT, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_NEXT,
+    VK_OEM_4, VK_OEM_5, VK_OEM_6, VK_OEM_COMMA, VK_OEM_MINUS, VK_OEM_PERIOD, VK_OEM_PLUS, VK_PRIOR,
+    VK_RCONTROL, VK_RETURN, VK_RIGHT, VK_RMENU, VK_RSHIFT, VK_RWIN, VK_SPACE, VK_SUBTRACT, VK_TAB,
+    VK_UP, VK_Z,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CallNextHookEx, PostMessageW, SetWindowsHookExW, UnhookWindowsHookEx, HHOOK, KBDLLHOOKSTRUCT,
-    LLKHF_INJECTED, WH_KEYBOARD_LL, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP,
+    CallNextHookEx, HHOOK, KBDLLHOOKSTRUCT, LLKHF_INJECTED, PostMessageW, SetWindowsHookExW,
+    UnhookWindowsHookEx, WH_KEYBOARD_LL, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP,
 };
+use winscroller2d_core::Action;
+use winscroller2d_core::config::KeybindConfig;
 
 const MOD_WIN: u8 = 1 << 0;
 const MOD_CTRL: u8 = 1 << 1;
@@ -178,7 +179,10 @@ pub fn reload_bindings(bindings: &[KeybindConfig]) {
             actions.push(b.action.clone());
             map.insert(chord, idx);
         } else {
-            eprintln!("[winscroller2d] ignoring unrecognized keybinding '{}'", b.keys);
+            eprintln!(
+                "[winscroller2d] ignoring unrecognized keybinding '{}'",
+                b.keys
+            );
         }
     }
     if let Ok(mut guard) = keymap_lock().write() {
@@ -349,7 +353,11 @@ fn suppress_start_menu() {
         },
     ];
     unsafe {
-        SendInput(inputs.len() as u32, inputs.as_ptr(), size_of::<INPUT>() as i32);
+        SendInput(
+            inputs.len() as u32,
+            inputs.as_ptr(),
+            size_of::<INPUT>() as i32,
+        );
     }
 }
 

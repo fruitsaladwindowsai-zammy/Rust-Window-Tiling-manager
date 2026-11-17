@@ -2,17 +2,17 @@ mod app;
 mod ipc_pipe;
 mod win32;
 
-use winscroller2d_core::{Action, Direction, IpcRequest, IpcResponse};
 use std::path::PathBuf;
 use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
 use windows_sys::Win32::Security::{
-    GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
+    GetTokenInformation, TOKEN_ELEVATION, TOKEN_QUERY, TokenElevation,
 };
 use windows_sys::Win32::System::Threading::{
-    GetCurrentProcess, GetExitCodeProcess, OpenProcessToken, WaitForSingleObject, INFINITE,
+    GetCurrentProcess, GetExitCodeProcess, INFINITE, OpenProcessToken, WaitForSingleObject,
 };
-use windows_sys::Win32::UI::Shell::{ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW};
+use windows_sys::Win32::UI::Shell::{SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW, ShellExecuteExW};
 use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOW;
+use winscroller2d_core::{Action, Direction, IpcRequest, IpcResponse};
 
 fn main() {
     install_panic_hook();
@@ -64,7 +64,10 @@ fn run_cli(args: &[String]) -> Result<(), String> {
                 return Ok(());
             }
             "-V" | "--version" => {
-                println!("WinScroller 2D (winscroller2d) {}", env!("CARGO_PKG_VERSION"));
+                println!(
+                    "WinScroller 2D (winscroller2d) {}",
+                    env!("CARGO_PKG_VERSION")
+                );
                 return Ok(());
             }
             "-c" | "--config" => {
@@ -106,7 +109,10 @@ fn run_cli(args: &[String]) -> Result<(), String> {
         return Ok(());
     }
 
-    if matches!(ipc_pipe::send_ipc_request(&IpcRequest::Ping), Ok(IpcResponse::Pong)) {
+    if matches!(
+        ipc_pipe::send_ipc_request(&IpcRequest::Ping),
+        Ok(IpcResponse::Pong)
+    ) {
         if mode_replace {
             println!("[winscroller2d] existing instance detected, requesting graceful shutdown...");
             let _ = ipc_pipe::send_ipc_request(&IpcRequest::Run {
@@ -155,7 +161,8 @@ pub fn is_elevated() -> bool {
 }
 
 fn relaunch_elevated(args: &[String]) -> Result<(), String> {
-    let exe = std::env::current_exe().map_err(|e| format!("cannot determine executable path: {e}"))?;
+    let exe =
+        std::env::current_exe().map_err(|e| format!("cannot determine executable path: {e}"))?;
     let exe_w = win32::to_wide(exe.to_string_lossy().as_ref());
     let verb_w = win32::to_wide("runas");
 
@@ -192,7 +199,9 @@ fn relaunch_elevated(args: &[String]) -> Result<(), String> {
         if err == 1223 {
             return Err("elevation request was cancelled by user (UAC prompt dismissed)".into());
         }
-        return Err(format!("failed to relaunch as administrator (Win32 error {err})"));
+        return Err(format!(
+            "failed to relaunch as administrator (Win32 error {err})"
+        ));
     }
 
     if !sei.hProcess.is_null() {
@@ -396,7 +405,9 @@ fn parse_delta(arg: Option<&String>) -> Result<i32, String> {
     match raw.to_ascii_lowercase().as_str() {
         "grow" | "+" | "+1" | "1" => Ok(1),
         "shrink" | "-" | "-1" => Ok(-1),
-        other => other.parse::<i32>().map_err(|_| format!("invalid delta `{other}`")),
+        other => other
+            .parse::<i32>()
+            .map_err(|_| format!("invalid delta `{other}`")),
     }
 }
 

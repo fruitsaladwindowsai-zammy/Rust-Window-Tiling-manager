@@ -278,7 +278,10 @@ impl TouchpadTracker {
             self.panning_3f = true;
             let inst_vx = dx / dt;
             let inst_vy = dy / dt;
-            self.vel = (self.vel.0 * 0.5 + inst_vx * 0.5, self.vel.1 * 0.5 + inst_vy * 0.5);
+            self.vel = (
+                self.vel.0 * 0.5 + inst_vx * 0.5,
+                self.vel.1 * 0.5 + inst_vy * 0.5,
+            );
             if dx.abs() > 0.1 || dy.abs() > 0.1 {
                 return Some(GestureEvent::PanDelta { dx, dy });
             }

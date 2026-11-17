@@ -173,7 +173,8 @@ impl WorkspaceManager {
         if !self.config.layout.persist_state {
             return;
         }
-        self.restore_deadline_epoch = now_epoch_secs().saturating_add(self.config.layout.restore_timeout_secs);
+        self.restore_deadline_epoch =
+            now_epoch_secs().saturating_add(self.config.layout.restore_timeout_secs);
         self.restore_pending.clear();
         for pw in state.workspaces {
             let ws_key = pw.key.clone();
@@ -349,20 +350,16 @@ impl WorkspaceManager {
         let mut prev_state: HashMap<u64, (usize, HashMap<String, usize>)> = self
             .monitors
             .iter()
-            .map(|m| {
-                (
-                    m.info.id,
-                    (m.active_workspace, m.active_by_desktop.clone()),
-                )
-            })
+            .map(|m| (m.info.id, (m.active_workspace, m.active_by_desktop.clone())))
             .collect();
 
         self.monitors = incoming
             .into_iter()
             .map(|info| {
                 let id = info.id;
-                let (active_workspace, active_by_desktop) =
-                    prev_state.remove(&id).unwrap_or_else(|| (0, HashMap::new()));
+                let (active_workspace, active_by_desktop) = prev_state
+                    .remove(&id)
+                    .unwrap_or_else(|| (0, HashMap::new()));
                 ManagedMonitor {
                     info,
                     active_workspace,
@@ -606,7 +603,9 @@ impl WorkspaceManager {
         if let Some(&ws_id) = mon.active_by_desktop.get(os_desktop) {
             return Some(ws_id);
         }
-        self.monitor_workspaces_for(os_desktop, mon_id).first().copied()
+        self.monitor_workspaces_for(os_desktop, mon_id)
+            .first()
+            .copied()
     }
 
     fn monitor_workspaces(&self, mon_id: u64) -> Vec<usize> {
@@ -655,7 +654,11 @@ impl WorkspaceManager {
         self.monitor_owning_workspace(ws_id)
     }
 
-    pub fn move_window_to_workspace(&mut self, win_id: WindowId, target_ws_id: usize) -> Option<String> {
+    pub fn move_window_to_workspace(
+        &mut self,
+        win_id: WindowId,
+        target_ws_id: usize,
+    ) -> Option<String> {
         self.move_window_to_workspace_id(win_id, target_ws_id)
     }
 
@@ -769,21 +772,21 @@ impl WorkspaceManager {
 
         let layout_cfg = self.config.layout.clone();
         let ws_key = self.workspace_persist_key(ws_id);
-        let restored = if layout_cfg.persist_state && now_epoch_secs() <= self.restore_deadline_epoch
+        let restored = if layout_cfg.persist_state
+            && now_epoch_secs() <= self.restore_deadline_epoch
         {
             if let Some(ref key) = ws_key {
-                self.restore_pending
-                    .get_mut(key)
-                    .and_then(|pending| {
-                        let m = pending.take_match(&info.process_name, &info.class_name, &info.title)?;
-                        let occupied = pending.claimed.contains(&(m.col, m.row));
-                        if !occupied {
-                            pending.claimed.insert((m.col, m.row));
-                            Some(m)
-                        } else {
-                            None
-                        }
-                    })
+                self.restore_pending.get_mut(key).and_then(|pending| {
+                    let m =
+                        pending.take_match(&info.process_name, &info.class_name, &info.title)?;
+                    let occupied = pending.claimed.contains(&(m.col, m.row));
+                    if !occupied {
+                        pending.claimed.insert((m.col, m.row));
+                        Some(m)
+                    } else {
+                        None
+                    }
+                })
             } else {
                 None
             }
@@ -805,8 +808,12 @@ impl WorkspaceManager {
                     ws.apply_restored_snap(
                         info.id,
                         CellSnap {
-                            width_step: m.width_step.min(layout_cfg.width_steps.len().saturating_sub(1)),
-                            height_step: m.height_step.min(layout_cfg.height_steps.len().saturating_sub(1)),
+                            width_step: m
+                                .width_step
+                                .min(layout_cfg.width_steps.len().saturating_sub(1)),
+                            height_step: m
+                                .height_step
+                                .min(layout_cfg.height_steps.len().saturating_sub(1)),
                             maximized: m.maximized,
                             manual_override: m.manual_override,
                             custom_width_frac: m.custom_width_frac,
@@ -888,9 +895,7 @@ impl WorkspaceManager {
             self.focused_window_id = Some(id);
             self.focused_monitor_id = Some(mon_id);
         } else if self.focused_window_id == Some(id) {
-            self.focused_window_id = self
-                .workspace(old_ws_id)
-                .and_then(|w| w.focused);
+            self.focused_window_id = self.workspace(old_ws_id).and_then(|w| w.focused);
         }
         self.state_dirty = true;
         true
@@ -905,9 +910,7 @@ impl WorkspaceManager {
             ws.remove_window_with_compact(id, compact);
         }
         if self.focused_window_id == Some(id) {
-            self.focused_window_id = self
-                .workspace(meta.workspace_id)
-                .and_then(|ws| ws.focused);
+            self.focused_window_id = self.workspace(meta.workspace_id).and_then(|ws| ws.focused);
         }
         self.state_dirty = true;
         true
@@ -969,7 +972,10 @@ impl WorkspaceManager {
         let area_h = area.h.max(1) as f64;
         let peek_x = (self.config.layout.peek_x as f64).clamp(0.0, ((area_w - 1.0) / 2.0).max(0.0));
         let peek_y = (self.config.layout.peek_y as f64).clamp(0.0, ((area_h - 1.0) / 2.0).max(0.0));
-        Some(((area_w - peek_x * 2.0).max(1.0), (area_h - peek_y * 2.0).max(1.0)))
+        Some((
+            (area_w - peek_x * 2.0).max(1.0),
+            (area_h - peek_y * 2.0).max(1.0),
+        ))
     }
 
     pub fn focused_window_rect_on_monitor(&self, mon_bounds: IRect) -> Option<IRect> {
@@ -980,15 +986,20 @@ impl WorkspaceManager {
         Some(IRect::new(r.x - mon_bounds.x, r.y - mon_bounds.y, r.w, r.h))
     }
 
-    pub fn record_window_snap(&mut self, win_id: WindowId, width_frac: f64, height_frac: f64) -> bool {
+    pub fn record_window_snap(
+        &mut self,
+        win_id: WindowId,
+        width_frac: f64,
+        height_frac: f64,
+    ) -> bool {
         let Some(ws_id) = self.windows.get(&win_id).map(|m| m.workspace_id) else {
             return false;
         };
         let w_steps = self.config.layout.width_steps.clone();
         let h_steps = self.config.layout.height_steps.clone();
-        let changed = self
-            .workspace_mut(ws_id)
-            .is_some_and(|ws| ws.set_custom_snap(win_id, width_frac, height_frac, &w_steps, &h_steps));
+        let changed = self.workspace_mut(ws_id).is_some_and(|ws| {
+            ws.set_custom_snap(win_id, width_frac, height_frac, &w_steps, &h_steps)
+        });
         if changed {
             self.state_dirty = true;
         }
@@ -1261,9 +1272,9 @@ impl WorkspaceManager {
                     let list = self.monitor_workspaces(mon_id);
                     if let Some(cur_ws) = self.active_workspace_for_monitor(mon_id) {
                         if let Some(pos) = list.iter().position(|&id| id == cur_ws) {
-                            let next_pos =
-                                (pos as isize + delta as isize).clamp(0, list.len().saturating_sub(1) as isize)
-                                    as usize;
+                            let next_pos = (pos as isize + delta as isize)
+                                .clamp(0, list.len().saturating_sub(1) as isize)
+                                as usize;
                             self.switch_workspace_slot(next_pos, &mut effects);
                         }
                     }
@@ -1285,11 +1296,14 @@ impl WorkspaceManager {
                 }
             }
             Action::MoveToMonitor { direction } => {
-                if let (Some(win_id), Some(target_mon)) =
-                    (self.focused_window_id, self.find_monitor_in_direction(direction))
-                {
+                if let (Some(win_id), Some(target_mon)) = (
+                    self.focused_window_id,
+                    self.find_monitor_in_direction(direction),
+                ) {
                     if let Some(target_ws) = self.active_workspace_for_monitor(target_mon) {
-                        if let Some(target_desktop) = self.move_window_to_workspace_id(win_id, target_ws) {
+                        if let Some(target_desktop) =
+                            self.move_window_to_workspace_id(win_id, target_ws)
+                        {
                             effects.moved_to_desktop = Some((win_id, target_desktop));
                         }
                         self.focused_monitor_id = Some(target_mon);
@@ -1300,7 +1314,11 @@ impl WorkspaceManager {
                     }
                 }
             }
-            Action::JumpToCell { col, row, window_id } => {
+            Action::JumpToCell {
+                col,
+                row,
+                window_id,
+            } => {
                 if let Some(ws_id) = self.current_workspace_id() {
                     let target = self
                         .workspace_mut(ws_id)
@@ -1330,17 +1348,15 @@ impl WorkspaceManager {
                 if let Some(ws_id) = ws_id {
                     let preserve_holes = self.config.layout.preserve_holes;
                     let layout_cfg = self.config.layout.clone();
-                    let moved = self
-                        .workspace_mut(ws_id)
-                        .is_some_and(|ws| {
-                            ws.place_window_at(
-                                window_id,
-                                Coord::new(col, row),
-                                stack,
-                                preserve_holes,
-                                &layout_cfg,
-                            )
-                        });
+                    let moved = self.workspace_mut(ws_id).is_some_and(|ws| {
+                        ws.place_window_at(
+                            window_id,
+                            Coord::new(col, row),
+                            stack,
+                            preserve_holes,
+                            &layout_cfg,
+                        )
+                    });
                     if moved {
                         self.focused_window_id = Some(window_id);
                         if !self.overview_open {
@@ -1365,7 +1381,12 @@ impl WorkspaceManager {
                 if let Some(ws_id) = ws_id {
                     let layout_cfg = self.config.layout.clone();
                     let split = self.workspace_mut(ws_id).is_some_and(|ws| {
-                        ws.split_window_horizontal(window_id, target_window_id, on_left, &layout_cfg)
+                        ws.split_window_horizontal(
+                            window_id,
+                            target_window_id,
+                            on_left,
+                            &layout_cfg,
+                        )
                     });
                     if split {
                         self.focused_window_id = Some(window_id);
@@ -1431,7 +1452,11 @@ impl WorkspaceManager {
         effects.layout_dirty = true;
     }
 
-    fn move_window_to_workspace_id(&mut self, win_id: WindowId, target_ws_id: usize) -> Option<String> {
+    fn move_window_to_workspace_id(
+        &mut self,
+        win_id: WindowId,
+        target_ws_id: usize,
+    ) -> Option<String> {
         let Some(old_ws_id) = self.windows.get(&win_id).map(|m| m.workspace_id) else {
             return None;
         };
@@ -1526,7 +1551,10 @@ impl WorkspaceManager {
                     .filter(|(id, _)| *id != m.info.id)
                     .map(|(_, r)| *r)
                     .collect();
-                (m.active_workspace, (m.info.work_area, m.info.bounds, others))
+                (
+                    m.active_workspace,
+                    (m.info.work_area, m.info.bounds, others),
+                )
             })
             .collect();
 

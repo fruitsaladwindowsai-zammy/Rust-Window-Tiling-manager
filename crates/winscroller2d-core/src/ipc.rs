@@ -44,31 +44,74 @@ impl Direction {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case")]
 pub enum Action {
-    Focus { direction: Direction },
-    MoveWindow { direction: Direction },
-    PanCamera { direction: Direction },
-    PanPixels { dx: f64, dy: f64 },
-    PanCommit { vx: f64, vy: f64 },
+    Focus {
+        direction: Direction,
+    },
+    MoveWindow {
+        direction: Direction,
+    },
+    PanCamera {
+        direction: Direction,
+    },
+    PanPixels {
+        dx: f64,
+        dy: f64,
+    },
+    PanCommit {
+        vx: f64,
+        vy: f64,
+    },
     CenterCamera,
-    ResizeWidth { delta: i32 },
-    ResizeHeight { delta: i32 },
+    ResizeWidth {
+        delta: i32,
+    },
+    ResizeHeight {
+        delta: i32,
+    },
     CycleWidthPreset,
     CycleHeightPreset,
-    ConsumeIntoCell { direction: Option<Direction> },
-    ExpelFromCell { direction: Option<Direction> },
+    ConsumeIntoCell {
+        direction: Option<Direction>,
+    },
+    ExpelFromCell {
+        direction: Option<Direction>,
+    },
     ToggleCellStackMode,
     ToggleMaximizeCell,
     ToggleFullscreen,
     ToggleFloating,
     CloseFocused,
-    SwitchWorkspace { index: usize },
-    SwitchWorkspaceRelative { delta: i32 },
-    MoveToWorkspace { index: usize },
-    FocusMonitor { direction: Direction },
-    MoveToMonitor { direction: Direction },
-    JumpToCell { col: i32, row: i32, window_id: Option<u64> },
-    PlaceWindowAt { window_id: u64, col: i32, row: i32, stack: bool },
-    SplitWindowHorizontal { window_id: u64, target_window_id: u64, on_left: bool },
+    SwitchWorkspace {
+        index: usize,
+    },
+    SwitchWorkspaceRelative {
+        delta: i32,
+    },
+    MoveToWorkspace {
+        index: usize,
+    },
+    FocusMonitor {
+        direction: Direction,
+    },
+    MoveToMonitor {
+        direction: Direction,
+    },
+    JumpToCell {
+        col: i32,
+        row: i32,
+        window_id: Option<u64>,
+    },
+    PlaceWindowAt {
+        window_id: u64,
+        col: i32,
+        row: i32,
+        stack: bool,
+    },
+    SplitWindowHorizontal {
+        window_id: u64,
+        target_window_id: u64,
+        on_left: bool,
+    },
     ToggleOverview,
     TogglePause,
     ToggleWorkspaceLayout,

@@ -318,7 +318,8 @@ impl Config {
         self.layout.stack_gap = self.layout.stack_gap.max(0);
         self.layout.overview_min_width = self.layout.overview_min_width.clamp(0.05, 0.60);
         self.layout.overview_min_height = self.layout.overview_min_height.clamp(0.05, 0.60);
-        self.layout.overview_autoscroll_speed = self.layout.overview_autoscroll_speed.clamp(0.0, 5000.0);
+        self.layout.overview_autoscroll_speed =
+            self.layout.overview_autoscroll_speed.clamp(0.0, 5000.0);
         self.layout.hover_focus_delay_ms = self.layout.hover_focus_delay_ms.min(2000);
         self.layout.gesture_pan_sensitivity = self.layout.gesture_pan_sensitivity.clamp(0.2, 5.0);
         self.layout.restore_timeout_secs = self.layout.restore_timeout_secs.clamp(5, 300);
@@ -387,20 +388,80 @@ fn bind(keys: &str, action: Action) -> KeybindConfig {
 fn default_bindings() -> Vec<KeybindConfig> {
     let mut list = vec![
         // Directional 2D Focus (Niri + Hyprscroll2D)
-        bind("Win+Left", Action::Focus { direction: Direction::Left }),
-        bind("Win+Right", Action::Focus { direction: Direction::Right }),
-        bind("Win+Up", Action::Focus { direction: Direction::Up }),
-        bind("Win+Down", Action::Focus { direction: Direction::Down }),
+        bind(
+            "Win+Left",
+            Action::Focus {
+                direction: Direction::Left,
+            },
+        ),
+        bind(
+            "Win+Right",
+            Action::Focus {
+                direction: Direction::Right,
+            },
+        ),
+        bind(
+            "Win+Up",
+            Action::Focus {
+                direction: Direction::Up,
+            },
+        ),
+        bind(
+            "Win+Down",
+            Action::Focus {
+                direction: Direction::Down,
+            },
+        ),
         // Directional 2D Move / Swap (preserves holes on empty cells, swaps on occupied)
-        bind("Win+Shift+Left", Action::MoveWindow { direction: Direction::Left }),
-        bind("Win+Shift+Right", Action::MoveWindow { direction: Direction::Right }),
-        bind("Win+Shift+Up", Action::MoveWindow { direction: Direction::Up }),
-        bind("Win+Shift+Down", Action::MoveWindow { direction: Direction::Down }),
+        bind(
+            "Win+Shift+Left",
+            Action::MoveWindow {
+                direction: Direction::Left,
+            },
+        ),
+        bind(
+            "Win+Shift+Right",
+            Action::MoveWindow {
+                direction: Direction::Right,
+            },
+        ),
+        bind(
+            "Win+Shift+Up",
+            Action::MoveWindow {
+                direction: Direction::Up,
+            },
+        ),
+        bind(
+            "Win+Shift+Down",
+            Action::MoveWindow {
+                direction: Direction::Down,
+            },
+        ),
         // Independent 2D Camera Panning (Hyprscroll2D)
-        bind("Win+Ctrl+Left", Action::PanCamera { direction: Direction::Left }),
-        bind("Win+Ctrl+Right", Action::PanCamera { direction: Direction::Right }),
-        bind("Win+Ctrl+Up", Action::PanCamera { direction: Direction::Up }),
-        bind("Win+Ctrl+Down", Action::PanCamera { direction: Direction::Down }),
+        bind(
+            "Win+Ctrl+Left",
+            Action::PanCamera {
+                direction: Direction::Left,
+            },
+        ),
+        bind(
+            "Win+Ctrl+Right",
+            Action::PanCamera {
+                direction: Direction::Right,
+            },
+        ),
+        bind(
+            "Win+Ctrl+Up",
+            Action::PanCamera {
+                direction: Direction::Up,
+            },
+        ),
+        bind(
+            "Win+Ctrl+Down",
+            Action::PanCamera {
+                direction: Direction::Down,
+            },
+        ),
         bind("Win+C", Action::CenterCamera),
         // Independent Width & Height Presets (Hyprscroll2D + Niri)
         bind("Win+Equal", Action::ResizeWidth { delta: 1 }),
@@ -410,8 +471,18 @@ fn default_bindings() -> Vec<KeybindConfig> {
         bind("Win+Alt+R", Action::CycleWidthPreset),
         bind("Win+Alt+Shift+R", Action::CycleHeightPreset),
         // Niri Column/Cell Stacking (Consume / Expel / Tabbed)
-        bind("Win+Comma", Action::ConsumeIntoCell { direction: Some(Direction::Right) }),
-        bind("Win+Period", Action::ExpelFromCell { direction: Some(Direction::Right) }),
+        bind(
+            "Win+Comma",
+            Action::ConsumeIntoCell {
+                direction: Some(Direction::Right),
+            },
+        ),
+        bind(
+            "Win+Period",
+            Action::ExpelFromCell {
+                direction: Some(Direction::Right),
+            },
+        ),
         bind("Win+W", Action::ToggleCellStackMode),
         // Cell Modes & Overview
         bind("Win+F", Action::ToggleMaximizeCell),
@@ -420,10 +491,30 @@ fn default_bindings() -> Vec<KeybindConfig> {
         bind("Win+O", Action::ToggleOverview),
         bind("Win+Shift+Q", Action::CloseFocused),
         // Monitor navigation
-        bind("Win+Alt+Left", Action::FocusMonitor { direction: Direction::Left }),
-        bind("Win+Alt+Right", Action::FocusMonitor { direction: Direction::Right }),
-        bind("Win+Alt+Shift+Left", Action::MoveToMonitor { direction: Direction::Left }),
-        bind("Win+Alt+Shift+Right", Action::MoveToMonitor { direction: Direction::Right }),
+        bind(
+            "Win+Alt+Left",
+            Action::FocusMonitor {
+                direction: Direction::Left,
+            },
+        ),
+        bind(
+            "Win+Alt+Right",
+            Action::FocusMonitor {
+                direction: Direction::Right,
+            },
+        ),
+        bind(
+            "Win+Alt+Shift+Left",
+            Action::MoveToMonitor {
+                direction: Direction::Left,
+            },
+        ),
+        bind(
+            "Win+Alt+Shift+Right",
+            Action::MoveToMonitor {
+                direction: Direction::Right,
+            },
+        ),
         // Vertical / Relative Workspace switching (Niri)
         bind("Win+PageUp", Action::SwitchWorkspaceRelative { delta: -1 }),
         bind("Win+PageDown", Action::SwitchWorkspaceRelative { delta: 1 }),
@@ -435,7 +526,10 @@ fn default_bindings() -> Vec<KeybindConfig> {
     ];
 
     for n in 1..=9 {
-        list.push(bind(&format!("Win+Alt+{n}"), Action::SwitchWorkspace { index: n - 1 }));
+        list.push(bind(
+            &format!("Win+Alt+{n}"),
+            Action::SwitchWorkspace { index: n - 1 },
+        ));
         list.push(bind(
             &format!("Win+Alt+Shift+{n}"),
             Action::MoveToWorkspace { index: n - 1 },

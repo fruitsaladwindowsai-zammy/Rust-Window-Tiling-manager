@@ -1,22 +1,22 @@
-use crate::win32::{to_wide, WM_APP_IPC_NOTIFY};
+use crate::win32::{WM_APP_IPC_NOTIFY, to_wide};
 use std::sync::mpsc;
-use winscroller2d_core::{IpcRequest, IpcResponse};
 use windows_sys::Win32::Foundation::{
     CloseHandle, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Security::{
-    InitializeSecurityDescriptor, SetSecurityDescriptorDacl, SECURITY_ATTRIBUTES,
-    SECURITY_DESCRIPTOR,
+    InitializeSecurityDescriptor, SECURITY_ATTRIBUTES, SECURITY_DESCRIPTOR,
+    SetSecurityDescriptorDacl,
 };
+use winscroller2d_core::{IpcRequest, IpcResponse};
 
 const SECURITY_DESCRIPTOR_REVISION: u32 = 1;
 use windows_sys::Win32::Storage::FileSystem::{
-    CreateFileW, FlushFileBuffers, ReadFile, WriteFile, FILE_ATTRIBUTE_NORMAL, OPEN_EXISTING,
-    PIPE_ACCESS_DUPLEX,
+    CreateFileW, FILE_ATTRIBUTE_NORMAL, FlushFileBuffers, OPEN_EXISTING, PIPE_ACCESS_DUPLEX,
+    ReadFile, WriteFile,
 };
 use windows_sys::Win32::System::Pipes::{
-    ConnectNamedPipe, CreateNamedPipeW, DisconnectNamedPipe, WaitNamedPipeW, PIPE_READMODE_BYTE,
-    PIPE_TYPE_BYTE, PIPE_UNLIMITED_INSTANCES, PIPE_WAIT,
+    ConnectNamedPipe, CreateNamedPipeW, DisconnectNamedPipe, PIPE_READMODE_BYTE, PIPE_TYPE_BYTE,
+    PIPE_UNLIMITED_INSTANCES, PIPE_WAIT, WaitNamedPipeW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::PostMessageW;
 
@@ -27,9 +27,7 @@ pub struct PendingIpc {
     pub reply_tx: mpsc::Sender<IpcResponse>,
 }
 
-pub fn spawn_ipc_server(
-    target_hwnd: usize,
-) -> mpsc::Receiver<PendingIpc> {
+pub fn spawn_ipc_server(target_hwnd: usize) -> mpsc::Receiver<PendingIpc> {
     let (tx, rx) = mpsc::channel::<PendingIpc>();
     std::thread::Builder::new()
         .name("winscroller2d-ipc".into())
@@ -44,7 +42,12 @@ pub fn spawn_ipc_server(
                         &mut sd as *mut _ as *mut _,
                         SECURITY_DESCRIPTOR_REVISION,
                     );
-                    SetSecurityDescriptorDacl(&mut sd as *mut _ as *mut _, 1, std::ptr::null_mut(), 0);
+                    SetSecurityDescriptorDacl(
+                        &mut sd as *mut _ as *mut _,
+                        1,
+                        std::ptr::null_mut(),
+                        0,
+                    );
                 }
                 let mut sa = SECURITY_ATTRIBUTES {
                     nLength: std::mem::size_of::<SECURITY_ATTRIBUTES>() as u32,
@@ -90,11 +93,7 @@ pub fn spawn_ipc_server(
     rx
 }
 
-fn handle_pipe_client(
-    pipe: HANDLE,
-    target_hwnd: usize,
-    tx: mpsc::Sender<PendingIpc>,
-) {
+fn handle_pipe_client(pipe: HANDLE, target_hwnd: usize, tx: mpsc::Sender<PendingIpc>) {
     let mut buf = [0u8; 65536];
     let mut read_bytes: u32 = 0;
     let ok = unsafe {
@@ -175,7 +174,9 @@ pub fn send_ipc_request(req: &IpcRequest) -> Result<IpcResponse, String> {
         )
     };
     if handle == INVALID_HANDLE_VALUE {
-        return Err("could not connect to WinScroller 2D daemon (is winscroller2d running?)".into());
+        return Err(
+            "could not connect to WinScroller 2D daemon (is winscroller2d running?)".into(),
+        );
     }
 
     let mut payload = serde_json::to_vec(req).map_err(|e| e.to_string())?;

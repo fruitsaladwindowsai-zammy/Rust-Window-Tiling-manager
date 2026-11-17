@@ -1,18 +1,17 @@
 use crate::win32::from_wide;
 use std::mem::{size_of, zeroed};
-use winscroller2d_core::{IRect, MonitorInfo};
 use windows_sys::Win32::Foundation::{BOOL, HWND, LPARAM, RECT, TRUE};
 use windows_sys::Win32::Graphics::Dwm::{
-    DwmGetWindowAttribute, DwmSetWindowAttribute, DWMWA_BORDER_COLOR,
-    DWMWA_EXTENDED_FRAME_BOUNDS,
+    DWMWA_BORDER_COLOR, DWMWA_EXTENDED_FRAME_BOUNDS, DwmGetWindowAttribute, DwmSetWindowAttribute,
 };
 use windows_sys::Win32::Graphics::Gdi::{
     EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFOEXW,
 };
 use windows_sys::Win32::UI::HiDpi::{
-    SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
+    DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::GetWindowRect;
+use winscroller2d_core::{IRect, MonitorInfo};
 
 pub const DWMWA_COLOR_DEFAULT: u32 = 0xFFFF_FFFF;
 

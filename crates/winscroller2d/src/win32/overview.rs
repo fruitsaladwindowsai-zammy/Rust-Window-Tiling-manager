@@ -1,7 +1,8 @@
-use crate::win32::icons::{draw_icon_scaled, draw_soft_shadow_circle, extract_window_icon, IconImage};
+use crate::win32::icons::{
+    IconImage, draw_icon_scaled, draw_soft_shadow_circle, extract_window_icon,
+};
 use crate::win32::wallpaper::WallpaperCache;
-use crate::win32::{to_wide, VsyncPacer, WM_APP_OVERVIEW_CMD, WM_APP_VSYNC_STEP};
-use winscroller2d_core::{IRect, OverviewBlurMode, Spring1D, WorkspaceSnapshot};
+use crate::win32::{VsyncPacer, WM_APP_OVERVIEW_CMD, WM_APP_VSYNC_STEP, to_wide};
 use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::mem::{size_of, zeroed};
@@ -9,17 +10,18 @@ use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
 use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, SIZE, TRUE, WPARAM};
 use windows_sys::Win32::Graphics::Dwm::{
-    DwmFlush, DwmQueryThumbnailSourceSize, DwmRegisterThumbnail, DwmUnregisterThumbnail,
-    DwmUpdateThumbnailProperties, DWM_THUMBNAIL_PROPERTIES, DWM_TNP_OPACITY,
-    DWM_TNP_RECTDESTINATION, DWM_TNP_SOURCECLIENTAREAONLY, DWM_TNP_VISIBLE,
+    DWM_THUMBNAIL_PROPERTIES, DWM_TNP_OPACITY, DWM_TNP_RECTDESTINATION,
+    DWM_TNP_SOURCECLIENTAREAONLY, DWM_TNP_VISIBLE, DwmFlush, DwmQueryThumbnailSourceSize,
+    DwmRegisterThumbnail, DwmUnregisterThumbnail, DwmUpdateThumbnailProperties,
 };
 use windows_sys::Win32::Graphics::Gdi::{
-    BeginPaint, BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject,
-    DrawTextW, EndPaint, InvalidateRect, RedrawWindow, SelectObject, SetBkMode, SetTextColor,
-    AC_SRC_ALPHA, AC_SRC_OVER, ANTIALIASED_QUALITY, BITMAPINFO, BITMAPINFOHEADER, BI_RGB,
-    BLENDFUNCTION, CLIP_DEFAULT_PRECIS, DEFAULT_CHARSET, DEFAULT_PITCH, DIB_RGB_COLORS, DT_CENTER,
-    DT_END_ELLIPSIS, DT_NOPREFIX, DT_SINGLELINE, DT_VCENTER, FW_BOLD, FW_NORMAL, HBITMAP, HDC,
-    HFONT, OUT_DEFAULT_PRECIS, PAINTSTRUCT, RDW_INVALIDATE, RDW_UPDATENOW, SRCCOPY, TRANSPARENT,
+    AC_SRC_ALPHA, AC_SRC_OVER, ANTIALIASED_QUALITY, BI_RGB, BITMAPINFO, BITMAPINFOHEADER,
+    BLENDFUNCTION, BeginPaint, BitBlt, CLIP_DEFAULT_PRECIS, CreateCompatibleDC, CreateDIBSection,
+    CreateFontW, DEFAULT_CHARSET, DEFAULT_PITCH, DIB_RGB_COLORS, DT_CENTER, DT_END_ELLIPSIS,
+    DT_NOPREFIX, DT_SINGLELINE, DT_VCENTER, DeleteDC, DeleteObject, DrawTextW, EndPaint, FW_BOLD,
+    FW_NORMAL, HBITMAP, HDC, HFONT, InvalidateRect, OUT_DEFAULT_PRECIS, PAINTSTRUCT,
+    RDW_INVALIDATE, RDW_UPDATENOW, RedrawWindow, SRCCOPY, SelectObject, SetBkMode, SetTextColor,
+    TRANSPARENT,
 };
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
@@ -29,13 +31,14 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     BringWindowToTop, CreateWindowExW, DefWindowProcW, DestroyWindow, GetForegroundWindow,
-    GetWindowRect, GetWindowThreadProcessId, IsWindow, LoadCursorW, PostMessageW, RegisterClassExW,
-    SetForegroundWindow, SetWindowPos, ShowWindow, UpdateLayeredWindow, HWND_TOPMOST, IDC_ARROW,
-    SWP_NOACTIVATE, SWP_SHOWWINDOW, SW_HIDE, SW_SHOW, ULW_ALPHA, WM_CAPTURECHANGED,
-    WM_ERASEBKGND, WM_KEYDOWN, WM_KILLFOCUS, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEHWHEEL,
-    WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_PAINT, WM_RBUTTONDOWN, WNDCLASSEXW, WS_EX_LAYERED,
-    WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
+    GetWindowRect, GetWindowThreadProcessId, HWND_TOPMOST, IDC_ARROW, IsWindow, LoadCursorW,
+    PostMessageW, RegisterClassExW, SW_HIDE, SW_SHOW, SWP_NOACTIVATE, SWP_SHOWWINDOW,
+    SetForegroundWindow, SetWindowPos, ShowWindow, ULW_ALPHA, UpdateLayeredWindow,
+    WM_CAPTURECHANGED, WM_ERASEBKGND, WM_KEYDOWN, WM_KILLFOCUS, WM_LBUTTONDOWN, WM_LBUTTONUP,
+    WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_PAINT, WM_RBUTTONDOWN, WNDCLASSEXW,
+    WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
 };
+use winscroller2d_core::{IRect, OverviewBlurMode, Spring1D, WorkspaceSnapshot};
 
 const OVERVIEW_CLASS: &str = "WinScroller2dOverviewWindow";
 const OVERVIEW_ICONS_CLASS: &str = "WinScroller2dOverviewIcons";
@@ -398,41 +401,41 @@ impl OverviewWindow {
         OVERVIEW_STATE.with(|cell| {
             if let Ok(mut guard) = cell.try_borrow_mut() {
                 *guard = Some(OverviewState {
-                controller_hwnd,
-                overlay_hwnd: hwnd,
-                icon_hwnd,
-                snapshot: None,
-                bounds: IRect::new(0, 0, 1280, 720),
-                return_rect: IRect::new(8, 8, 1264, 704),
-                boxes: Vec::new(),
-                thumbs: HashMap::new(),
-                thumb_sizes: HashMap::new(),
-                last_thumb_props: HashMap::new(),
-                icons: HashMap::new(),
-                hero_window_id: None,
-                card_springs: HashMap::new(),
-                hover_springs: HashMap::new(),
-                close_springs: HashMap::new(),
-                open_spring: Spring1D::default(),
-                empty_fade_spring: Spring1D::default(),
-                scroll_x: Spring1D::default(),
-                scroll_y: Spring1D::default(),
-                max_scroll: (0.0, 0.0),
-                content_size: (1280, 720),
-                closing_jump: None,
-                opts: OverviewOptions::default(),
-                pacer,
-                last_tick: Instant::now(),
-                cursor: (0, 0),
-                hover_coord: None,
-                hover_close_win: None,
-                drag: None,
-                pending_empty_click: None,
-                pending_close: None,
-                wallpaper: WallpaperCache::default(),
-                surface: None,
-                icon_surface: None,
-            });
+                    controller_hwnd,
+                    overlay_hwnd: hwnd,
+                    icon_hwnd,
+                    snapshot: None,
+                    bounds: IRect::new(0, 0, 1280, 720),
+                    return_rect: IRect::new(8, 8, 1264, 704),
+                    boxes: Vec::new(),
+                    thumbs: HashMap::new(),
+                    thumb_sizes: HashMap::new(),
+                    last_thumb_props: HashMap::new(),
+                    icons: HashMap::new(),
+                    hero_window_id: None,
+                    card_springs: HashMap::new(),
+                    hover_springs: HashMap::new(),
+                    close_springs: HashMap::new(),
+                    open_spring: Spring1D::default(),
+                    empty_fade_spring: Spring1D::default(),
+                    scroll_x: Spring1D::default(),
+                    scroll_y: Spring1D::default(),
+                    max_scroll: (0.0, 0.0),
+                    content_size: (1280, 720),
+                    closing_jump: None,
+                    opts: OverviewOptions::default(),
+                    pacer,
+                    last_tick: Instant::now(),
+                    cursor: (0, 0),
+                    hover_coord: None,
+                    hover_close_win: None,
+                    drag: None,
+                    pending_empty_click: None,
+                    pending_close: None,
+                    wallpaper: WallpaperCache::default(),
+                    surface: None,
+                    icon_surface: None,
+                });
             }
         });
 
@@ -489,71 +492,71 @@ impl OverviewWindow {
 
         with_overview(|st| {
             st.cursor = (ws.camera_col, ws.camera_row);
-                st.bounds = monitor_bounds;
-                st.return_rect = return_rect;
-                st.snapshot = Some(ws);
-                st.drag = None;
-                st.pending_empty_click = None;
-                st.pending_close = None;
-                st.hover_coord = None;
-                st.hover_close_win = None;
-                st.closing_jump = None;
-                st.hero_window_id = hero_win;
-                st.opts = OverviewOptions {
-                    stiffness: opts.stiffness.max(10.0),
-                    damping_ratio: opts.damping_ratio.clamp(0.25, 2.0),
-                    min_w_frac: opts.min_w_frac.clamp(0.05, 0.60),
-                    min_h_frac: opts.min_h_frac.clamp(0.05, 0.60),
-                    autoscroll_speed: opts.autoscroll_speed.clamp(0.0, 5000.0),
-                    ..opts
-                };
-                st.last_tick = Instant::now();
-                st.card_springs.clear();
-                st.hover_springs.clear();
-                st.close_springs.clear();
-                st.icons.clear();
+            st.bounds = monitor_bounds;
+            st.return_rect = return_rect;
+            st.snapshot = Some(ws);
+            st.drag = None;
+            st.pending_empty_click = None;
+            st.pending_close = None;
+            st.hover_coord = None;
+            st.hover_close_win = None;
+            st.closing_jump = None;
+            st.hero_window_id = hero_win;
+            st.opts = OverviewOptions {
+                stiffness: opts.stiffness.max(10.0),
+                damping_ratio: opts.damping_ratio.clamp(0.25, 2.0),
+                min_w_frac: opts.min_w_frac.clamp(0.05, 0.60),
+                min_h_frac: opts.min_h_frac.clamp(0.05, 0.60),
+                autoscroll_speed: opts.autoscroll_speed.clamp(0.0, 5000.0),
+                ..opts
+            };
+            st.last_tick = Instant::now();
+            st.card_springs.clear();
+            st.hover_springs.clear();
+            st.close_springs.clear();
+            st.icons.clear();
 
-                rebuild_boxes(st);
-                st.scroll_x.snap_to(0.0);
-                st.scroll_y.snap_to(0.0);
-                ensure_coord_visible(st, st.cursor, false);
+            rebuild_boxes(st);
+            st.scroll_x.snap_to(0.0);
+            st.scroll_y.snap_to(0.0);
+            ensure_coord_visible(st, st.cursor, false);
 
-                let sx = st.scroll_x.current.round() as i32;
-                let sy = st.scroll_y.current.round() as i32;
-                for b in &st.boxes {
-                    let mut hs = Spring1D::default();
-                    hs.snap_to(1.0);
-                    st.hover_springs.insert((b.col, b.row), hs);
-                    if let Some(win_id) = b.window_id {
-                        let mut cs = CardSpring::default();
-                        cs.set_target(b.rect, false);
-                        if Some(win_id) == hero_win {
-                            // Active hero window animates backward from full screen (`return_rect`) to reveal all others.
-                            let virt_start = start_rects
-                                .get(&win_id)
-                                .copied()
-                                .map(|sr| IRect::new(sr.x + sx, sr.y + sy, sr.w, sr.h))
-                                .unwrap_or(IRect::new(
-                                    return_rect.x + sx,
-                                    return_rect.y + sy,
-                                    return_rect.w,
-                                    return_rect.h,
-                                ));
-                            cs.start_rect = Some(virt_start);
-                        } else {
-                            // Sibling windows emerge gently forward from slightly behind center.
-                            cs.start_rect = Some(scale_around_center(b.rect, 0.80));
-                        }
-                        st.card_springs.insert(win_id, cs);
+            let sx = st.scroll_x.current.round() as i32;
+            let sy = st.scroll_y.current.round() as i32;
+            for b in &st.boxes {
+                let mut hs = Spring1D::default();
+                hs.snap_to(1.0);
+                st.hover_springs.insert((b.col, b.row), hs);
+                if let Some(win_id) = b.window_id {
+                    let mut cs = CardSpring::default();
+                    cs.set_target(b.rect, false);
+                    if Some(win_id) == hero_win {
+                        // Active hero window animates backward from full screen (`return_rect`) to reveal all others.
+                        let virt_start = start_rects
+                            .get(&win_id)
+                            .copied()
+                            .map(|sr| IRect::new(sr.x + sx, sr.y + sy, sr.w, sr.h))
+                            .unwrap_or(IRect::new(
+                                return_rect.x + sx,
+                                return_rect.y + sy,
+                                return_rect.w,
+                                return_rect.h,
+                            ));
+                        cs.start_rect = Some(virt_start);
+                    } else {
+                        // Sibling windows emerge gently forward from slightly behind center.
+                        cs.start_rect = Some(scale_around_center(b.rect, 0.80));
                     }
+                    st.card_springs.insert(win_id, cs);
                 }
-                sync_hover_targets(st);
-                sync_icons(st);
-                st.wallpaper.ensure(monitor_bounds.w, monitor_bounds.h);
-                st.empty_fade_spring.snap_to(0.0);
-                st.open_spring.snap_to(0.0);
-                st.open_spring.set_target(1.0, true);
-                sync_thumbnails(st);
+            }
+            sync_hover_targets(st);
+            sync_icons(st);
+            st.wallpaper.ensure(monitor_bounds.w, monitor_bounds.h);
+            st.empty_fade_spring.snap_to(0.0);
+            st.open_spring.snap_to(0.0);
+            st.open_spring.set_target(1.0, true);
+            sync_thumbnails(st);
             update_animated_thumbnails(st);
         });
     }
@@ -768,11 +771,7 @@ fn sync_hover_targets(st: &mut OverviewState) {
         let coord = (b.col, b.row);
         let is_hl = highlight == Some(coord);
         let target = if is_hl {
-            if is_hover {
-                1.038
-            } else {
-                1.022
-            }
+            if is_hover { 1.038 } else { 1.022 }
         } else {
             1.0
         };
@@ -925,7 +924,12 @@ fn promote_thumbnail_to_front(st: &mut OverviewState, win_id: u64) {
 
 fn lerp_rect(a: IRect, b: IRect, t: f64) -> IRect {
     let f = |p: i32, q: i32| (p as f64 + (q as f64 - p as f64) * t).round() as i32;
-    IRect::new(f(a.x, b.x), f(a.y, b.y), f(a.w, b.w).max(16), f(a.h, b.h).max(16))
+    IRect::new(
+        f(a.x, b.x),
+        f(a.y, b.y),
+        f(a.w, b.w).max(16),
+        f(a.h, b.h).max(16),
+    )
 }
 
 fn animated_card_rect(st: &OverviewState, b: &CellBox) -> IRect {
@@ -946,8 +950,12 @@ fn animated_card_rect(st: &OverviewState, b: &CellBox) -> IRect {
                     .get(&win_id)
                     .map(CardSpring::current_rect)
                     .unwrap_or(b.rect);
-                let screen_card =
-                    IRect::new(spring_rect.x - sx, spring_rect.y - sy, spring_rect.w, spring_rect.h);
+                let screen_card = IRect::new(
+                    spring_rect.x - sx,
+                    spring_rect.y - sy,
+                    spring_rect.w,
+                    spring_rect.h,
+                );
                 return lerp_rect(st.return_rect, screen_card, t);
             }
         }
@@ -1020,16 +1028,13 @@ fn update_animated_thumbnails(st: &mut OverviewState) {
         };
         let src_size = st.thumb_sizes.get(&win_id).copied();
         let dest = fit_thumb_rect(card, src_size);
-        let unchanged = st
-            .last_thumb_props
-            .get(&win_id)
-            .is_some_and(|&(r, a)| {
-                a == alpha
-                    && r.left == dest.left
-                    && r.top == dest.top
-                    && r.right == dest.right
-                    && r.bottom == dest.bottom
-            });
+        let unchanged = st.last_thumb_props.get(&win_id).is_some_and(|&(r, a)| {
+            a == alpha
+                && r.left == dest.left
+                && r.top == dest.top
+                && r.right == dest.right
+                && r.bottom == dest.bottom
+        });
         if !unchanged {
             apply_thumb_props(thumb, dest, alpha);
             st.last_thumb_props.insert(win_id, (dest, alpha));
@@ -1224,7 +1229,11 @@ fn rebuild_boxes(st: &mut OverviewState) {
         (ws.camera_col, ws.camera_col, ws.camera_row, ws.camera_row)
     };
 
-    let float_row = if tiled.is_empty() { min_row } else { max_row + 1 };
+    let float_row = if tiled.is_empty() {
+        min_row
+    } else {
+        max_row + 1
+    };
     if !floating.is_empty() {
         max_col = max_col.max(min_col + floating.len() as i32 - 1);
         max_row = float_row;
@@ -1348,11 +1357,7 @@ fn hit_close_button(st: &OverviewState, mx: i32, my: i32) -> Option<(i32, i32, u
         .iter()
         .find(|b| (b.col, b.row) == hl && b.window_id.is_some())?;
     let win_id = b.window_id?;
-    let anim_t = st
-        .close_springs
-        .get(&hl)
-        .map(|s| s.current)
-        .unwrap_or(0.0);
+    let anim_t = st.close_springs.get(&hl).map(|s| s.current).unwrap_or(0.0);
     if anim_t < 0.25 {
         return None;
     }
@@ -1377,9 +1382,13 @@ fn draw_line_aa(
     rgba: (u8, u8, u8, u8),
 ) {
     let min_x = (x0.min(x1) - half_width - 1.5).floor().max(0.0) as i32;
-    let max_x = (x0.max(x1) + half_width + 1.5).ceil().min((buf_w - 1) as f32) as i32;
+    let max_x = (x0.max(x1) + half_width + 1.5)
+        .ceil()
+        .min((buf_w - 1) as f32) as i32;
     let min_y = (y0.min(y1) - half_width - 1.5).floor().max(0.0) as i32;
-    let max_y = (y0.max(y1) + half_width + 1.5).ceil().min((buf_h - 1) as f32) as i32;
+    let max_y = (y0.max(y1) + half_width + 1.5)
+        .ceil()
+        .min((buf_h - 1) as f32) as i32;
     let vx = x1 - x0;
     let vy = y1 - y0;
     let len_sq = (vx * vx + vy * vy).max(0.0001);
@@ -1435,17 +1444,7 @@ fn draw_close_badge(
     } else {
         (255, 215, 220, ((alpha as u16 * 210) / 255) as u8)
     };
-    draw_rounded_card(
-        buf,
-        buf_w,
-        buf_h,
-        rect,
-        rect.w / 2,
-        fill,
-        border,
-        1,
-        false,
-    );
+    draw_rounded_card(buf, buf_w, buf_h, rect, rect.w / 2, fill, border, 1, false);
     let pad = ((rect.w as f32) * 0.30).max(3.5);
     let x0 = rect.x as f32 + pad;
     let y0 = rect.y as f32 + pad;
@@ -1459,9 +1458,9 @@ fn draw_close_badge(
 fn hit_box(boxes: &[CellBox], sx: i32, sy: i32, mx: i32, my: i32) -> Option<&CellBox> {
     let vx = mx + sx;
     let vy = my + sy;
-    boxes.iter().find(|b| {
-        vx >= b.rect.x && vx <= b.rect.right() && vy >= b.rect.y && vy <= b.rect.bottom()
-    })
+    boxes
+        .iter()
+        .find(|b| vx >= b.rect.x && vx <= b.rect.right() && vy >= b.rect.y && vy <= b.rect.bottom())
 }
 
 fn hit_or_nearest_box(boxes: &[CellBox], sx: i32, sy: i32, mx: i32, my: i32) -> Option<&CellBox> {
@@ -1624,7 +1623,9 @@ unsafe extern "system" fn overview_wnd_proc(
                 if let Some(ref mut drag) = st.drag {
                     drag.cur_x = mx;
                     drag.cur_y = my;
-                    if !drag.active && ((mx - drag.start_x).abs() > 5 || (my - drag.start_y).abs() > 5) {
+                    if !drag.active
+                        && ((mx - drag.start_x).abs() > 5 || (my - drag.start_y).abs() > 5)
+                    {
                         drag.active = true;
                         just_activated_drag = true;
                     }
@@ -1744,7 +1745,8 @@ unsafe extern "system" fn overview_wnd_proc(
                                         },
                                     );
                                 }
-                            } else if (target.col, target.row) != (drag.source_col, drag.source_row) {
+                            } else if (target.col, target.row) != (drag.source_col, drag.source_row)
+                            {
                                 return UpAction::Place(
                                     st.controller_hwnd,
                                     OverviewCommand::Place {
@@ -1771,7 +1773,9 @@ unsafe extern "system" fn overview_wnd_proc(
                 }
 
                 if let Some((col, row)) = empty_click {
-                    if hit_box(&st.boxes, sx, sy, mx, my).is_some_and(|b| b.col == col && b.row == row) {
+                    if hit_box(&st.boxes, sx, sy, mx, my)
+                        .is_some_and(|b| b.col == col && b.row == row)
+                    {
                         return UpAction::Close(Some((col, row, None)));
                     }
                 }
@@ -1960,7 +1964,8 @@ pub(crate) fn draw_rounded_card(
             }
             if fill_rgba.3 > 0 && right_b_start > left_b_end {
                 if fill_rgba.3 == 255 {
-                    buf[row_off + left_b_end as usize..row_off + right_b_start as usize].fill(pre_fill);
+                    buf[row_off + left_b_end as usize..row_off + right_b_start as usize]
+                        .fill(pre_fill);
                 } else {
                     for px in left_b_end..right_b_start {
                         buf[row_off + px as usize] = blend_premul(
@@ -2264,9 +2269,19 @@ unsafe fn paint_overview(hwnd: HWND) {
                         continue;
                     }
                     let (fill_rgba, border_rgba, bw, dashed) = if is_drop_target {
-                        ((130, 225, 165, (72.0 * vis).round() as u8), (158, 226, 106, (240.0 * vis).round() as u8), 2, false)
+                        (
+                            (130, 225, 165, (72.0 * vis).round() as u8),
+                            (158, 226, 106, (240.0 * vis).round() as u8),
+                            2,
+                            false,
+                        )
                     } else {
-                        ((255, 255, 255, (14.0 * vis).round() as u8), (220, 232, 248, (145.0 * vis).round() as u8), 1, true)
+                        (
+                            (255, 255, 255, (14.0 * vis).round() as u8),
+                            (220, 232, 248, (145.0 * vis).round() as u8),
+                            1,
+                            true,
+                        )
                     };
                     draw_rounded_card(pixels, w, h, card, 10, fill_rgba, border_rgba, bw, dashed);
                     continue;
@@ -2300,7 +2315,11 @@ unsafe fn paint_overview(hwnd: HWND) {
                         true,
                     );
                 } else if is_drop_target {
-                    let drop_rgb = if shift_down { (122, 162, 247) } else { (247, 184, 104) };
+                    let drop_rgb = if shift_down {
+                        (122, 162, 247)
+                    } else {
+                        (247, 184, 104)
+                    };
                     draw_rounded_card(
                         pixels,
                         w,
@@ -2320,7 +2339,16 @@ unsafe fn paint_overview(hwnd: HWND) {
         st.surface = Some(surf);
 
         unsafe {
-            paint_icon_layer(st, hdc_screen, w, h, active_drag.as_ref(), shift_down, open_t, ui_alpha);
+            paint_icon_layer(
+                st,
+                hdc_screen,
+                w,
+                h,
+                active_drag.as_ref(),
+                shift_down,
+                open_t,
+                ui_alpha,
+            );
         }
     });
 
@@ -2405,8 +2433,8 @@ unsafe fn paint_icon_layer(
             let b = &st.boxes[idx];
             let is_empty = b.window_id.is_none();
             let hovered = st.hover_coord == Some((b.col, b.row));
-            let is_drag_source = active_drag
-                .is_some_and(|d| d.source_col == b.col && d.source_row == b.row);
+            let is_drag_source =
+                active_drag.is_some_and(|d| d.source_col == b.col && d.source_row == b.row);
             let is_drop_target = active_drag.is_some() && hovered && !is_drag_source;
             let card = animated_card_rect(st, b);
 
@@ -2440,15 +2468,15 @@ unsafe fn paint_icon_layer(
 
             let is_hero = Some(win_id) == st.hero_window_id;
             let card_alpha = if is_closing {
-                if is_hero {
-                    255
-                } else {
-                    ui_alpha
-                }
+                if is_hero { 255 } else { ui_alpha }
             } else {
                 ui_alpha
             };
-            let icon_alpha = if is_closing && is_hero { ui_alpha } else { card_alpha };
+            let icon_alpha = if is_closing && is_hero {
+                ui_alpha
+            } else {
+                card_alpha
+            };
 
             let dest = fit_thumb_rect(card, st.thumb_sizes.get(&win_id).copied());
             let dest_r = IRect::new(
@@ -2467,7 +2495,12 @@ unsafe fn paint_icon_layer(
                     h,
                     dest_r,
                     6,
-                    (32, 38, 52, (230.0 * (card_alpha as f64 / 255.0)).round() as u8),
+                    (
+                        32,
+                        38,
+                        52,
+                        (230.0 * (card_alpha as f64 / 255.0)).round() as u8,
+                    ),
                     (70, 80, 105, card_alpha),
                     1,
                     false,
@@ -2504,7 +2537,11 @@ unsafe fn paint_icon_layer(
             }
 
             if is_drop_target {
-                let drop_rgb = if shift_down { (122, 162, 247) } else { (247, 184, 104) };
+                let drop_rgb = if shift_down {
+                    (122, 162, 247)
+                } else {
+                    (247, 184, 104)
+                };
                 draw_rounded_card(
                     pixels,
                     w,
@@ -2604,14 +2641,15 @@ unsafe fn paint_icon_layer(
                     if let Some(base_btn) = close_button_rect(dest_r, w, h) {
                         let close_hovered = st.hover_close_win == Some(win_id)
                             || st.pending_close.is_some_and(|(_, _, wid)| wid == win_id);
-                        let pop_scale = (0.45 + 0.55 * close_t)
-                            * if close_hovered { 1.10 } else { 1.0 };
+                        let pop_scale =
+                            (0.45 + 0.55 * close_t) * if close_hovered { 1.10 } else { 1.0 };
                         let nw = ((base_btn.w as f64) * pop_scale).round().max(8.0) as i32;
                         let nh = ((base_btn.h as f64) * pop_scale).round().max(8.0) as i32;
                         let y_slide = ((1.0 - close_t.min(1.0)) * 5.0).round() as i32;
                         let anim_btn = IRect::new(
                             base_btn.x + (base_btn.w - nw) / 2,
-                            (base_btn.y + (base_btn.h - nh) / 2 + y_slide).clamp(2, (h - nh - 2).max(2)),
+                            (base_btn.y + (base_btn.h - nh) / 2 + y_slide)
+                                .clamp(2, (h - nh - 2).max(2)),
                             nw,
                             nh,
                         );
@@ -2705,7 +2743,11 @@ pub(crate) unsafe fn make_font(height: i32, bold: bool) -> HFONT {
             0,
             0,
             0,
-            if bold { FW_BOLD as i32 } else { FW_NORMAL as i32 },
+            if bold {
+                FW_BOLD as i32
+            } else {
+                FW_NORMAL as i32
+            },
             0,
             0,
             0,
@@ -2737,8 +2779,14 @@ mod tests {
                 let total_w = cw * cols + gap * (cols - 1);
                 let total_h = ch * rows + gap * (rows - 1);
                 assert!(cw > 20 && ch > 16);
-                assert!(sx >= 0 && sx + total_w <= bw, "horizontal fit failed for {cols}x{rows} in {bw}x{bh}");
-                assert!(sy >= 0 && sy + total_h <= bh, "vertical fit failed for {cols}x{rows} in {bw}x{bh}");
+                assert!(
+                    sx >= 0 && sx + total_w <= bw,
+                    "horizontal fit failed for {cols}x{rows} in {bw}x{bh}"
+                );
+                assert!(
+                    sy >= 0 && sy + total_h <= bh,
+                    "vertical fit failed for {cols}x{rows} in {bw}x{bh}"
+                );
             }
         }
     }
@@ -2749,7 +2797,12 @@ mod tests {
         let btn = close_button_rect(card, 1920, 1080).expect("close button visible");
         assert!(btn.x >= card.x + card.w / 2 && btn.x <= card.right());
         assert!(btn.y >= 2 && btn.bottom() <= 1078);
-        assert!(point_in_rect_pad(btn.x + btn.w / 2, btn.y + btn.h / 2, btn, 4));
+        assert!(point_in_rect_pad(
+            btn.x + btn.w / 2,
+            btn.y + btn.h / 2,
+            btn,
+            4
+        ));
         assert!(close_button_rect(IRect::new(0, 0, 40, 30), 1920, 1080).is_none());
     }
 }

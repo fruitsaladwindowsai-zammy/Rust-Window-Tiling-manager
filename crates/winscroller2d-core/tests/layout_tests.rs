@@ -7,7 +7,10 @@ fn area_1080p() -> IRect {
     IRect::new(0, 0, 1920, 1040)
 }
 
-fn find_rect(placements: &[winscroller2d_core::WindowPlacement], id: u64) -> &winscroller2d_core::WindowPlacement {
+fn find_rect(
+    placements: &[winscroller2d_core::WindowPlacement],
+    id: u64,
+) -> &winscroller2d_core::WindowPlacement {
     placements
         .iter()
         .find(|p| p.window_id == id)
@@ -233,17 +236,8 @@ fn smooth_camera_converges_and_keeps_focused_put_on_offscreen_resize() {
     // Focused window did NOT change during camera pan!
     assert_eq!(ws.focused, Some(3));
 
-    let (mid_placements, still_animating) = ws.compute_placements(
-        area_1080p(),
-        &[],
-        &cfg,
-        true,
-        true,
-        0.016,
-        280.0,
-        0.94,
-        0.5,
-    );
+    let (mid_placements, still_animating) =
+        ws.compute_placements(area_1080p(), &[], &cfg, true, true, 0.016, 280.0, 0.94, 0.5);
     assert!(still_animating);
     let mid_x = find_rect(&mid_placements, 1).rect.center().0;
     assert!(mid_x < 1920 / 2);
@@ -251,34 +245,16 @@ fn smooth_camera_converges_and_keeps_focused_put_on_offscreen_resize() {
     // Step frames until animation settles on col 0.
     let mut animating = true;
     for _ in 0..160 {
-        let (_, a) = ws.compute_placements(
-            area_1080p(),
-            &[],
-            &cfg,
-            true,
-            true,
-            0.016,
-            280.0,
-            0.94,
-            0.5,
-        );
+        let (_, a) =
+            ws.compute_placements(area_1080p(), &[], &cfg, true, true, 0.016, 280.0, 0.94, 0.5);
         animating = a;
         if !animating {
             break;
         }
     }
     assert!(!animating);
-    let (settled, _) = ws.compute_placements(
-        area_1080p(),
-        &[],
-        &cfg,
-        true,
-        true,
-        0.016,
-        280.0,
-        0.94,
-        0.5,
-    );
+    let (settled, _) =
+        ws.compute_placements(area_1080p(), &[], &cfg, true, true, 0.016, 280.0, 0.94, 0.5);
     assert!((find_rect(&settled, 1).rect.center().0 - 1920 / 2).abs() <= 1);
 }
 
@@ -333,14 +309,18 @@ fn workspace_manager_dynamic_workspaces_and_rules() {
 
     let snap = mgr.snapshot();
     assert_eq!(snap.workspaces[0].window_count, 2);
-    assert!(snap.workspaces[0]
-        .windows
-        .iter()
-        .any(|w| w.id == 100 && w.floating));
-    assert!(snap.workspaces[0]
-        .windows
-        .iter()
-        .any(|w| w.id == 101 && !w.floating));
+    assert!(
+        snap.workspaces[0]
+            .windows
+            .iter()
+            .any(|w| w.id == 100 && w.floating)
+    );
+    assert!(
+        snap.workspaces[0]
+            .windows
+            .iter()
+            .any(|w| w.id == 101 && !w.floating)
+    );
 
     // Switching workspace cloaks workspace 0 windows in frame plan.
     mgr.dispatch(Action::SwitchWorkspace { index: 1 });
@@ -410,17 +390,8 @@ fn auto_expand_focused_grows_active_and_shrinks_previous_on_switch() {
     // Move focus Left to window 1 with smooth animation enabled:
     // window 1 grows to full expanded size and window 2 shrinks back to preset!
     assert_eq!(ws.focus_direction(Direction::Left), Some(1));
-    let (mid, still_anim) = ws.compute_placements(
-        area_1080p(),
-        &[],
-        &cfg,
-        true,
-        true,
-        0.016,
-        280.0,
-        0.94,
-        0.5,
-    );
+    let (mid, still_anim) =
+        ws.compute_placements(area_1080p(), &[], &cfg, true, true, 0.016, 280.0, 0.94, 0.5);
     assert!(still_anim);
     let mid_1 = find_rect(&mid, 1).rect;
     let mid_2 = find_rect(&mid, 2).rect;
@@ -431,32 +402,14 @@ fn auto_expand_focused_grows_active_and_shrinks_previous_on_switch() {
 
     // Let animation settle.
     for _ in 0..200 {
-        let (_, anim) = ws.compute_placements(
-            area_1080p(),
-            &[],
-            &cfg,
-            true,
-            true,
-            0.016,
-            280.0,
-            0.94,
-            0.5,
-        );
+        let (_, anim) =
+            ws.compute_placements(area_1080p(), &[], &cfg, true, true, 0.016, 280.0, 0.94, 0.5);
         if !anim {
             break;
         }
     }
-    let (done, anim_done) = ws.compute_placements(
-        area_1080p(),
-        &[],
-        &cfg,
-        true,
-        true,
-        0.016,
-        280.0,
-        0.94,
-        0.5,
-    );
+    let (done, anim_done) =
+        ws.compute_placements(area_1080p(), &[], &cfg, true, true, 0.016, 280.0, 0.94, 0.5);
     assert!(!anim_done);
     let final_1 = find_rect(&done, 1).rect;
     let final_2 = find_rect(&done, 2).rect;
@@ -509,7 +462,8 @@ fn drag_drop_split_window_horizontal_creates_side_by_side_halves_and_unpacks() {
 
     // Verify placements combine to 100% width and full height side-by-side in one view
     let area = IRect::new(0, 0, 1920, 1080);
-    let (placements, _) = ws.compute_placements(area, &[], &cfg, false, false, 0.016, 260.0, 0.85, 0.5);
+    let (placements, _) =
+        ws.compute_placements(area, &[], &cfg, false, false, 0.016, 260.0, 0.85, 0.5);
     let p101 = placements.iter().find(|p| p.window_id == 101).unwrap();
     let p102 = placements.iter().find(|p| p.window_id == 102).unwrap();
     assert!(p101.visible && p102.visible);
@@ -547,7 +501,10 @@ fn underdamped_default_spring_overshoots_and_settles() {
         }
     }
 
-    assert!(max_val > 1.01, "expected underdamped spring overshoot bounce, max={max_val}");
+    assert!(
+        max_val > 1.01,
+        "expected underdamped spring overshoot bounce, max={max_val}"
+    );
     assert!(settled, "expected spring to settle cleanly");
     assert!((spring.current - 1.0).abs() <= 0.001);
 }
@@ -599,7 +556,17 @@ fn continuous_pan_commit_snaps_back_under_threshold_or_focuses_neighbor() {
     ws.insert_window(1, false, None, None, &cfg);
     ws.insert_window(2, false, None, None, &cfg);
     ws.set_focus(1);
-    let _ = ws.compute_placements(area_1080p(), &[], &cfg, false, false, 0.016, 260.0, 0.72, 0.5);
+    let _ = ws.compute_placements(
+        area_1080p(),
+        &[],
+        &cfg,
+        false,
+        false,
+        0.016,
+        260.0,
+        0.72,
+        0.5,
+    );
 
     // Small pan < 8px snaps cleanly back to win 1.
     ws.pan_pixels(4.0, 2.0);
@@ -608,7 +575,17 @@ fn continuous_pan_commit_snaps_back_under_threshold_or_focuses_neighbor() {
 
     // Substantial rightward pan commits focus to win 2.
     ws.pan_pixels(420.0, 10.0);
-    let _ = ws.compute_placements(area_1080p(), &[], &cfg, false, false, 0.016, 260.0, 0.72, 0.5);
+    let _ = ws.compute_placements(
+        area_1080p(),
+        &[],
+        &cfg,
+        false,
+        false,
+        0.016,
+        260.0,
+        0.72,
+        0.5,
+    );
     assert_eq!(ws.finish_pixel_pan(200.0, 0.0), Some(2));
     assert_eq!(ws.focused, Some(2));
 }
@@ -642,13 +619,17 @@ fn persisted_state_restores_coordinates_sizes_and_workspace_layout_toggle() {
         monitor_id: Some(1),
         ..Default::default()
     });
-    mgr.dispatch(Action::MoveWindow { direction: Direction::Down });
+    mgr.dispatch(Action::MoveWindow {
+        direction: Direction::Down,
+    });
     mgr.dispatch(Action::ResizeWidth { delta: -1 });
     mgr.dispatch(Action::ToggleWorkspaceLayout);
     assert!(mgr.active_workspace_layout_disabled());
 
     let exported = mgr.export_persisted_state();
-    let json = exported.to_json_pretty().expect("serialize persisted state");
+    let json = exported
+        .to_json_pretty()
+        .expect("serialize persisted state");
     let decoded = winscroller2d_core::PersistedState::from_json_str(&json).expect("deserialize");
 
     let mut mgr2 = WorkspaceManager::new(cfg, vec![mon]);
@@ -675,7 +656,11 @@ fn persisted_state_restores_coordinates_sizes_and_workspace_layout_toggle() {
         ..Default::default()
     });
     let ws = mgr2.active_workspace_snapshot().expect("ws snapshot");
-    let w_editor = ws.windows.iter().find(|w| w.id == 202).expect("editor restored");
+    let w_editor = ws
+        .windows
+        .iter()
+        .find(|w| w.id == 202)
+        .expect("editor restored");
     assert_eq!((w_editor.col, w_editor.row), (1, 1));
     assert_eq!(w_editor.width_step, 2);
 
@@ -733,10 +718,7 @@ fn per_desktop_per_monitor_registers_independent_scroll_instances() {
     });
 
     // Creating Desktop B registers brand-new scroll instances on both Mon 1 and Mon 2.
-    assert!(mgr.sync_os_desktops(
-        vec!["desk-a".into(), "desk-b".into()],
-        "desk-b".into(),
-    ));
+    assert!(mgr.sync_os_desktops(vec!["desk-a".into(), "desk-b".into()], "desk-b".into(),));
     let active_ws_b = mgr.active_workspace_snapshot().expect("desk-b ws");
     assert_eq!(active_ws_b.desktop_id, "desk-b");
     assert_eq!(active_ws_b.window_count, 0);
@@ -754,7 +736,12 @@ fn per_desktop_per_monitor_registers_independent_scroll_instances() {
     // Frame on Desktop B must only command Desktop B windows (never Desktop A).
     let plan_b = mgr.compute_frame(0.016);
     assert!(plan_b.commands.iter().any(|c| c.window_id == 2001));
-    assert!(!plan_b.commands.iter().any(|c| c.window_id == 1001 || c.window_id == 1002));
+    assert!(
+        !plan_b
+            .commands
+            .iter()
+            .any(|c| c.window_id == 1001 || c.window_id == 1002)
+    );
 
     // Adding a 3rd monitor registers instances for BOTH desk-a and desk-b.
     let mon3 = MonitorInfo {
@@ -765,20 +752,19 @@ fn per_desktop_per_monitor_registers_independent_scroll_instances() {
     };
     mgr.sync_monitors(vec![mon1, mon2, mon3]);
     let snap = mgr.snapshot();
-    assert!(snap
-        .workspaces
-        .iter()
-        .any(|w| w.desktop_id == "desk-a" && w.monitor_id == Some(3)));
-    assert!(snap
-        .workspaces
-        .iter()
-        .any(|w| w.desktop_id == "desk-b" && w.monitor_id == Some(3)));
+    assert!(
+        snap.workspaces
+            .iter()
+            .any(|w| w.desktop_id == "desk-a" && w.monitor_id == Some(3))
+    );
+    assert!(
+        snap.workspaces
+            .iter()
+            .any(|w| w.desktop_id == "desk-b" && w.monitor_id == Some(3))
+    );
 
     // Switch back to Desktop A: Desktop A instances and focus remain intact; Desktop B untouched.
-    assert!(mgr.sync_os_desktops(
-        vec!["desk-a".into(), "desk-b".into()],
-        "desk-a".into(),
-    ));
+    assert!(mgr.sync_os_desktops(vec!["desk-a".into(), "desk-b".into()], "desk-a".into(),));
     let plan_a = mgr.compute_frame(0.016);
     assert!(plan_a.commands.iter().any(|c| c.window_id == 1001));
     assert!(plan_a.commands.iter().any(|c| c.window_id == 1002));

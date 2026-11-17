@@ -253,7 +253,10 @@ impl GridWorkspace {
         }
 
         let was_empty = self.cells.is_empty();
-        if matches!(config.new_window_placement, NewWindowPlacement::StackInCurrentCell) {
+        if matches!(
+            config.new_window_placement,
+            NewWindowPlacement::StackInCurrentCell
+        ) {
             if let Some(focused_id) = self.focused {
                 if let Some(&coord) = self.loc.get(&focused_id) {
                     if let Some(cell) = self.cells.get_mut(&coord) {
@@ -352,9 +355,7 @@ impl GridWorkspace {
             steps
                 .iter()
                 .enumerate()
-                .min_by(|(_, a), (_, b)| {
-                    ((**a - target).abs()).total_cmp(&(**b - target).abs())
-                })
+                .min_by(|(_, a), (_, b)| ((**a - target).abs()).total_cmp(&(**b - target).abs()))
                 .map(|(i, _)| i)
                 .unwrap_or(0)
         };
@@ -404,7 +405,12 @@ impl GridWorkspace {
             }
             NewWindowPlacement::Neighbor4Way => {
                 // Omalattice rule: check direct adjacent neighbors right -> down -> left -> up.
-                for dir in [Direction::Right, Direction::Down, Direction::Left, Direction::Up] {
+                for dir in [
+                    Direction::Right,
+                    Direction::Down,
+                    Direction::Left,
+                    Direction::Up,
+                ] {
                     let cand = anchor.step(dir);
                     if !self.cells.contains_key(&cand) {
                         return cand;
@@ -593,7 +599,9 @@ impl GridWorkspace {
                         self.follow_focused();
                         return Some(target);
                     }
-                    Direction::Right | Direction::Down if cell.active_idx + 1 < cell.windows.len() => {
+                    Direction::Right | Direction::Down
+                        if cell.active_idx + 1 < cell.windows.len() =>
+                    {
                         cell.active_idx += 1;
                         let target = cell.active_window();
                         self.focused = Some(target);
@@ -643,7 +651,10 @@ impl GridWorkspace {
                 };
                 let aligned = if across == 0 { 0 } else { 1 };
                 let manhattan = dc.abs() + dr.abs();
-                Some(((aligned, across, along, manhattan, cand.col, cand.row), cand))
+                Some((
+                    (aligned, across, along, manhattan, cand.col, cand.row),
+                    cand,
+                ))
             })
             .min_by_key(|(metrics, _)| *metrics)
             .map(|(_, coord)| coord)
@@ -770,10 +781,18 @@ impl GridWorkspace {
         let old_cells = std::mem::take(&mut self.cells);
         for (coord, cell) in old_cells {
             let new_coord = if horizontal {
-                let c = if coord.col > empty_idx { coord.col - 1 } else { coord.col };
+                let c = if coord.col > empty_idx {
+                    coord.col - 1
+                } else {
+                    coord.col
+                };
                 Coord::new(c, coord.row)
             } else {
-                let r = if coord.row > empty_idx { coord.row - 1 } else { coord.row };
+                let r = if coord.row > empty_idx {
+                    coord.row - 1
+                } else {
+                    coord.row
+                };
                 Coord::new(coord.col, r)
             };
             for &id in &cell.windows {
@@ -933,8 +952,12 @@ impl GridWorkspace {
             return false;
         }
         let Some(id) = self.focused else { return false };
-        let Some(&coord) = self.loc.get(&id) else { return false };
-        let Some(cell) = self.cells.get_mut(&coord) else { return false };
+        let Some(&coord) = self.loc.get(&id) else {
+            return false;
+        };
+        let Some(cell) = self.cells.get_mut(&coord) else {
+            return false;
+        };
         cell.maximized = false;
         cell.manual_override = true;
         if horizontal {
@@ -958,8 +981,12 @@ impl GridWorkspace {
             return false;
         }
         let Some(id) = self.focused else { return false };
-        let Some(&coord) = self.loc.get(&id) else { return false };
-        let Some(cell) = self.cells.get_mut(&coord) else { return false };
+        let Some(&coord) = self.loc.get(&id) else {
+            return false;
+        };
+        let Some(cell) = self.cells.get_mut(&coord) else {
+            return false;
+        };
         cell.maximized = false;
         cell.manual_override = true;
         if horizontal {
@@ -978,12 +1005,21 @@ impl GridWorkspace {
 
     /// Niri `ConsumeIntoCell`: pull an adjacent cell's active window into the focused cell's stack.
     pub fn consume_into_cell(&mut self, preferred_dir: Option<Direction>) -> bool {
-        let Some(focused_id) = self.focused else { return false };
-        let Some(&origin) = self.loc.get(&focused_id) else { return false };
+        let Some(focused_id) = self.focused else {
+            return false;
+        };
+        let Some(&origin) = self.loc.get(&focused_id) else {
+            return false;
+        };
 
         let candidate_dirs = match preferred_dir {
             Some(d) => vec![d],
-            None => vec![Direction::Right, Direction::Left, Direction::Down, Direction::Up],
+            None => vec![
+                Direction::Right,
+                Direction::Left,
+                Direction::Down,
+                Direction::Up,
+            ],
         };
 
         let mut donor_coord = None;
@@ -1027,8 +1063,12 @@ impl GridWorkspace {
 
     /// Niri `ExpelFromCell`: push the focused window out of a multi-window cell into an open neighbor cell.
     pub fn expel_from_cell(&mut self, dir: Direction) -> bool {
-        let Some(focused_id) = self.focused else { return false };
-        let Some(&origin) = self.loc.get(&focused_id) else { return false };
+        let Some(focused_id) = self.focused else {
+            return false;
+        };
+        let Some(&origin) = self.loc.get(&focused_id) else {
+            return false;
+        };
 
         let (w_step, h_step) = {
             let Some(cell) = self.cells.get_mut(&origin) else {
@@ -1049,7 +1089,8 @@ impl GridWorkspace {
         while self.cells.contains_key(&dest) {
             dest = dest.step(dir);
         }
-        self.cells.insert(dest, Cell::new(focused_id, w_step, h_step));
+        self.cells
+            .insert(dest, Cell::new(focused_id, w_step, h_step));
         self.loc.insert(focused_id, dest);
         self.camera_coord = dest;
         self.camera_pan_offset = (0.0, 0.0);
@@ -1059,8 +1100,12 @@ impl GridWorkspace {
 
     pub fn toggle_stack_mode(&mut self) -> bool {
         let Some(id) = self.focused else { return false };
-        let Some(&coord) = self.loc.get(&id) else { return false };
-        let Some(cell) = self.cells.get_mut(&coord) else { return false };
+        let Some(&coord) = self.loc.get(&id) else {
+            return false;
+        };
+        let Some(cell) = self.cells.get_mut(&coord) else {
+            return false;
+        };
         cell.stack_mode = match cell.stack_mode {
             StackMode::Split => StackMode::Tabbed,
             StackMode::Tabbed => StackMode::Split,
@@ -1070,8 +1115,12 @@ impl GridWorkspace {
 
     pub fn toggle_maximize_cell(&mut self) -> bool {
         let Some(id) = self.focused else { return false };
-        let Some(&coord) = self.loc.get(&id) else { return false };
-        let Some(cell) = self.cells.get_mut(&coord) else { return false };
+        let Some(&coord) = self.loc.get(&id) else {
+            return false;
+        };
+        let Some(cell) = self.cells.get_mut(&coord) else {
+            return false;
+        };
         cell.maximized = !cell.maximized;
         self.follow_focused();
         true
@@ -1124,14 +1173,19 @@ impl GridWorkspace {
         // Support dragging a floating window straight into a grid cell.
         if let Some(pos) = self.floating.iter().position(|&w| w == window_id) {
             self.floating.remove(pos);
-            let w_step = config.default_width_step.min(config.width_steps.len().saturating_sub(1));
-            let h_step = config.default_height_step.min(config.height_steps.len().saturating_sub(1));
+            let w_step = config
+                .default_width_step
+                .min(config.width_steps.len().saturating_sub(1));
+            let h_step = config
+                .default_height_step
+                .min(config.height_steps.len().saturating_sub(1));
             if let Some(dest_cell) = self.cells.get_mut(&dest) {
                 dest_cell.windows.push(window_id);
                 dest_cell.active_idx = dest_cell.windows.len() - 1;
                 dest_cell.stack_mode = StackMode::Split;
             } else {
-                self.cells.insert(dest, Cell::new(window_id, w_step, h_step));
+                self.cells
+                    .insert(dest, Cell::new(window_id, w_step, h_step));
             }
             self.loc.insert(window_id, dest);
             self.focused = Some(window_id);
@@ -1303,9 +1357,14 @@ impl GridWorkspace {
             cell.custom_width_frac = None;
             cell.custom_height_frac = None;
         } else {
-            let w_step = config.default_width_step.min(config.width_steps.len().saturating_sub(1));
-            let h_step = config.default_height_step.min(config.height_steps.len().saturating_sub(1));
-            self.cells.insert(target_coord, Cell::new(window_id, w_step, h_step));
+            let w_step = config
+                .default_width_step
+                .min(config.width_steps.len().saturating_sub(1));
+            let h_step = config
+                .default_height_step
+                .min(config.height_steps.len().saturating_sub(1));
+            self.cells
+                .insert(target_coord, Cell::new(window_id, w_step, h_step));
         }
 
         self.loc.insert(window_id, target_coord);
@@ -1329,8 +1388,12 @@ impl GridWorkspace {
             return false;
         }
 
-        let w_step = config.default_width_step.min(config.width_steps.len().saturating_sub(1));
-        let h_step = config.default_height_step.min(config.height_steps.len().saturating_sub(1));
+        let w_step = config
+            .default_width_step
+            .min(config.width_steps.len().saturating_sub(1));
+        let h_step = config
+            .default_height_step
+            .min(config.height_steps.len().saturating_sub(1));
 
         for coord in multi_coords {
             let Some(cell) = self.cells.get_mut(&coord) else {
@@ -1357,8 +1420,12 @@ impl GridWorkspace {
 
     /// Reset all cells to clean preset geometries (clearing manual overrides and snaps).
     pub fn retile(&mut self, config: &LayoutConfig) {
-        let def_w = config.default_width_step.min(config.width_steps.len().saturating_sub(1));
-        let def_h = config.default_height_step.min(config.height_steps.len().saturating_sub(1));
+        let def_w = config
+            .default_width_step
+            .min(config.width_steps.len().saturating_sub(1));
+        let def_h = config
+            .default_height_step
+            .min(config.height_steps.len().saturating_sub(1));
         for cell in self.cells.values_mut() {
             cell.custom_width_frac = None;
             cell.custom_height_frac = None;
@@ -1396,8 +1463,10 @@ impl GridWorkspace {
         let area_h = area.h.max(1) as f64;
         let peek_x = (config.peek_x as f64).clamp(0.0, ((area_w - 1.0) / 2.0).max(0.0));
         let peek_y = (config.peek_y as f64).clamp(0.0, ((area_h - 1.0) / 2.0).max(0.0));
-        let focused_peek_x = (config.focused_peek_x as f64).clamp(0.0, ((area_w - 1.0) / 2.0).max(0.0));
-        let focused_peek_y = (config.focused_peek_y as f64).clamp(0.0, ((area_h - 1.0) / 2.0).max(0.0));
+        let focused_peek_x =
+            (config.focused_peek_x as f64).clamp(0.0, ((area_w - 1.0) / 2.0).max(0.0));
+        let focused_peek_y =
+            (config.focused_peek_y as f64).clamp(0.0, ((area_h - 1.0) / 2.0).max(0.0));
         let max_cell_w = (area_w - peek_x * 2.0).max(1.0);
         let max_cell_h = (area_h - peek_y * 2.0).max(1.0);
         let gap_x = config.gap_x.max(0) as f64;
@@ -1436,33 +1505,47 @@ impl GridWorkspace {
                 .clamp(0.10, 1.0);
             let preset_size = (max_cell_w * wf, max_cell_h * hf);
 
-            let (target_w, target_h) = if cell.maximized
-                || (single_cell_expand && !cell.manual_override)
-            {
-                ((area_w - margin * 2.0).max(1.0), (area_h - margin * 2.0).max(1.0))
-            } else if config.auto_expand_focused
-                && focused_coord == Some(coord)
-                && !cell.manual_override
-            {
-                (
-                    (area_w - focused_peek_x * 2.0).max(1.0),
-                    (area_h - focused_peek_y * 2.0).max(1.0),
-                )
-            } else {
-                preset_size
-            };
+            let (target_w, target_h) =
+                if cell.maximized || (single_cell_expand && !cell.manual_override) {
+                    (
+                        (area_w - margin * 2.0).max(1.0),
+                        (area_h - margin * 2.0).max(1.0),
+                    )
+                } else if config.auto_expand_focused
+                    && focused_coord == Some(coord)
+                    && !cell.manual_override
+                {
+                    (
+                        (area_w - focused_peek_x * 2.0).max(1.0),
+                        (area_h - focused_peek_y * 2.0).max(1.0),
+                    )
+                } else {
+                    preset_size
+                };
 
             let (w, h) = if animate && animate_resize {
                 if !cell.anim_w.initialized {
-                    cell.anim_w.snap_to(if !cam_initialized { target_w } else { preset_size.0 });
+                    cell.anim_w.snap_to(if !cam_initialized {
+                        target_w
+                    } else {
+                        preset_size.0
+                    });
                 }
                 if !cell.anim_h.initialized {
-                    cell.anim_h.snap_to(if !cam_initialized { target_h } else { preset_size.1 });
+                    cell.anim_h.snap_to(if !cam_initialized {
+                        target_h
+                    } else {
+                        preset_size.1
+                    });
                 }
                 cell.anim_w.set_target(target_w, true);
                 cell.anim_h.set_target(target_h, true);
-                let aw = cell.anim_w.step(dt_secs, stiffness, damping_ratio, snap_epsilon);
-                let ah = cell.anim_h.step(dt_secs, stiffness, damping_ratio, snap_epsilon);
+                let aw = cell
+                    .anim_w
+                    .step(dt_secs, stiffness, damping_ratio, snap_epsilon);
+                let ah = cell
+                    .anim_h
+                    .step(dt_secs, stiffness, damping_ratio, snap_epsilon);
                 size_animating |= aw || ah;
                 (cell.anim_w.current.max(1.0), cell.anim_h.current.max(1.0))
             } else {
@@ -1504,22 +1587,34 @@ impl GridWorkspace {
         col_centers.insert(0, 0.0);
         for c in 1..=max_col {
             let prev = col_centers[&(c - 1)];
-            col_centers.insert(c, prev + col_widths[&(c - 1)] / 2.0 + gap_x + col_widths[&c] / 2.0);
+            col_centers.insert(
+                c,
+                prev + col_widths[&(c - 1)] / 2.0 + gap_x + col_widths[&c] / 2.0,
+            );
         }
         for c in (min_col..0).rev() {
             let next = col_centers[&(c + 1)];
-            col_centers.insert(c, next - col_widths[&(c + 1)] / 2.0 - gap_x - col_widths[&c] / 2.0);
+            col_centers.insert(
+                c,
+                next - col_widths[&(c + 1)] / 2.0 - gap_x - col_widths[&c] / 2.0,
+            );
         }
 
         let mut row_centers: HashMap<i32, f64> = HashMap::new();
         row_centers.insert(0, 0.0);
         for r in 1..=max_row {
             let prev = row_centers[&(r - 1)];
-            row_centers.insert(r, prev + row_heights[&(r - 1)] / 2.0 + gap_y + row_heights[&r] / 2.0);
+            row_centers.insert(
+                r,
+                prev + row_heights[&(r - 1)] / 2.0 + gap_y + row_heights[&r] / 2.0,
+            );
         }
         for r in (min_row..0).rev() {
             let next = row_centers[&(r + 1)];
-            row_centers.insert(r, next - row_heights[&(r + 1)] / 2.0 - gap_y - row_heights[&r] / 2.0);
+            row_centers.insert(
+                r,
+                next - row_heights[&(r + 1)] / 2.0 - gap_y - row_heights[&r] / 2.0,
+            );
         }
 
         let anchor_x = col_centers[&self.camera_coord.col];
@@ -1529,10 +1624,12 @@ impl GridWorkspace {
         // or smoothly preserve old screen position when transitioning to a new camera coord.
         if let Some((prev_coord, prev_x, prev_y)) = self.last_anchor {
             if prev_coord == self.camera_coord {
-                self.camera_anim.shift_world(anchor_x - prev_x, anchor_y - prev_y);
-            } else if let (Some(&new_of_old_x), Some(&new_of_old_y)) =
-                (col_centers.get(&prev_coord.col), row_centers.get(&prev_coord.row))
-            {
+                self.camera_anim
+                    .shift_world(anchor_x - prev_x, anchor_y - prev_y);
+            } else if let (Some(&new_of_old_x), Some(&new_of_old_y)) = (
+                col_centers.get(&prev_coord.col),
+                row_centers.get(&prev_coord.row),
+            ) {
                 self.camera_anim
                     .shift_world(new_of_old_x - prev_x, new_of_old_y - prev_y);
             }
@@ -1549,10 +1646,10 @@ impl GridWorkspace {
             )
         } else {
             // FocusCentering::OnOverflow: keep current target unless focused cell + peek overflows viewport.
-            let (cell_w, cell_h) = cell_sizes
-                .get(&self.camera_coord)
-                .copied()
-                .unwrap_or((col_widths[&self.camera_coord.col], row_heights[&self.camera_coord.row]));
+            let (cell_w, cell_h) = cell_sizes.get(&self.camera_coord).copied().unwrap_or((
+                col_widths[&self.camera_coord.col],
+                row_heights[&self.camera_coord.row],
+            ));
             let mut tx = self.camera_anim.target_x();
             let mut ty = self.camera_anim.target_y();
 
@@ -1577,7 +1674,8 @@ impl GridWorkspace {
             (tx, ty)
         };
 
-        self.camera_anim.set_target(target_cam_x, target_cam_y, animate);
+        self.camera_anim
+            .set_target(target_cam_x, target_cam_y, animate);
         let cam_animating = if animate {
             self.camera_anim
                 .step(dt_secs, stiffness, damping_ratio, snap_epsilon)

@@ -2,11 +2,11 @@ use std::ffi::c_void;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::time::SystemTime;
-use winscroller2d_core::OverviewBlurMode;
 use windows_sys::Win32::Foundation::HMODULE;
-use windows_sys::Win32::Graphics::Gdi::{GetSysColor, COLOR_DESKTOP};
+use windows_sys::Win32::Graphics::Gdi::{COLOR_DESKTOP, GetSysColor};
 use windows_sys::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryW};
-use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GETDESKWALLPAPER};
+use windows_sys::Win32::UI::WindowsAndMessaging::{SPI_GETDESKWALLPAPER, SystemParametersInfoW};
+use winscroller2d_core::OverviewBlurMode;
 
 use crate::win32::to_wide;
 
@@ -107,8 +107,7 @@ fn gdiplus() -> Option<&'static GdiplusApi> {
             let dispose_image: FnGdipDisposeImage = load_proc(module, b"GdipDisposeImage\0")?;
             let get_image_graphics_context: FnGdipGetImageGraphicsContext =
                 load_proc(module, b"GdipGetImageGraphicsContext\0")?;
-            let delete_graphics: FnGdipDeleteGraphics =
-                load_proc(module, b"GdipDeleteGraphics\0")?;
+            let delete_graphics: FnGdipDeleteGraphics = load_proc(module, b"GdipDeleteGraphics\0")?;
             let set_interpolation_mode: FnGdipSetMode =
                 load_proc(module, b"GdipSetInterpolationMode\0")?;
             let set_pixel_offset_mode: FnGdipSetMode =
@@ -242,13 +241,7 @@ impl WallpaperCache {
         self.blur = build_gaussian_blur(&self.sharp, w, h);
     }
 
-    pub fn blit_to(
-        &self,
-        dst: &mut [u32],
-        blur_t: f64,
-        mode: OverviewBlurMode,
-        frost_alpha: u8,
-    ) {
+    pub fn blit_to(&self, dst: &mut [u32], blur_t: f64, mode: OverviewBlurMode, frost_alpha: u8) {
         let len = dst.len().min(self.sharp.len()).min(self.blur.len());
         if len == 0 {
             return;
@@ -650,7 +643,10 @@ mod tests {
                 max_luma > min_luma,
                 "expected real blurred wallpaper variation, got flat luma={min_luma}"
             );
-            assert!(blur_mean < 245.0, "wallpaper unexpectedly washed to white: {blur_mean}");
+            assert!(
+                blur_mean < 245.0,
+                "wallpaper unexpectedly washed to white: {blur_mean}"
+            );
         }
     }
 }
