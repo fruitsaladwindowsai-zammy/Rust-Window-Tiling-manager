@@ -60,3 +60,19 @@ The host executable links native Windows subsystem components:
   * `DwmRegisterThumbnail` & `DwmUpdateThumbnailProperties`: Streams live video surfaces for the `Win+O` overview.
 * **120 Hz VSync Animation Pacer**:
   A dedicated background pacer thread utilizes high-resolution waitable timers (`CreateWaitableTimerExW`) to deliver smooth 120 FPS step ticks to the main message loop without spinning the CPU.
+
+---
+
+## ⚡ Core Subsystem Architectures
+
+### 1. Niri-Style Cell Stacking & Split Dynamics
+![Cell Stacking Architecture](assets/concept-cell-stacking.svg)
+
+### 2. 120Hz Underdamped Mass-Spring Physics
+![Mass-Spring Dynamics](assets/concept-spring-physics.svg)
+
+### 3. 100+ Windows Sparse Matrix Performance
+![100 Windows Performance](assets/concept-100-windows.svg)
+
+### 4. Multi-Monitor & Virtual Desktop Matrix
+![Multi-Monitor Matrix](assets/concept-multi-monitor-matrix.svg)

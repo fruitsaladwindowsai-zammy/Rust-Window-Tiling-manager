@@ -2,6 +2,8 @@
 
 **Overview Mode** (`Win + O`) provides a bird's-eye view of your entire 2D workspace, inspired by macOS Mission Control, GNOME Overview, and Windows Task View, but customized specifically for infinite 2D tiling.
 
+![Overview Architecture](assets/concept-overview.svg)
+
 ---
 
 ## 🎨 Visual Aesthetics & Layout
@@ -23,6 +25,8 @@ When you press **`Win + O`**:
 ---
 
 ## 🖱️ Drag-and-Drop & Horizontal Split Snapping
+
+![Split Snapping Dynamics](assets/concept-split-snap.svg)
 
 ![Tiling and Snapping Demo](assets/tiling-snap-demo.gif)
 

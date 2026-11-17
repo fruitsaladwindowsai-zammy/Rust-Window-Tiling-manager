@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGlow3" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#111827" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#090d16" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#05070c" stop-opacity="1"/>
+    </radialGradient>
+
+    <linearGradient id="splitSeamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#00f5d4"/>
+    </linearGradient>
+
+    <filter id="neonSeam" x="-30%" y="-10%" width="160%" height="120%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="shadowBox" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.75"/>
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes pulseSeam {
+      0%, 100% { opacity: 0.8; stroke-width: 3; }
+      50% { opacity: 1; stroke-width: 5; }
+    }
+    @keyframes seamGlider {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(300px); }
+    }
+    .anim-seam { animation: pulseSeam 3s infinite ease-in-out; }
+    .anim-glider { animation: seamGlider 4s infinite ease-in-out; }
+    
+    text { font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif; }
+    .mono { font-family: 'Fira Code', monospace; }
+  </style>
+
+  <!-- Deep Obsidian Canvas Background -->
+  <rect width="1200" height="750" fill="url(#bgGlow3)"/>
+
+  <!-- Top Title Badge -->
+  <g transform="translate(600, 48)">
+    <rect x="-240" y="-18" width="480" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="rgba(0, 245, 212, 0.4)" stroke-width="1.5"/>
+    <circle cx="-210" cy="0" r="5" fill="#00f5d4"/>
+    <text x="-195" y="4" fill="#f8fafc" font-size="12" font-weight="700">Snapped Dual-App Horizontal Split (50% / 50%)</text>
+    <text x="175" y="4" fill="#a855f7" font-size="10" class="mono" font-weight="bold">Lattice Cell</text>
+  </g>
+
+  <!-- Monitor Workspace Frame -->
+  <rect x="140" y="90" width="920" height="540" rx="18" fill="#080c14" stroke="rgba(255, 255, 255, 0.15)" stroke-width="2" filter="url(#shadowBox)"/>
+
+  <!-- Dual App Split Cell Container -->
+  <g transform="translate(180, 130)">
+    <!-- Outer Cell Container Outline -->
+    <rect width="840" height="460" rx="14" fill="#0d1322" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5"/>
+
+    <!-- Left App: 50% Width (Editor / Rust) -->
+    <g transform="translate(10, 10)">
+      <rect width="405" height="440" rx="10" fill="#111827" stroke="rgba(0, 245, 212, 0.3)" stroke-width="1.5"/>
+      <!-- Header -->
+      <path d="M 0 10 Q 0 0 10 0 L 395 0 Q 405 0 405 10 L 405 32 L 0 32 Z" fill="#182235"/>
+      <circle cx="16" cy="16" r="4" fill="#ef4444"/>
+      <circle cx="28" cy="16" r="4" fill="#f59e0b"/>
+      <circle cx="40" cy="16" r="4" fill="#10b981"/>
+      <text x="56" y="20" fill="#00f5d4" font-size="11" class="mono" font-weight="bold">Window A: crates/core/snap.rs (50%)</text>
+
+      <!-- Code Lines -->
+      <g class="mono" font-size="11" fill="#94a3b8">
+        <text x="20" y="65" fill="#f43f5e">pub fn <tspan fill="#38bdf8">snap_horizontal</tspan>(&amp;mut self, a: WindowId, b: WindowId) {</text>
+        <text x="40" y="90" fill="#cbd5e1">let cell_width = self.viewport.width;</text>
+        <text x="40" y="115" fill="#cbd5e1">let split_width = (cell_width - gap) / 2.0;</text>
+        <text x="40" y="140" fill="#a855f7">// Store persistent snap memory state</text>
+        <text x="40" y="165" fill="#cbd5e1">self.state.save_snap_pair(a, b, 0.5);</text>
+        <text x="40" y="190" fill="#10b981">self.apply_dwm_spring_transition();</text>
+        <text x="20" y="215" fill="#f43f5e">}</text>
+
+        <!-- Vector Diagram of 50% split width -->
+        <rect x="20" y="250" width="365" height="150" rx="8" fill="rgba(0, 245, 212, 0.04)" stroke="rgba(0, 245, 212, 0.2)" stroke-width="1"/>
+        <text x="35" y="280" fill="#00f5d4" font-size="12" font-weight="bold">Snap Geometry Calculation</text>
+        <text x="35" y="305" fill="#94a3b8" font-size="10">X_offset = 0px | Target Width = 50.0% W</text>
+        <text x="35" y="325" fill="#94a3b8" font-size="10">Zero spillover boundary: CLOAKED at screen edge</text>
+        <text x="35" y="345" fill="#10b981" font-size="10">Joint 2D Scroll Lock: ACTIVE</text>
+      </g>
+    </g>
+
+    <!-- Right App: 50% Width (Terminal / Test Runner) -->
+    <g transform="translate(425, 10)">
+      <rect width="405" height="440" rx="10" fill="#0b0f19" stroke="rgba(168, 85, 247, 0.3)" stroke-width="1.5"/>
+      <path d="M 0 10 Q 0 0 10 0 L 395 0 Q 405 0 405 10 L 405 32 L 0 32 Z" fill="#161c2d"/>
+      <circle cx="16" cy="16" r="4" fill="#ef4444"/>
+      <circle cx="28" cy="16" r="4" fill="#f59e0b"/>
+      <circle cx="40" cy="16" r="4" fill="#10b981"/>
+      <text x="56" y="20" fill="#c084fc" font-size="11" class="mono" font-weight="bold">Window B: cargo test --workspace (50%)</text>
+
+      <!-- Terminal output -->
+      <g class="mono" font-size="11">
+        <text x="20" y="65" fill="#10b981">running 24 tests across workspace</text>
+        <text x="20" y="90" fill="#e2e8f0">test layout::test_snap_horizontal ... <tspan fill="#10b981" font-weight="bold">ok</tspan></text>
+        <text x="20" y="115" fill="#e2e8f0">test layout::test_50_50_split ... <tspan fill="#10b981" font-weight="bold">ok</tspan></text>
+        <text x="20" y="140" fill="#e2e8f0">test physics::test_120hz_damping ... <tspan fill="#10b981" font-weight="bold">ok</tspan></text>
+        <text x="20" y="165" fill="#e2e8f0">test uipi::test_elevation_bypass ... <tspan fill="#10b981" font-weight="bold">ok</tspan></text>
+        <text x="20" y="190" fill="#e2e8f0">test cloaking::test_0px_margin_spill ... <tspan fill="#10b981" font-weight="bold">ok</tspan></text>
+        
+        <rect x="20" y="215" width="365" height="1" fill="rgba(255, 255, 255, 0.1)"/>
+        
+        <text x="20" y="245" fill="#10b981" font-weight="bold">test result: ok. 24 passed; 0 failed; 0 ignored</text>
+        <text x="20" y="275" fill="#a855f7">[STATE] Saved persistent snap to state.json</text>
+        <text x="20" y="300" fill="#64748b">Both windows scroll smoothly together in 2D space</text>
+      </g>
+    </g>
+
+    <!-- Glowing Magnetic Snap Seam Divider Bar -->
+    <g transform="translate(418, 10)">
+      <line x1="0" y1="0" x2="0" y2="440" stroke="url(#splitSeamGrad)" stroke-width="4" filter="url(#neonSeam)" class="anim-seam"/>
+      <!-- Magnetic Snap Seam Handle Puck -->
+      <g class="anim-glider">
+        <rect x="-10" y="190" width="20" height="40" rx="10" fill="#07090e" stroke="#00f5d4" stroke-width="2"/>
+        <line x1="-4" y1="205" x2="4" y2="205" stroke="#00f5d4" stroke-width="1.5"/>
+        <line x1="-4" y1="215" x2="4" y2="215" stroke="#00f5d4" stroke-width="1.5"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Persistent Snap Memory Annotation Banner -->
+  <g transform="translate(600, 680)">
+    <rect x="-260" y="-18" width="520" height="36" rx="8" fill="rgba(14, 20, 32, 0.9)" stroke="rgba(255, 255, 255, 0.1)"/>
+    <text x="0" y="4" fill="#94a3b8" font-size="11" class="mono" text-anchor="middle">
+      <tspan fill="#00f5d4" font-weight="bold">state.json:</tspan> Snap coordinates &amp; dimensions persist across restarts &amp; overview
+    </text>
+  </g>
+</svg>

@@ -2,6 +2,8 @@
 
 WinScroller 2D provides enterprise-grade multi-display management and seamless integration with Windows 11 Virtual Desktops.
 
+![Dual Monitor Architecture](assets/concept-dual-monitor.svg)
+
 ---
 
 ## 🖥️ Multi-Monitor Extended Mode
@@ -35,6 +37,8 @@ When Windows is set to **Extend these displays** (`Win + P` > Extend), WinScroll
 ---
 
 ## 🗂️ Windows Virtual Desktops
+
+![Virtual Desktops Architecture](assets/concept-virtual-desktops.svg)
 
 WinScroller 2D interfaces directly with the native Windows COM `IVirtualDesktopManager` subsystem:
 

@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGlow2" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#111827" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#090d16" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#05070c" stop-opacity="1"/>
+    </radialGradient>
+
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#00b4d8"/>
+    </linearGradient>
+
+    <linearGradient id="rustGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff5722"/>
+      <stop offset="100%" stop-color="#ffaa00"/>
+    </linearGradient>
+
+    <filter id="neonGlowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="shadowFilter" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.7"/>
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes panCamera {
+      0%, 25% { transform: translate(0, 0); }
+      45%, 70% { transform: translate(-140px, 0); }
+      85%, 100% { transform: translate(0, 0); }
+    }
+    @keyframes pulsePeek {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; stroke-width: 2.5; }
+    }
+    @keyframes vectorFlow {
+      0% { stroke-dashoffset: 40; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .anim-pan { animation: panCamera 8s infinite cubic-bezier(0.18, 0.89, 0.32, 1.15); }
+    .anim-peek { animation: pulsePeek 3s infinite ease-in-out; }
+    .flow-line { stroke-dasharray: 8 6; animation: vectorFlow 1.5s linear infinite; }
+    
+    text { font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif; }
+    .mono { font-family: 'Fira Code', monospace; }
+  </style>
+
+  <!-- Deep Obsidian Background -->
+  <rect width="1200" height="750" fill="url(#bgGlow2)"/>
+
+  <!-- Infinite Cartesian Coordinate Rays -->
+  <g stroke="rgba(255, 255, 255, 0.05)" stroke-width="1">
+    <line x1="0" y1="375" x2="1200" y2="375"/>
+    <line x1="600" y1="0" x2="600" y2="750"/>
+  </g>
+
+  <!-- Physical Display Monitor Bezel Frame -->
+  <rect x="220" y="80" width="760" height="520" rx="16" fill="rgba(8, 12, 20, 0.9)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="2" filter="url(#shadowFilter)"/>
+  <rect x="228" y="88" width="744" height="504" rx="12" fill="none" stroke="rgba(0, 245, 212, 0.15)" stroke-width="1"/>
+
+  <!-- Monitor Stand Base Graphic -->
+  <path d="M 540 600 L 520 660 L 680 660 L 660 600 Z" fill="#111827" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1.5"/>
+  <rect x="460" y="660" width="280" height="12" rx="6" fill="#1f2937" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1"/>
+
+  <!-- Display Label Badge -->
+  <rect x="520" y="96" width="160" height="22" rx="11" fill="rgba(14, 20, 32, 0.95)" stroke="rgba(255, 255, 255, 0.1)"/>
+  <text x="600" y="111" fill="#94a3b8" font-size="10" class="mono" text-anchor="middle">PRIMARY MONITOR (3840×2160)</text>
+
+  <!-- ==================== ANIMATED 2D SCROLLING CANVAS ==================== -->
+  <g class="anim-pan">
+    <!-- Left Peeking Window: Cell (0, 0) -->
+    <g transform="translate(140, 160)" filter="url(#shadowFilter)">
+      <rect width="260" height="380" rx="12" fill="#111827" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+      <path d="M 0 12 Q 0 0 12 0 L 248 0 Q 260 0 260 12 L 260 32 L 0 32 Z" fill="#182235"/>
+      <circle cx="16" cy="16" r="4" fill="#ef4444"/>
+      <circle cx="28" cy="16" r="4" fill="#f59e0b"/>
+      <circle cx="40" cy="16" r="4" fill="#10b981"/>
+      <text x="56" y="20" fill="#cbd5e1" font-size="11" class="mono">crates/core/layout.rs</text>
+      
+      <!-- Code lines -->
+      <rect x="20" y="55" width="180" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      <rect x="20" y="75" width="140" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      <rect x="20" y="95" width="210" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      <rect x="20" y="115" width="160" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      <rect x="20" y="135" width="190" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      <rect x="20" y="155" width="130" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+    </g>
+
+    <!-- Center Active Window: Cell (1, 0) (Focused) -->
+    <g transform="translate(430, 140)" filter="url(#shadowFilter)">
+      <rect width="420" height="420" rx="14" fill="#0d1322" stroke="url(#cyanGrad)" stroke-width="2.5" filter="url(#neonGlowCyan)"/>
+      <path d="M 0 14 Q 0 0 14 0 L 406 0 Q 420 0 420 14 L 420 36 L 0 36 Z" fill="#151e33"/>
+      <circle cx="18" cy="18" r="4" fill="#ef4444"/>
+      <circle cx="32" cy="18" r="4" fill="#f59e0b"/>
+      <circle cx="46" cy="18" r="4" fill="#10b981"/>
+      <text x="64" y="22" fill="#00f5d4" font-size="12" class="mono" font-weight="bold">PowerShell (Elevated High Integrity)</text>
+      
+      <rect x="345" y="8" width="60" height="20" rx="4" fill="#00f5d4"/>
+      <text x="375" y="22" fill="#07090e" font-size="10" class="mono" font-weight="bold" text-anchor="middle">ACTIVE</text>
+
+      <!-- Terminal content -->
+      <g class="mono" font-size="11">
+        <text x="24" y="68" fill="#10b981">PS D:\WinScroller2D&gt; cargo run --release</text>
+        <text x="24" y="92" fill="#38bdf8">[INFO] Initializing WinScroller 2D Engine</text>
+        <text x="24" y="116" fill="#f59e0b">[DWM] Native VSync sync @ 120.00 Hz</text>
+        <text x="24" y="140" fill="#a855f7">[PEEK] Horizontal margin: 64px | Vertical: 48px</text>
+        <text x="24" y="164" fill="#e2e8f0">[SPARSE] Sparse matrix coordinates (1, 0)</text>
+        <text x="24" y="188" fill="#10b981">[HOOKS] Low-Level WH_KEYBOARD_LL active</text>
+        
+        <rect x="24" y="210" width="370" height="1" fill="rgba(255, 255, 255, 0.1)"/>
+        
+        <text x="24" y="235" fill="#64748b">Spring Velocity: vx = 0.0 px/s, vy = 0.0 px/s</text>
+        <text x="24" y="258" fill="#00f5d4">Ready for Win+Arrows 2D spatial navigation</text>
+        <rect x="24" y="275" width="10" height="16" fill="#00f5d4"/>
+      </g>
+
+      <!-- App Logo Badge -->
+      <circle cx="210" cy="420" r="18" fill="#07090e" stroke="#00f5d4" stroke-width="2"/>
+      <text x="210" y="426" font-size="16" text-anchor="middle">🦀</text>
+    </g>
+
+    <!-- Right Peeking Window: Cell (2, 0) -->
+    <g transform="translate(880, 160)" filter="url(#shadowFilter)">
+      <rect width="260" height="380" rx="12" fill="#111827" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+      <path d="M 0 12 Q 0 0 12 0 L 248 0 Q 260 0 260 12 L 260 32 L 0 32 Z" fill="#182235"/>
+      <circle cx="16" cy="16" r="4" fill="#ef4444"/>
+      <circle cx="28" cy="16" r="4" fill="#f59e0b"/>
+      <circle cx="40" cy="16" r="4" fill="#10b981"/>
+      <text x="56" y="20" fill="#cbd5e1" font-size="11" class="mono">DWM Preview Docs</text>
+
+      <rect x="20" y="55" width="200" height="18" rx="4" fill="rgba(255, 255, 255, 0.08)"/>
+      <rect x="20" y="85" width="220" height="60" rx="4" fill="rgba(0, 245, 212, 0.06)"/>
+    </g>
+  </g>
+
+  <!-- ==================== PEEKING DIMENSION ANNOTATIONS ==================== -->
+
+  <!-- Left Peek Indicator -->
+  <g transform="translate(228, 300)" class="anim-peek">
+    <line x1="0" y1="0" x2="64" y2="0" stroke="#00f5d4" stroke-width="2"/>
+    <line x1="0" y1="-8" x2="0" y2="8" stroke="#00f5d4" stroke-width="2"/>
+    <line x1="64" y1="-8" x2="64" y2="8" stroke="#00f5d4" stroke-width="2"/>
+    <rect x="8" y="-22" width="80" height="18" rx="4" fill="#07090e" stroke="#00f5d4" stroke-width="1"/>
+    <text x="48" y="-10" fill="#00f5d4" font-size="9" class="mono" font-weight="bold" text-anchor="middle">peek_x: 64px</text>
+  </g>
+
+  <!-- Right Peek Indicator -->
+  <g transform="translate(908, 300)" class="anim-peek">
+    <line x1="0" y1="0" x2="64" y2="0" stroke="#00f5d4" stroke-width="2"/>
+    <line x1="0" y1="-8" x2="0" y2="8" stroke="#00f5d4" stroke-width="2"/>
+    <line x1="64" y1="-8" x2="64" y2="8" stroke="#00f5d4" stroke-width="2"/>
+    <rect x="-24" y="-22" width="80" height="18" rx="4" fill="#07090e" stroke="#00f5d4" stroke-width="1"/>
+    <text x="16" y="-10" fill="#00f5d4" font-size="9" class="mono" font-weight="bold" text-anchor="middle">peek_x: 64px</text>
+  </g>
+
+  <!-- Momentum Spring Velocity Arrow Concept -->
+  <g transform="translate(600, 680)">
+    <line x1="-120" y1="0" x2="120" y2="0" stroke="#ff5722" stroke-width="2.5" class="flow-line"/>
+    <polygon points="125,0 115,-5 115,5" fill="#ff5722"/>
+    <polygon points="-125,0 -115,-5 -115,5" fill="#ff5722"/>
+    <text x="0" y="-8" fill="#ff5722" font-size="10" class="mono" font-weight="bold" text-anchor="middle">120Hz DAMPED MOMENTUM FLIGHT (Win + Arrows)</text>
+  </g>
+
+  <!-- Top Concept Badge -->
+  <g transform="translate(600, 42)">
+    <rect x="-200" y="-18" width="400" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="url(#cyanGrad)" stroke-width="1.5" filter="url(#shadowFilter)"/>
+    <circle cx="-170" cy="0" r="5" fill="#00f5d4"/>
+    <text x="-155" y="4" fill="#f8fafc" font-size="12" font-weight="700">Infinite 2D Sparse Grid with Edge Peeking</text>
+    <text x="145" y="4" fill="#ff5722" font-size="10" class="mono" font-weight="bold">v0.1.0</text>
+  </g>
+</svg>

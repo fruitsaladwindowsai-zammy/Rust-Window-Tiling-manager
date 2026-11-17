@@ -8,6 +8,7 @@
 - [Keybindings & Shortcuts](./keyboard-shortcuts.md)
 - [Touchpad Gestures](./touchpad.md)
 - [Overview Mode (Win+O)](./overview-mode.md)
+- [Physics & 120Hz Dynamics](./physics.md)
 - [Multi-Monitor & Extended Displays](./multi-monitor.md)
 - [Administrator & Elevated Apps](./admin-apps.md)
 - [Configuration](./configuration.md)

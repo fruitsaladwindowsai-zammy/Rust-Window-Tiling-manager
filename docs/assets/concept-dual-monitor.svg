@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGlow4" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#111827" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#090d16" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#05070c" stop-opacity="1"/>
+    </radialGradient>
+
+    <linearGradient id="monCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#00b4d8"/>
+    </linearGradient>
+
+    <linearGradient id="monPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+
+    <filter id="neonBeam" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="shadowMon" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.75"/>
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes transferBeam {
+      0% { transform: translateX(0); opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateX(480px); opacity: 0; }
+    }
+    @keyframes pulseBoundary {
+      0%, 100% { stroke-opacity: 0.3; }
+      50% { stroke-opacity: 1; stroke-width: 3; }
+    }
+    .anim-beam { animation: transferBeam 3s infinite cubic-bezier(0.16, 1, 0.3, 1); }
+    .anim-bound { animation: pulseBoundary 2.5s infinite ease-in-out; }
+    
+    text { font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif; }
+    .mono { font-family: 'Fira Code', monospace; }
+  </style>
+
+  <!-- Deep Obsidian Background -->
+  <rect width="1200" height="750" fill="url(#bgGlow4)"/>
+
+  <!-- Top Title Badge -->
+  <g transform="translate(600, 48)">
+    <rect x="-240" y="-18" width="480" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="url(#monCyan)" stroke-width="1.5"/>
+    <circle cx="-210" cy="0" r="5" fill="#00f5d4"/>
+    <text x="-195" y="4" fill="#f8fafc" font-size="12" font-weight="700">Multi-Monitor Extended Mode (Zero Spillover)</text>
+    <text x="175" y="4" fill="#00f5d4" font-size="10" class="mono" font-weight="bold">0px Edge</text>
+  </g>
+
+  <!-- ==================== DISPLAY 1: PRIMARY 4K ==================== -->
+  <g transform="translate(100, 120)" filter="url(#shadowMon)">
+    <!-- Monitor Bezel -->
+    <rect width="470" height="420" rx="14" fill="#090d16" stroke="url(#monCyan)" stroke-width="2"/>
+    <rect x="8" y="8" width="454" height="404" rx="10" fill="#050810"/>
+    
+    <!-- Monitor Header -->
+    <rect x="15" y="15" width="440" height="26" rx="6" fill="#0f172a"/>
+    <text x="25" y="32" fill="#00f5d4" font-size="10" class="mono" font-weight="bold">MONITOR 1 (Primary — 3840×2160 @ 120Hz)</text>
+    <text x="440" y="32" fill="#64748b" font-size="9" class="mono" text-anchor="end">Canvas 1</text>
+
+    <!-- Active Window inside Monitor 1 -->
+    <g transform="translate(25, 60)">
+      <rect width="420" height="330" rx="10" fill="#0d1424" stroke="rgba(0, 245, 212, 0.4)" stroke-width="1.5"/>
+      <path d="M 0 10 Q 0 0 10 0 L 410 0 Q 420 0 420 10 L 420 28 L 0 28 Z" fill="#151e33"/>
+      <circle cx="14" cy="14" r="3.5" fill="#ef4444"/>
+      <circle cx="25" cy="14" r="3.5" fill="#f59e0b"/>
+      <circle cx="36" cy="14" r="3.5" fill="#10b981"/>
+      <text x="50" y="18" fill="#cbd5e1" font-size="10" class="mono">Development Workspace — Grid (0, 0)</text>
+
+      <!-- Content -->
+      <rect x="20" y="45" width="200" height="8" rx="4" fill="#00f5d4" opacity="0.6"/>
+      <rect x="20" y="65" width="340" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      <rect x="20" y="80" width="280" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      <rect x="20" y="95" width="310" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      
+      <rect x="20" y="125" width="380" height="170" rx="8" fill="rgba(0, 245, 212, 0.05)" stroke="rgba(0, 245, 212, 0.2)" stroke-width="1"/>
+      <text x="35" y="155" fill="#00f5d4" font-size="11" class="mono" font-weight="bold">✓ ZERO SPILLOVER BOUNDARY GUARANTEE</text>
+      <text x="35" y="180" fill="#94a3b8" font-size="10">Non-visible columns/rows are strictly cloaked at 0px.</text>
+      <text x="35" y="200" fill="#94a3b8" font-size="10">Zero title bar slivers or edge bleeding in corners.</text>
+      <text x="35" y="225" fill="#10b981" font-size="10" class="mono">DWM_CLOAKED: TRUE on all off-display geometry</text>
+    </g>
+  </g>
+
+  <!-- Strict Display Boundary Dividing Seam -->
+  <g transform="translate(585, 110)">
+    <line x1="0" y1="0" x2="0" y2="440" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4" class="anim-bound"/>
+    <rect x="-55" y="200" width="110" height="24" rx="12" fill="#07090e" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="0" y="216" fill="#f59e0b" font-size="9" class="mono" font-weight="bold" text-anchor="middle">STRICT 0px EDGE</text>
+  </g>
+
+  <!-- Cross-Monitor Transfer Particle / Beam -->
+  <g transform="translate(240, 280)" class="anim-beam" filter="url(#neonBeam)">
+    <rect width="140" height="80" rx="8" fill="rgba(168, 85, 247, 0.3)" stroke="#c084fc" stroke-width="2"/>
+    <text x="70" y="45" fill="#f8fafc" font-size="10" class="mono" font-weight="bold" text-anchor="middle">Win+Alt+Right</text>
+  </g>
+
+  <!-- ==================== DISPLAY 2: SECONDARY 4K ==================== -->
+  <g transform="translate(630, 120)" filter="url(#shadowMon)">
+    <rect width="470" height="420" rx="14" fill="#090d16" stroke="url(#monPurple)" stroke-width="2"/>
+    <rect x="8" y="8" width="454" height="404" rx="10" fill="#050810"/>
+
+    <rect x="15" y="15" width="440" height="26" rx="6" fill="#0f172a"/>
+    <text x="25" y="32" fill="#c084fc" font-size="10" class="mono" font-weight="bold">MONITOR 2 (Secondary — 3840×2160 @ 120Hz)</text>
+    <text x="440" y="32" fill="#64748b" font-size="9" class="mono" text-anchor="end">Canvas 2</text>
+
+    <!-- Secondary Workspace Content -->
+    <g transform="translate(25, 60)">
+      <rect width="420" height="330" rx="10" fill="#120f1e" stroke="rgba(168, 85, 247, 0.4)" stroke-width="1.5"/>
+      <path d="M 0 10 Q 0 0 10 0 L 410 0 Q 420 0 420 10 L 420 28 L 0 28 Z" fill="#1e1830"/>
+      <circle cx="14" cy="14" r="3.5" fill="#ef4444"/>
+      <circle cx="25" cy="14" r="3.5" fill="#f59e0b"/>
+      <circle cx="36" cy="14" r="3.5" fill="#10b981"/>
+      <text x="50" y="18" fill="#cbd5e1" font-size="10" class="mono">Documentation &amp; Preview — Grid (0, 0)</text>
+
+      <rect x="20" y="45" width="180" height="8" rx="4" fill="#c084fc" opacity="0.6"/>
+      <rect x="20" y="65" width="310" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+      <rect x="20" y="80" width="260" height="6" rx="3" fill="#64748b" opacity="0.4"/>
+
+      <!-- Mixed DPI Awareness Card -->
+      <rect x="20" y="125" width="380" height="170" rx="8" fill="rgba(168, 85, 247, 0.05)" stroke="rgba(168, 85, 247, 0.2)" stroke-width="1"/>
+      <text x="35" y="155" fill="#c084fc" font-size="11" class="mono" font-weight="bold">INDEPENDENT PER-MONITOR LATTICE</text>
+      <text x="35" y="180" fill="#94a3b8" font-size="10">COM IVirtualDesktopManager binds workspaces per display.</text>
+      <text x="35" y="200" fill="#94a3b8" font-size="10">Per-Monitor V2 DPI awareness guarantees razor-sharp fonts.</text>
+      <text x="35" y="225" fill="#10b981" font-size="10" class="mono">Hardware Edge Clipping: ZERO BLEED</text>
+    </g>
+  </g>
+
+  <!-- Bottom Annotation Bar -->
+  <g transform="translate(600, 680)">
+    <rect x="-300" y="-18" width="600" height="36" rx="8" fill="rgba(14, 20, 32, 0.9)" stroke="rgba(255, 255, 255, 0.1)"/>
+    <text x="0" y="4" fill="#94a3b8" font-size="11" class="mono" text-anchor="middle">
+      <tspan fill="#00f5d4" font-weight="bold">WinScroller 2D Architecture:</tspan> Independent coordinate space per (Monitor, VirtualDesktop) pair
+    </text>
+  </g>
+</svg>

@@ -5,8 +5,13 @@
 ![Platform: Windows 10 / 11](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6?style=flat-square)
 ![Rust Edition 2024](https://img.shields.io/badge/rust-Edition%202024-orange?style=flat-square)
 [![Windows CI](https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/actions/workflows/ci.yml)
+[![Website & Live Simulator](https://img.shields.io/badge/website-Live%20Simulator%20%26%20Showcase-00f5d4?style=flat-square&logo=googlechrome&logoColor=black)](https://fruitsaladwindowsai-zammy.github.io/Rust-Window-Tiling-manager/)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Architecture: Native Win32 + DWM](https://img.shields.io/badge/backend-Win32%20%2B%20DWM%20%2B%20HID-5C6BC0?style=flat-square)
+
+> 🌐 **Experience the Live Interactive Showcase & 2D Simulator**:  
+> Test WinScroller 2D directly in your browser with our interactive grid simulator, 120Hz mass-spring physics lab, and live configuration studio:  
+> [**fruitsaladwindowsai-zammy.github.io/Rust-Window-Tiling-manager**](https://fruitsaladwindowsai-zammy.github.io/Rust-Window-Tiling-manager/)
 
 ```text
   ┌─────────────────── 2D Infinite Scrolling Workspace ───────────────────┐
@@ -45,6 +50,30 @@
 | Multi-Monitor Extended Mode (Zero Spillover) | 2D Infinite Scrolling Workspace |
 |:---:|:---:|
 | ![Dual Monitor](docs/assets/dual-monitor.png) | ![2D Infinite Scroll](docs/assets/2d-infinite-scroll.jpg) |
+
+---
+
+### 📐 Architectural Concepts & System Mechanics
+
+| 2D Infinite Sparse Lattice Navigation | Niri-Style Cell Stacking & Split |
+|:---:|:---:|
+| ![2D Tiling Navigation](docs/assets/concept-tiling-snap.svg) | ![Cell Stacking Dynamics](docs/assets/concept-cell-stacking.svg) |
+| *Unbounded $(X,Y)$ sparse matrix with neighbor peeking* | *Card deck tabs (`Win+W`) vs vertical split cells* |
+
+| Live Acrylic `Win + O` Overview | Drag-to-Snap Horizontal Split |
+|:---:|:---:|
+| ![Live Overview Architecture](docs/assets/concept-overview.svg) | ![Split Snapping Dynamics](docs/assets/concept-split-snap.svg) |
+| *Frameless DWM thumbnails & dynamic fit-to-display* | *Drag onto window to combine into 50/50 split scroll* |
+
+| 120Hz Mass-Spring Physics ($m\ddot{x} + c\dot{x} + kx = 0$) | Dual Monitor Extended Mode (Zero Spillover) |
+|:---:|:---:|
+| ![Spring Physics Dynamics](docs/assets/concept-spring-physics.svg) | ![Dual Monitor Architecture](docs/assets/concept-dual-monitor.svg) |
+| *Underdamped harmonic oscillator with zero CPU idle* | *Strict 0px boundary clamping with zero display bleed* |
+
+| 100+ Windows Sparse Matrix Performance | Virtual Desktops & Multi-Monitor Matrix |
+|:---:|:---:|
+| ![100 Windows Performance](docs/assets/concept-100-windows.svg) | ![Virtual Desktops Architecture](docs/assets/concept-virtual-desktops.svg) |
+| *0.1% CPU & <15MB RAM via DWM cloaking culling* | *COM `IVirtualDesktopManager` per-desktop isolation* |
 
 --- 
 

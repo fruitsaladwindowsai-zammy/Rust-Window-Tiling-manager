@@ -1,10 +1,18 @@
 # Overview Mode (`Win+O`)
 
-The **Win+O** overview provides a live, interactive bird's-eye view of the active monitor and workspace.
+The **Win+O** overview provides a live, interactive bird's-eye view of your entire 2D coordinate canvas.
+
+![Overview Architecture](../assets/concept-overview.svg)
+
+---
+
+## 🎬 Live Walkthrough
 
 ![Overview Demo](../assets/overview-demo.gif)
 
-## Visual Design & Animations
+---
+
+## Visual Design & Architecture
 
 | Live Acrylic Overview | Card Navigation & Selection |
 |:---:|:---:|
@@ -13,23 +21,35 @@ The **Win+O** overview provides a live, interactive bird's-eye view of the activ
 - **Dynamic Fit-to-Display Layout**: Window thumbnails scale automatically based on the number of open windows so the entire layout fits cleanly within the display view without scrolling.
 - **Frameless App Previews + Bottom-Center Icons**: Renders live DWM thumbnails directly over Gaussian-blurred desktop wallpaper (`pure_blur` or `acrylic_clear`) with no opaque card box or titlebar text — displaying each app's icon centered along the bottom edge (plus stack dots when a cell holds multiple windows).
 - **Front/Back Transitions**: Pressing **Win+O** animates the active window backward into the grid; clicking a card or pressing `Enter` animates the highlighted window smoothly back to the front.
+- **Live Wallpaper Acrylic Filter**: Captures current Windows desktop wallpaper via `SystemParametersInfoW` and computes an in-memory box/Gaussian blur before rendering via DirectComposition.
 
-## Highlighted Close Button
+---
+
+## ✕ Spring-Animated Close Button
 
 - Only the **currently highlighted** card activates the close button (`hit_close_button` + `close_springs`).
 - Rendered as a vivid **red circle with a white `✕`** in the **top-right corner** of the card, clamped inside screen bounds (`close_button_rect`).
 - Animates in and out with dedicated spring physics and scales slightly when hovered.
-- Automatically hides while dragging a card (`active_drag`).
+- Automatically hides while dragging a card (`active_drag`) to prevent accidental closures during cell moves.
 
-## Drag-and-Drop Reordering & Snapping
+---
 
-![Tiling and Snapping Demo](../assets/tiling-snap-demo.gif)
+## 🔀 Drag-and-Drop Reordering & Horizontal Split Snapping
 
-- Dragging a window card shrinks the overview tiles smoothly and reveals available target grid slots.
-- Drop onto any occupied or empty coordinate to move or swap the window.
-- **Drag-to-Snap Horizontal Split**: Drop any window card onto another window to snap both together side-by-side ($50\% / 50\%$ width) into a unified view with infinite scroll between views!
-- Hold **`Shift`** while dropping to stack the window into the target cell.
+![Split Snapping Dynamics](../assets/concept-split-snap.svg)
+
+- **Interactive Dragging**: Dragging a window card shrinks surrounding tiles smoothly and reveals available target grid slots.
+- **Swap / Reorder**: Drop onto any occupied or empty coordinate to move or swap the window in the 2D lattice.
+- **Drag-to-Snap Horizontal Split**: Drop any window card directly onto another window to fuse both together side-by-side ($50\% / 50\%$ width) into a unified view with infinite scroll between views!
+- **Cell Stacking**: Hold **`Shift`** while dropping to stack the window into the target cell (Niri-style tabbed or split stack).
 
 | Snapped Dual-App Horizontal Split View |
 |:---:|
 | ![Split Horizontal Snap](../assets/split-horizontal-snap.png) |
+
+---
+
+## Clean Display Borders & Cloaking Guarantees
+
+1. **Zero Leftover Artifacts**: Windows off the visible screen edges are cleanly cloaked using DWM cloaking (`DWMWA_CLOAK`). No titlebar fragments or 1px window borders linger in corners.
+2. **Clean Centering on Exit**: Pressing `Win+Shift+Escape` uncloaks all windows and restores them centered on the physical screen without any leftover gaps.

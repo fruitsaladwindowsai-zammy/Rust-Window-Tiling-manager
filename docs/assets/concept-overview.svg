@@ -1,0 +1,301 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#121829" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#090d16" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#05070c" stop-opacity="1"/>
+    </radialGradient>
+    
+    <radialGradient id="acrylicAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#00f5d4" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#07090e" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Window Gradients -->
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#182235" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0e1524" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <linearGradient id="cyanBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5d4"/>
+      <stop offset="100%" stop-color="#00b4d8"/>
+    </linearGradient>
+
+    <linearGradient id="purpleBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+
+    <linearGradient id="snapGlowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffaa00" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#00f5d4" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffaa00" stop-opacity="0.8"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="neonCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="neonPurple" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <style>
+    /* Continuous Concept Animations */
+    @keyframes pulseAura {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+    @keyframes dragSnapCycle {
+      0%, 20% { transform: translate(0, 0); }
+      45%, 65% { transform: translate(-260px, 0); }
+      70%, 90% { transform: translate(-260px, 0) scale(0.96); }
+      100% { transform: translate(0, 0); }
+    }
+    @keyframes snapBoxPulse {
+      0%, 35% { opacity: 0; transform: scale(0.95); }
+      45%, 65% { opacity: 1; transform: scale(1); }
+      75%, 100% { opacity: 0; transform: scale(0.95); }
+    }
+    @keyframes floatCoords {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes scanline {
+      0% { transform: translateY(-750px); }
+      100% { transform: translateY(750px); }
+    }
+    .anim-aura { animation: pulseAura 8s infinite ease-in-out; transform-origin: 600px 375px; }
+    .anim-drag { animation: dragSnapCycle 7s infinite cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .anim-snap-indicator { animation: snapBoxPulse 7s infinite ease-in-out; transform-origin: 390px 375px; }
+    .anim-float { animation: floatCoords 4s infinite ease-in-out; }
+    
+    text {
+      font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    }
+    .mono {
+      font-family: 'Fira Code', monospace;
+    }
+  </style>
+
+  <!-- Deep Obsidian Canvas Background -->
+  <rect width="1200" height="750" fill="url(#bgGlow)"/>
+
+  <!-- Infinite 2D Grid Lattice Coordinates -->
+  <g stroke="rgba(255, 255, 255, 0.04)" stroke-width="1">
+    <!-- Vertical Grid Lines -->
+    <line x1="150" y1="0" x2="150" y2="750" stroke-dasharray="4 6"/>
+    <line x1="390" y1="0" x2="390" y2="750" stroke-dasharray="4 6"/>
+    <line x1="630" y1="0" x2="630" y2="750" stroke-dasharray="4 6"/>
+    <line x1="870" y1="0" x2="870" y2="750" stroke-dasharray="4 6"/>
+    <line x1="1050" y1="0" x2="1050" y2="750" stroke-dasharray="4 6"/>
+
+    <!-- Horizontal Grid Lines -->
+    <line x1="0" y1="180" x2="1200" y2="180" stroke-dasharray="4 6"/>
+    <line x1="0" y1="375" x2="1200" y2="375" stroke-dasharray="4 6"/>
+    <line x1="0" y1="570" x2="1200" y2="570" stroke-dasharray="4 6"/>
+  </g>
+
+  <!-- Acrylic Wallpaper Blur Aura -->
+  <ellipse cx="600" cy="375" rx="550" ry="340" fill="url(#acrylicAura)" class="anim-aura"/>
+
+  <!-- Coordinate Lattice Labels -->
+  <g class="mono" font-size="11" fill="rgba(255, 255, 255, 0.25)">
+    <text x="140" y="165" text-anchor="end">(-1, -1)</text>
+    <text x="380" y="165" text-anchor="end">(0, -1)</text>
+    <text x="620" y="165" text-anchor="end">(1, -1)</text>
+    <text x="860" y="165" text-anchor="end">(2, -1)</text>
+
+    <text x="140" y="360" text-anchor="end">(-1, 0)</text>
+    <text x="380" y="360" text-anchor="end">(0, 0)</text>
+    <text x="620" y="360" text-anchor="end">(1, 0) [FOCUS]</text>
+    <text x="860" y="360" text-anchor="end">(2, 0)</text>
+
+    <text x="380" y="555" text-anchor="end">(0, 1)</text>
+    <text x="620" y="555" text-anchor="end">(1, 1)</text>
+  </g>
+
+  <!-- Live 2D Overview Camera Frustum Boundary -->
+  <rect x="180" y="90" width="840" height="570" rx="20" fill="none" stroke="rgba(168, 85, 247, 0.4)" stroke-width="2" stroke-dasharray="8 6"/>
+  <rect x="184" y="94" width="832" height="562" rx="16" fill="rgba(168, 85, 247, 0.02)"/>
+
+  <!-- ==================== SPATIAL WINDOW TILES ==================== -->
+
+  <!-- Window 1: Cell (0, 0) — Code Editor / Neovim -->
+  <g transform="translate(280, 260)" filter="url(#dropShadow)">
+    <rect width="220" height="150" rx="10" fill="url(#cardGrad)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5"/>
+    <!-- Header -->
+    <path d="M 0 10 Q 0 0 10 0 L 210 0 Q 220 0 220 10 L 220 28 L 0 28 Z" fill="#141c2c"/>
+    <circle cx="12" cy="14" r="3.5" fill="#ef4444"/>
+    <circle cx="22" cy="14" r="3.5" fill="#f59e0b"/>
+    <circle cx="32" cy="14" r="3.5" fill="#10b981"/>
+    <text x="44" y="17" fill="#94a3b8" font-size="9" class="mono">crates/core/spring.rs</text>
+    <rect x="175" y="6" width="36" height="15" rx="3" fill="rgba(255, 255, 255, 0.08)"/>
+    <text x="193" y="16" fill="#00f5d4" font-size="8" class="mono" text-anchor="middle">(0, 0)</text>
+    
+    <!-- Code Lines Schematic -->
+    <rect x="15" y="42" width="60" height="5" rx="2.5" fill="#f43f5e" opacity="0.8"/>
+    <rect x="80" y="42" width="90" height="5" rx="2.5" fill="#38bdf8" opacity="0.8"/>
+    <rect x="25" y="55" width="120" height="5" rx="2.5" fill="#34d399" opacity="0.7"/>
+    <rect x="25" y="68" width="80" height="5" rx="2.5" fill="#64748b" opacity="0.6"/>
+    <rect x="15" y="81" width="45" height="5" rx="2.5" fill="#f43f5e" opacity="0.8"/>
+    <rect x="25" y="94" width="140" height="5" rx="2.5" fill="#e2e8f0" opacity="0.6"/>
+    <rect x="25" y="107" width="95" height="5" rx="2.5" fill="#c084fc" opacity="0.8"/>
+    <rect x="15" y="120" width="30" height="5" rx="2.5" fill="#f43f5e" opacity="0.8"/>
+
+    <!-- Bottom App Identity Icon Badge -->
+    <circle cx="110" cy="150" r="14" fill="#0f172a" stroke="#00f5d4" stroke-width="1.5"/>
+    <text x="110" y="154" font-size="12" text-anchor="middle">🦀</text>
+  </g>
+
+  <!-- Magnetic Snap Indicator Zone (Fires during drag cycle) -->
+  <g class="anim-snap-indicator" pointer-events="none">
+    <rect x="270" y="250" width="240" height="170" rx="14" fill="rgba(255, 170, 0, 0.08)" stroke="url(#snapGlowGrad)" stroke-width="2.5" stroke-dasharray="6 4" filter="url(#neonCyan)"/>
+    <rect x="330" y="232" width="120" height="20" rx="10" fill="#ffaa00"/>
+    <text x="390" y="245" fill="#07090e" font-size="10" font-weight="700" text-anchor="middle">SNAP 50/50 DUAL VIEW</text>
+  </g>
+
+  <!-- Window 2: Cell (1, 0) — Terminal / Build (Active Focus & Drag Source) -->
+  <g transform="translate(520, 260)" class="anim-drag" filter="url(#dropShadow)">
+    <rect width="220" height="150" rx="10" fill="url(#cardGrad)" stroke="url(#cyanBorder)" stroke-width="2.5" filter="url(#neonCyan)"/>
+    <!-- Header -->
+    <path d="M 0 10 Q 0 0 10 0 L 210 0 Q 220 0 220 10 L 220 28 L 0 28 Z" fill="#141c2c"/>
+    <circle cx="12" cy="14" r="3.5" fill="#ef4444"/>
+    <circle cx="22" cy="14" r="3.5" fill="#f59e0b"/>
+    <circle cx="32" cy="14" r="3.5" fill="#10b981"/>
+    <text x="44" y="17" fill="#00f5d4" font-size="9" class="mono" font-weight="bold">Elevated PS — cargo run</text>
+    <rect x="170" y="6" width="44" height="15" rx="3" fill="#00f5d4"/>
+    <text x="192" y="16" fill="#07090e" font-size="8" class="mono" font-weight="bold" text-anchor="middle">(1, 0)</text>
+
+    <!-- Terminal Lines -->
+    <text x="15" y="48" fill="#10b981" font-size="8" class="mono">Compiling winscroller2d v0.1.0</text>
+    <text x="15" y="62" fill="#00f5d4" font-size="8" class="mono">Finished release in 3.4s</text>
+    <text x="15" y="76" fill="#f59e0b" font-size="8" class="mono">[DWM] Native acrylic hooks ready</text>
+    <text x="15" y="90" fill="#c084fc" font-size="8" class="mono">[SPRING] 120Hz physics sync</text>
+    <text x="15" y="104" fill="#38bdf8" font-size="8" class="mono">WinScroller 2D active [Win+O]</text>
+    <rect x="15" y="116" width="8" height="12" fill="#00f5d4"/>
+
+    <!-- Bottom App Identity Icon Badge -->
+    <circle cx="110" cy="150" r="14" fill="#0f172a" stroke="#00f5d4" stroke-width="1.5"/>
+    <text x="110" y="154" font-size="12" text-anchor="middle">⚡</text>
+  </g>
+
+  <!-- Window 3: Cell (2, 0) — Browser / Documentation -->
+  <g transform="translate(760, 260)" filter="url(#dropShadow)">
+    <rect width="220" height="150" rx="10" fill="url(#cardGrad)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5"/>
+    <path d="M 0 10 Q 0 0 10 0 L 210 0 Q 220 0 220 10 L 220 28 L 0 28 Z" fill="#141c2c"/>
+    <circle cx="12" cy="14" r="3.5" fill="#ef4444"/>
+    <circle cx="22" cy="14" r="3.5" fill="#f59e0b"/>
+    <circle cx="32" cy="14" r="3.5" fill="#10b981"/>
+    <text x="44" y="17" fill="#94a3b8" font-size="9" class="mono">docs/overview-mode.md</text>
+    <rect x="175" y="6" width="36" height="15" rx="3" fill="rgba(255, 255, 255, 0.08)"/>
+    <text x="193" y="16" fill="#a855f7" font-size="8" class="mono" text-anchor="middle">(2, 0)</text>
+
+    <!-- Browser URL bar -->
+    <rect x="15" y="38" width="190" height="16" rx="4" fill="rgba(255, 255, 255, 0.06)"/>
+    <text x="24" y="49" fill="#64748b" font-size="7" class="mono">https://winscroller2d.local/docs</text>
+    
+    <text x="15" y="74" fill="#00f5d4" font-size="9" font-weight="bold">Live DWM Thumbnails</text>
+    <rect x="15" y="84" width="190" height="4" rx="2" fill="rgba(255, 255, 255, 0.2)"/>
+    <rect x="15" y="93" width="160" height="4" rx="2" fill="rgba(255, 255, 255, 0.15)"/>
+    <rect x="15" y="102" width="175" height="4" rx="2" fill="rgba(255, 255, 255, 0.15)"/>
+    <rect x="15" y="111" width="120" height="4" rx="2" fill="rgba(255, 255, 255, 0.15)"/>
+
+    <circle cx="110" cy="150" r="14" fill="#0f172a" stroke="#a855f7" stroke-width="1.5"/>
+    <text x="110" y="154" font-size="12" text-anchor="middle">🌐</text>
+  </g>
+
+  <!-- Window 4: Cell (1, 1) — Dev Community / Chat -->
+  <g transform="translate(520, 450)" filter="url(#dropShadow)">
+    <rect width="220" height="150" rx="10" fill="url(#cardGrad)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5"/>
+    <path d="M 0 10 Q 0 0 10 0 L 210 0 Q 220 0 220 10 L 220 28 L 0 28 Z" fill="#141c2c"/>
+    <circle cx="12" cy="14" r="3.5" fill="#ef4444"/>
+    <circle cx="22" cy="14" r="3.5" fill="#f59e0b"/>
+    <circle cx="32" cy="14" r="3.5" fill="#10b981"/>
+    <text x="44" y="17" fill="#94a3b8" font-size="9" class="mono">#winscroller-dev</text>
+    <rect x="175" y="6" width="36" height="15" rx="3" fill="rgba(255, 255, 255, 0.08)"/>
+    <text x="193" y="16" fill="#38bdf8" font-size="8" class="mono" text-anchor="middle">(1, 1)</text>
+
+    <!-- Chat Messages -->
+    <rect x="12" y="38" width="196" height="26" rx="6" fill="rgba(255, 255, 255, 0.04)"/>
+    <text x="20" y="52" fill="#38bdf8" font-size="7.5" font-weight="bold">@zammy:</text>
+    <text x="60" y="52" fill="#cbd5e1" font-size="7.5">Zero corner spillover merged!</text>
+
+    <rect x="12" y="70" width="196" height="26" rx="6" fill="rgba(255, 255, 255, 0.04)"/>
+    <text x="20" y="84" fill="#a855f7" font-size="7.5" font-weight="bold">@dev_42:</text>
+    <text x="60" y="84" fill="#cbd5e1" font-size="7.5">120Hz mass-spring feels so responsive.</text>
+
+    <circle cx="110" cy="150" r="14" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="110" y="154" font-size="12" text-anchor="middle">💬</text>
+  </g>
+
+  <!-- Window 5: Cell (0, 1) — Hardware Oscilloscope -->
+  <g transform="translate(280, 450)" filter="url(#dropShadow)">
+    <rect width="220" height="150" rx="10" fill="url(#cardGrad)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5"/>
+    <path d="M 0 10 Q 0 0 10 0 L 210 0 Q 220 0 220 10 L 220 28 L 0 28 Z" fill="#141c2c"/>
+    <circle cx="12" cy="14" r="3.5" fill="#ef4444"/>
+    <circle cx="22" cy="14" r="3.5" fill="#f59e0b"/>
+    <circle cx="32" cy="14" r="3.5" fill="#10b981"/>
+    <text x="44" y="17" fill="#94a3b8" font-size="9" class="mono">120Hz Physics Oscilloscope</text>
+    <rect x="175" y="6" width="36" height="15" rx="3" fill="rgba(255, 255, 255, 0.08)"/>
+    <text x="193" y="16" fill="#10b981" font-size="8" class="mono" text-anchor="middle">(0, 1)</text>
+
+    <!-- Waveform Canvas Mockup -->
+    <path d="M 15 80 Q 40 40 65 80 T 115 80 T 165 80 T 205 80" fill="none" stroke="#00f5d4" stroke-width="2" filter="url(#neonCyan)"/>
+    <text x="15" y="112" fill="#94a3b8" font-size="8" class="mono">Settling: 184ms | Damping: 0.68</text>
+    <text x="15" y="125" fill="#10b981" font-size="8" class="mono">Memory: 18.4 MB (Pure Native Rust)</text>
+
+    <circle cx="110" cy="150" r="14" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
+    <text x="110" y="154" font-size="12" text-anchor="middle">📊</text>
+  </g>
+
+  <!-- ==================== HOLOGRAPHIC CONCEPT OVERLAY HUD ==================== -->
+
+  <!-- Top Center Concept Badge -->
+  <g transform="translate(600, 48)" class="anim-float">
+    <rect x="-180" y="-18" width="360" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="url(#purpleBorder)" stroke-width="1.5" filter="url(#dropShadow)"/>
+    <circle cx="-150" cy="0" r="5" fill="#c084fc"/>
+    <text x="-135" y="4" fill="#f8fafc" font-size="12" font-weight="700">WinScroller 2D Architectural Concept</text>
+    <text x="120" y="4" fill="#00f5d4" font-size="10" class="mono" font-weight="bold">Win+O Lens</text>
+  </g>
+
+  <!-- Drag-to-Snap Concept Annotation Banner -->
+  <g transform="translate(600, 685)">
+    <rect x="-290" y="-22" width="580" height="44" rx="12" fill="rgba(10, 15, 26, 0.92)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1"/>
+    <text x="-270" y="5" fill="#00f5d4" font-size="14">✦</text>
+    <text x="-250" y="5" fill="#e2e8f0" font-size="12">
+      <tspan font-weight="bold" fill="#00f5d4">Drag-to-Snap Architecture:</tspan> Dragging cell (1,0) onto cell (0,0) fuses both into 50/50 dual split
+    </text>
+  </g>
+
+  <!-- Bottom Left Telemetry HUD -->
+  <g transform="translate(45, 680)">
+    <rect width="180" height="45" rx="8" fill="rgba(14, 20, 32, 0.85)" stroke="rgba(255, 255, 255, 0.08)"/>
+    <text x="12" y="18" fill="#64748b" font-size="9" class="mono">CANVAS TOPOLOGY</text>
+    <text x="12" y="34" fill="#00f5d4" font-size="11" class="mono" font-weight="bold">UNBOUNDED 2D SPARSE</text>
+  </g>
+
+  <!-- Bottom Right Telemetry HUD -->
+  <g transform="translate(975, 680)">
+    <rect width="180" height="45" rx="8" fill="rgba(14, 20, 32, 0.85)" stroke="rgba(255, 255, 255, 0.08)"/>
+    <text x="12" y="18" fill="#64748b" font-size="9" class="mono">MOTION DYNAMICS</text>
+    <text x="12" y="34" fill="#c084fc" font-size="11" class="mono" font-weight="bold">120Hz MASS-SPRING</text>
+  </g>
+</svg>

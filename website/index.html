@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WinScroller 2D — Infinite 2D Scrolling & Tiling Window Manager for Windows 10/11</title>
+  <meta name="description" content="Infinite 2D scrolling and tiling window manager for Windows 10/11. Featuring Niri-style column stacking, 120Hz mass-spring physics, interactive Win+O acrylic overview, and drag-to-split snapping.">
+  <meta name="keywords" content="WinScroller 2D, Rust, Window Manager, Windows 11, Tiling Window Manager, Niri, Hyprland, Mass Spring Physics, DWM, Acrylic">
+  
+  <!-- Open Graph / Social Meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="WinScroller 2D — Infinite 2D Scrolling Window Manager">
+  <meta property="og:description" content="Infinite 2D scrolling & tiling for Windows 10/11. 120Hz springs, Win+O live overview, and drag-to-split snapping in pure native Rust.">
+  <meta property="og:image" content="assets/overview-mode.jpg">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230f172a'/><rect x='4' y='4' width='10' height='10' rx='2' fill='%2300f5d4'/><rect x='18' y='4' width='10' height='24' rx='2' fill='%237928ca'/><rect x='4' y='18' width='10' height='10' rx='2' fill='%23f74c00'/></svg>">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+  <!-- Interactive Canvas Background -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <!-- Ambient Aurora Glows -->
+  <div class="aurora-glow aurora-cyan" aria-hidden="true"></div>
+  <div class="aurora-glow aurora-violet" aria-hidden="true"></div>
+  <div class="aurora-glow aurora-rust" aria-hidden="true"></div>
+
+  <!-- Custom Cursor Glow Follower -->
+  <div id="cursor-glow" aria-hidden="true"></div>
+
+  <!-- Floating Audio & Mode Controls -->
+  <div class="floating-controls" role="toolbar" aria-label="Experience controls">
+    <button id="sound-toggle" class="control-btn" title="Toggle UI Sound Effects" aria-label="Toggle UI Sound Effects">
+      <span class="icon-speaker">🔊</span>
+      <span class="btn-text">SFX: ON</span>
+    </button>
+    <button id="perf-toggle" class="control-btn" title="Toggle 120Hz Animation Mode" aria-label="Toggle Animation Quality">
+      <span class="icon-bolt">⚡</span>
+      <span class="btn-text">120Hz Spring</span>
+    </button>
+  </div>
+
+  <!-- Main Navigation Bar -->
+  <header class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#hero" class="brand-logo" aria-label="WinScroller 2D Home">
+        <div class="logo-mark">
+          <span class="grid-dot top-left"></span>
+          <span class="grid-dot top-right"></span>
+          <span class="grid-dot btm-left"></span>
+          <span class="grid-dot btm-right"></span>
+          <span class="logo-core">2D</span>
+        </div>
+        <div class="logo-text">
+          <span class="brand-name">WinScroller</span>
+          <span class="brand-tag">2D</span>
+        </div>
+      </a>
+
+      <nav class="nav-links" id="nav-links">
+        <a href="#simulator" class="nav-link"><span class="nav-highlight">●</span> Live Simulator</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#overview-spotlight" class="nav-link">Win+O Overview</a>
+        <a href="#physics-lab" class="nav-link">120Hz Springs</a>
+        <a href="#gallery" class="nav-link">Media Gallery</a>
+        <a href="#keybindings" class="nav-link">Shortcuts</a>
+        <a href="#config-studio" class="nav-link">Config Studio</a>
+        <a href="#comparison" class="nav-link">Compare</a>
+        <a href="#install" class="nav-link">Install</a>
+        <a href="docs/" class="nav-link" title="Full mdBook Manual">Docs 📖</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager" target="_blank" rel="noopener noreferrer" class="github-btn" title="Star on GitHub">
+          <svg class="gh-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span class="gh-label">Star</span>
+          <span class="gh-count" id="star-count">★ 24</span>
+        </a>
+        <a href="#simulator" class="cta-nav-btn pulse-glow">Try Interactive Demo</a>
+      </div>
+
+      <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle Navigation Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO SECTION -->
+    <section class="hero-section" id="hero">
+      <div class="hero-particles-glow"></div>
+      <div class="hero-content">
+        <!-- Floating Pill Badges -->
+        <div class="hero-badges-wrapper">
+          <span class="badge badge-rust">
+            <span class="badge-dot"></span> Rust Edition 2024
+          </span>
+          <span class="badge badge-cyan">
+            <span class="badge-icon">⚡</span> 120Hz Mass-Spring Physics
+          </span>
+          <span class="badge badge-purple">
+            <span class="badge-icon">🪟</span> Win32 & DWM Native
+          </span>
+          <span class="badge badge-green">
+            <span class="badge-dot pulse"></span> v0.1.0 Released
+          </span>
+        </div>
+
+        <h1 class="hero-title">
+          The Infinite <span class="gradient-text gradient-cyan">2D Scrolling</span><br>
+          Window Manager for <span class="gradient-text gradient-rust">Windows</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Break out of rigid screen zones. Navigate an unbounded 2D sparse grid with 
+          <strong>Niri-style cell stacking</strong>, buttery <strong>120Hz mass-spring dynamics</strong>, 
+          and an instant <strong><code>Win+O</code> acrylic overview</strong> with intuitive drag-to-split snapping.
+        </p>
+
+        <!-- Primary Call to Actions -->
+        <div class="hero-cta-group">
+          <a href="#simulator" class="btn btn-primary btn-glow">
+            <span class="btn-icon">🎮</span>
+            <span>Launch Interactive Simulator</span>
+            <span class="btn-arrow">→</span>
+          </a>
+          <a href="#install" class="btn btn-secondary">
+            <span class="btn-icon">⚡</span>
+            <span>Quick Start Guide</span>
+          </a>
+          <a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/releases" target="_blank" rel="noopener noreferrer" class="btn btn-glass">
+            <span class="btn-icon">📦</span>
+            <span>Download v0.1.0 (.exe)</span>
+          </a>
+        </div>
+
+        <!-- Animated One-Line Terminal Copy -->
+        <div class="hero-install-box" id="hero-quick-install">
+          <div class="install-bar">
+            <span class="terminal-prompt">PS &gt;</span>
+            <code class="terminal-cmd" id="quick-cmd">winget install --id Git.Git Rustlang.Rustup</code>
+            <button class="copy-cmd-btn" id="copy-quick-cmd" title="Copy to clipboard">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+              </svg>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+          <div class="install-hint">Runs with Automatic Administrator Elevation (UIPI) for global shortcut capture.</div>
+        </div>
+
+        <!-- Hero Stats / Metrics Row -->
+        <div class="hero-stats-row">
+          <div class="stat-card">
+            <div class="stat-num counter" data-target="120">0</div>
+            <div class="stat-unit">Hz</div>
+            <div class="stat-desc">Hardware-paced Spring Physics</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">0<span class="stat-unit">px</span></div>
+            <div class="stat-desc">Edge Margin (Zero Corner Spillover)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num counter" data-target="24">0</div>
+            <div class="stat-unit">/24</div>
+            <div class="stat-desc">Passing Rust Layout Unit Tests</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">&infin;<span class="stat-unit"> 2D</span></div>
+            <div class="stat-desc">Unbounded Sparse Workspace Coordinates</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Visual Teaser: Floating 3D Tilting Card Preview -->
+      <div class="hero-preview-wrapper">
+        <div class="hero-preview-card" id="hero-tilt-card">
+          <div class="preview-header">
+            <div class="window-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="preview-title">WinScroller 2D — 3D Architectural Concept View [Coordinate: (1, 0)]</div>
+            <div class="preview-badge">120 FPS Active</div>
+          </div>
+          <div class="preview-screen">
+            <img src="assets/concept-hero-3d.jpg" alt="WinScroller 2D 3D Isometric Concept View" class="preview-gif">
+            <div class="preview-overlay-info">
+              <span class="overlay-pill">Conceptual Matrix Architecture</span>
+              <span class="overlay-pill">Infinite 2D Sparse Canvas</span>
+              <span class="overlay-pill">Press <strong>Win + O</strong> for Live Overview</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: LIVE INTERACTIVE 2D SIMULATOR -->
+    <section class="simulator-section" id="simulator">
+      <div class="section-header text-center">
+        <div class="section-tag"><span class="pulse-dot"></span> Interactive Playground</div>
+        <h2 class="section-title">Experience the 2D Infinite Canvas Live</h2>
+        <p class="section-subtitle">
+          Test real spring physics, Niri cell stacks, neighbor peeking, and overview drag-snapping directly in your browser.
+        </p>
+      </div>
+
+      <div class="simulator-container">
+        <!-- Scale & Multi-Monitor Stress Lab Toolbar -->
+        <div class="sim-density-bar">
+          <div class="density-group">
+            <span class="bar-label">⚡ WINDOW DENSITY:</span>
+            <button class="density-btn" data-count="100">100 Windows (10×10 Matrix)</button>
+            <button class="density-btn" data-count="50">50 Windows (10×5 Grid)</button>
+            <button class="density-btn" data-count="25">25 Windows (5×5 Lattice)</button>
+            <button class="density-btn active" data-count="5">5 Windows (Default)</button>
+          </div>
+
+          <div class="density-group">
+            <span class="bar-label">🖥️ DISPLAY TOPOLOGY:</span>
+            <button class="topology-btn active" data-topo="single">Single Monitor (4K)</button>
+            <button class="topology-btn" data-topo="dual">Dual 4K Extended (0px Seam)</button>
+            <button class="topology-btn" data-topo="triple">Triple Monitor Surround</button>
+          </div>
+
+          <div class="density-group">
+            <span class="bar-label">🪟 VIRTUAL DESKTOPS:</span>
+            <button class="vdesk-btn active" data-desk="1">Desktop 1: Rust Core 🦀</button>
+            <button class="vdesk-btn" data-desk="2">Desktop 2: Docs &amp; Web 🌐</button>
+            <button class="vdesk-btn" data-desk="3">Desktop 3: DevOps ⚡</button>
+            <button class="vdesk-btn" data-desk="4">Desktop 4: Comm 💬</button>
+          </div>
+        </div>
+
+        <!-- Simulator Controls Bar -->
+        <div class="sim-toolbar">
+          <div class="sim-status-group">
+            <div class="status-indicator live"></div>
+            <span class="sim-coords" id="sim-coords-display">Camera Focus: <strong>Col: 1, Row: 0</strong></span>
+            <span class="sim-mode-tag" id="sim-mode-tag">Mode: TILING CANVAS</span>
+            <span class="sim-count-badge" id="sim-count-badge">Active: 5 Windows</span>
+          </div>
+
+          <div class="sim-actions-group">
+            <button class="sim-action-btn" id="btn-toggle-overview" title="Trigger Live Acrylic Overview (Win+O)">
+              <span class="btn-icon">🔍</span>
+              <span>Overview [Win+O]</span>
+            </button>
+            <button class="sim-action-btn" id="btn-toggle-split" title="Toggle Split vs Tabbed Stacking (Win+W)">
+              <span class="btn-icon">🪟</span>
+              <span>Stack Mode [Win+W]</span>
+            </button>
+            <button class="sim-action-btn" id="btn-consume-window" title="Consume Window into Stack (Win+,)">
+              <span class="btn-icon">📥</span>
+              <span>Consume [Win+,]</span>
+            </button>
+            <button class="sim-action-btn" id="btn-resize-step" title="Cycle Cell Width Preset (Win+=)">
+              <span class="btn-icon">↔</span>
+              <span>Cycle Width</span>
+            </button>
+            <button class="sim-action-btn" id="btn-reset-cam" title="Center Focus (Win+C)">
+              <span class="btn-icon">🎯</span>
+              <span>Center [Win+C]</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- The Viewport -->
+        <div class="sim-viewport" id="sim-viewport" tabindex="0" aria-label="Interactive 2D Workspace Sandbox">
+          <div class="sim-acrylic-backdrop" id="sim-backdrop"></div>
+          
+          <!-- Virtual 2D Infinite Canvas Root -->
+          <div class="sim-canvas" id="sim-canvas">
+            <!-- Cell (0, 0): Code Editor / Neovim -->
+            <div class="sim-window-cell" data-col="0" data-row="0" id="win-editor" style="left: -480px; top: 0px;">
+              <div class="sim-window-header">
+                <div class="sim-window-title">
+                  <span class="win-app-icon">🦀</span>
+                  <span>crates/winscroller2d-core/src/spring.rs — Neovim</span>
+                </div>
+                <div class="sim-window-badges">
+                  <span class="win-coord-badge">(0, 0)</span>
+                </div>
+              </div>
+              <div class="sim-window-body code-theme">
+                <pre><code><span class="tok-kw">pub struct</span> <span class="tok-type">SpringPhysics</span> {
+    <span class="tok-kw">pub</span> stiffness: <span class="tok-type">f32</span>, <span class="tok-comment">// 380.0</span>
+    <span class="tok-kw">pub</span> damping: <span class="tok-type">f32</span>,   <span class="tok-comment">// 24.0 (underdamped)</span>
+    <span class="tok-kw">pub</span> mass: <span class="tok-type">f32</span>,      <span class="tok-comment">// 1.0</span>
+}
+
+<span class="tok-kw">impl</span> <span class="tok-type">SpringPhysics</span> {
+    <span class="tok-kw">pub fn</span> <span class="tok-fn">step</span>(&amp;<span class="tok-kw">mut self</span>, dt: <span class="tok-type">f32</span>) -&gt; <span class="tok-type">f32</span> {
+        <span class="tok-kw">let</span> force = -<span class="tok-kw">self</span>.stiffness * <span class="tok-kw">self</span>.pos 
+                    - <span class="tok-kw">self</span>.damping * <span class="tok-kw">self</span>.vel;
+        <span class="tok-kw">self</span>.vel += (force / <span class="tok-kw">self</span>.mass) * dt;
+        <span class="tok-kw">self</span>.pos += <span class="tok-kw">self</span>.vel * dt;
+        <span class="tok-kw">self</span>.pos
+    }
+}</code></pre>
+              </div>
+            </div>
+
+            <!-- Cell (1, 0): Terminal with Rust Build (Focused by default) -->
+            <div class="sim-window-cell active-focus" data-col="1" data-row="0" id="win-terminal" style="left: 0px; top: 0px;">
+              <div class="sim-window-header">
+                <div class="sim-window-title">
+                  <span class="win-app-icon">⚡</span>
+                  <span>PowerShell (Elevated High Integrity) — cargo run --release</span>
+                </div>
+                <div class="sim-window-badges">
+                  <span class="win-coord-badge active">(1, 0) Focus</span>
+                </div>
+              </div>
+              <div class="sim-window-body term-theme">
+                <div class="term-line"><span class="term-green">   Compiling</span> winscroller2d-core v0.1.0</div>
+                <div class="term-line"><span class="term-green">   Compiling</span> winscroller2d v0.1.0 (crates/winscroller2d)</div>
+                <div class="term-line"><span class="term-cyan">    Finished</span> release [optimized] target(s) in 3.42s</div>
+                <div class="term-line"><span class="term-yellow">[INFO]</span> Initializing Low-Level Win32 Hooks (WH_KEYBOARD_LL)...</div>
+                <div class="term-line"><span class="term-yellow">[INFO]</span> Initialized IVirtualDesktopManager COM interface.</div>
+                <div class="term-line"><span class="term-purple">[SPRING]</span> 120Hz display refresh timer attached (DWM sync).</div>
+                <div class="term-line"><span class="term-green">[SUCCESS]</span> WinScroller 2D active. Press Win+O for overview.</div>
+                <div class="term-cursor-line"><span class="term-prompt">PS &gt;</span> <span class="term-cursor">_</span></div>
+              </div>
+            </div>
+
+            <!-- Cell (2, 0): Browser / Docs Preview -->
+            <div class="sim-window-cell" data-col="2" data-row="0" id="win-browser" style="left: 480px; top: 0px;">
+              <div class="sim-window-header">
+                <div class="sim-window-title">
+                  <span class="win-app-icon">🌐</span>
+                  <span>WinScroller 2D — Architecture &amp; DWM thumbnail Docs</span>
+                </div>
+                <div class="sim-window-badges">
+                  <span class="win-coord-badge">(2, 0)</span>
+                </div>
+              </div>
+              <div class="sim-window-body web-theme">
+                <div class="browser-address-bar">
+                  <span class="ssl-lock">🔒</span>
+                  <span class="url-text">https://winscroller2d.local/docs/overview-mode</span>
+                </div>
+                <div class="browser-content">
+                  <h4>Live DWM Thumbnails &amp; Acrylic Blur</h4>
+                  <p>In <code>Win+O</code> Overview mode, WinScroller 2D registers live Win32 DWM thumbnails with acrylic wallpaper blur for instant visual navigation without rendering lag.</p>
+                  <div class="sample-tag-row">
+                    <span class="mini-tag">DWMWA_BORDER_COLOR</span>
+                    <span class="mini-tag">pure_blur</span>
+                    <span class="mini-tag">acrylic_clear</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cell (1, 1): Docs / Preview (Vertical neighbor) -->
+            <div class="sim-window-cell" data-col="1" data-row="1" id="win-chat" style="left: 0px; top: 380px;">
+              <div class="sim-window-header">
+                <div class="sim-window-title">
+                  <span class="win-app-icon">💬</span>
+                  <span>#dev-chat — WinScroller 2D Community</span>
+                </div>
+                <div class="sim-window-badges">
+                  <span class="win-coord-badge">(1, 1)</span>
+                </div>
+              </div>
+              <div class="sim-window-body chat-theme">
+                <div class="chat-msg">
+                  <span class="chat-user">@zammy:</span>
+                  <span class="chat-text">Just merged the 0px edge margin cloaking fix! No more edge slivers in the corners. 🎉</span>
+                </div>
+                <div class="chat-msg">
+                  <span class="chat-user">@rust_power:</span>
+                  <span class="chat-text">The drag-to-split snap in Win+O overview is incredible! So smooth on dual 4K monitors.</span>
+                </div>
+                <div class="chat-msg">
+                  <span class="chat-user">@system:</span>
+                  <span class="chat-text">All 24 cargo layout tests passed in CI.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cell (0, 1): System Monitor -->
+            <div class="sim-window-cell" data-col="0" data-row="1" id="win-monitor" style="left: -480px; top: 380px;">
+              <div class="sim-window-header">
+                <div class="sim-window-title">
+                  <span class="win-app-icon">📊</span>
+                  <span>System Resource &amp; Spring Oscilloscope</span>
+                </div>
+                <div class="sim-window-badges">
+                  <span class="win-coord-badge">(0, 1)</span>
+                </div>
+              </div>
+              <div class="sim-window-body monitor-theme">
+                <div class="monitor-metric">
+                  <span>RAM Usage:</span>
+                  <strong>18.4 MB (Native Rust)</strong>
+                </div>
+                <div class="monitor-metric">
+                  <span>CPU Idle:</span>
+                  <strong>&lt; 0.1% (Zero Polling)</strong>
+                </div>
+                <div class="monitor-metric">
+                  <span>Physics Frame Time:</span>
+                  <strong>0.32 ms (Target 120Hz)</strong>
+                </div>
+                <div class="sim-oscilloscope-bar">
+                  <div class="wave-anim"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Virtual Navigation Controller Overlay (On Screen for touch / mouse users) -->
+          <div class="sim-touch-dpad">
+            <div class="dpad-center">
+              <button class="dpad-btn up" id="dpad-up" title="Focus Up (Win+Up)" aria-label="Move Focus Up">▲</button>
+              <div class="dpad-middle">
+                <button class="dpad-btn left" id="dpad-left" title="Focus Left (Win+Left)" aria-label="Move Focus Left">◀</button>
+                <div class="dpad-indicator">WIN</div>
+                <button class="dpad-btn right" id="dpad-right" title="Focus Right (Win+Right)" aria-label="Move Focus Right">▶</button>
+              </div>
+              <button class="dpad-btn down" id="dpad-down" title="Focus Down (Win+Down)" aria-label="Move Focus Down">▼</button>
+            </div>
+          </div>
+
+          <!-- Overview Snap Overlay Guide -->
+          <div class="overview-instruction-hud" id="overview-hud">
+            <div class="hud-content">
+              <span class="hud-icon">💡</span>
+              <span class="hud-text"><strong>Overview Mode Active (`Win+O`):</strong> Click any window to focus, or drag one window onto another to snap them 50/50 horizontally!</span>
+              <button class="hud-close" id="hud-close-btn">&times;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulator Instructions & Keyboard Quick Legend -->
+        <div class="sim-legend">
+          <div class="legend-item">
+            <kbd class="key">Win</kbd> + <kbd class="key">←</kbd><kbd class="key">↑</kbd><kbd class="key">→</kbd><kbd class="key">↓</kbd>
+            <span>Navigate 2D Grid</span>
+          </div>
+          <div class="legend-item">
+            <kbd class="key">Win</kbd> + <kbd class="key">O</kbd>
+            <span>Toggle Live Acrylic Overview</span>
+          </div>
+          <div class="legend-item">
+            <kbd class="key">Win</kbd> + <kbd class="key">W</kbd>
+            <span>Toggle Tabbed vs Split Stack</span>
+          </div>
+          <div class="legend-item">
+            <kbd class="key">Win</kbd> + <kbd class="key">,</kbd> / <kbd class="key">.</kbd>
+            <span>Consume / Expel Window</span>
+          </div>
+          <div class="legend-item">
+            <kbd class="key">Win</kbd> + <kbd class="key">=</kbd> / <kbd class="key">-</kbd>
+            <span>Cycle Cell Dimensions</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: VISUAL MEDIA GALLERY & LIVE GIF WALKTHROUGHS -->
+    <section class="gallery-section" id="gallery">
+      <div class="section-header text-center">
+        <div class="section-tag">Architectural Concept Showcase</div>
+        <h2 class="section-title">Visualizing the Core 2D Architecture</h2>
+        <p class="section-subtitle">
+          Schematic and animated conceptual views of the layout topology, DWM cloaking, spring dynamics, and drag-to-snap geometry implemented in WinScroller 2D.
+        </p>
+      </div>
+
+      <div class="gallery-tabs-container">
+        <div class="gallery-tabs-nav" role="tablist">
+          <button class="gallery-tab active" data-tab="tab-concept-overview">Live Overview (Win+O)</button>
+          <button class="gallery-tab" data-tab="tab-concept-100win">⚡ 100-Window Matrix</button>
+          <button class="gallery-tab" data-tab="tab-concept-multimatrix">🖥️ Multi-Monitor Matrix</button>
+          <button class="gallery-tab" data-tab="tab-concept-vdesktops">🪟 Virtual Desktops (COM)</button>
+          <button class="gallery-tab" data-tab="tab-concept-tiling">2D Grid &amp; Edge Peeking</button>
+          <button class="gallery-tab" data-tab="tab-concept-split">Dual-App 50/50 Split</button>
+          <button class="gallery-tab" data-tab="tab-concept-dualmon">Multi-Monitor &amp; 0px Edge</button>
+          <button class="gallery-tab" data-tab="tab-concept-stacking">Niri Stacking &amp; Tabs</button>
+          <button class="gallery-tab" data-tab="tab-concept-springs">120Hz Spring Dynamics</button>
+          <button class="gallery-tab" data-tab="tab-concept-presets">Layout Presets HUD</button>
+        </div>
+
+        <!-- Tab 1: Live Overview Animated Concept -->
+        <div class="gallery-panel active" id="tab-concept-overview">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-overview.svg">
+              <img src="assets/concept-overview.svg" alt="Live 2D Overview (Win+O) Concept View" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>Live 2D Overview Mode (<code>Win + O</code>)</h3>
+              <p>Conceptual schematic of the full acrylic zoom-out lens. When triggered, the camera pulls back into an unbounded coordinate matrix, revealing live DWM thumbnails, app identity badges, and a magnetic drag-to-snap drop zone.</p>
+              <div class="gallery-tags">
+                <span class="tag">Acrylic Blur Lens</span>
+                <span class="tag">Live DWM Clones</span>
+                <span class="tag">Drag-to-Snap Target</span>
+                <span class="tag">Sparse Lattice</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: 100-Window Matrix Concept -->
+        <div class="gallery-panel" id="tab-concept-100win">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-100-windows.svg">
+              <img src="assets/concept-100-windows.svg" alt="100-Window Extreme Scale Stress Matrix" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>100-Window Extreme Scale Stress Matrix (10×10 Grid)</h3>
+              <p>Handling 100 managed applications with zero stutter. Offscreen windows (96 cells) are cleanly cloaked using native DWM APIs, preserving RAM footprint at just 24.2 MB while the active camera frustum glides at a locked 120Hz refresh.</p>
+              <div class="gallery-tags">
+                <span class="tag">100 Active Windows</span>
+                <span class="tag">Zero Stutter VSync</span>
+                <span class="tag">96 Offscreen Cloaked</span>
+                <span class="tag">24.2 MB RAM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Multi-Monitor Matrix Concept -->
+        <div class="gallery-panel" id="tab-concept-multimatrix">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-multi-monitor-matrix.svg">
+              <img src="assets/concept-multi-monitor-matrix.svg" alt="Multi-Monitor Extended Matrix (Triple 4K Setup)" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>Multi-Monitor Extended Matrix (Triple Display Setup)</h3>
+              <p>Seamlessly orchestrates dozens of applications across primary 4K displays, vertical code monitors, and dedicated media screens. Strict 0px edge boundaries guarantee zero window overlap or corner bleed across monitor frames.</p>
+              <div class="gallery-tags">
+                <span class="tag">Triple Display Setup</span>
+                <span class="tag">54 Managed Windows</span>
+                <span class="tag">Zero Corner Bleed</span>
+                <span class="tag">Per-Monitor V2 DPI</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Virtual Desktops Concept -->
+        <div class="gallery-panel" id="tab-concept-vdesktops">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-virtual-desktops.svg">
+              <img src="assets/concept-virtual-desktops.svg" alt="Windows 11 Virtual Desktops Isolation" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>Windows 10/11 Virtual Desktops Integration (COM)</h3>
+              <p>Direct hook into COM <code>IVirtualDesktopManager</code>. Each virtual desktop (Rust Core, Docs/Web, DevOps, Communication) hosts an independent, unbounded 2D coordinate lattice with zero window leakage when switching workspaces.</p>
+              <div class="gallery-tags">
+                <span class="tag">COM IVirtualDesktopManager</span>
+                <span class="tag">Isolated 2D Lattices</span>
+                <span class="tag">Win+Alt+1..9 Switch</span>
+                <span class="tag">Zero Leakage</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 2D Grid & Edge Peeking Animated Concept -->
+        <div class="gallery-panel" id="tab-concept-tiling">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-tiling-snap.svg">
+              <img src="assets/concept-tiling-snap.svg" alt="2D Infinite Grid &amp; Edge Peeking Concept" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>Infinite 2D Sparse Grid &amp; Edge Peeking</h3>
+              <p>Schematic view of the primary display work area with neighbor windows peeking into edge boundaries (<code>peek_x: 64px</code>, <code>peek_y: 48px</code>). Smooth directional camera momentum preserves spatial orientation.</p>
+              <div class="gallery-tags">
+                <span class="tag">Edge Peeking</span>
+                <span class="tag">120Hz Momentum Flight</span>
+                <span class="tag">Sparse Holes Preserved</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Dual App Split Snap Animated Concept -->
+        <div class="gallery-panel" id="tab-concept-split">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-split-snap.svg">
+              <img src="assets/concept-split-snap.svg" alt="Snapped Dual-App Horizontal Split (50% / 50%) Concept" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>Snapped Dual-App Horizontal Split (50% / 50%)</h3>
+              <p>Architectural breakdown of two independent applications fused into one combined lattice cell. A magnetic snap divider joins both windows so they scroll together as a unified workstation with persistent snap memory in <code>state.json</code>.</p>
+              <div class="gallery-tags">
+                <span class="tag">50% / 50% Geometry</span>
+                <span class="tag">Magnetic Lock Seam</span>
+                <span class="tag">Persistent State</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Multi Monitor & 0px Edge Concept -->
+        <div class="gallery-panel" id="tab-concept-dualmon">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-dual-monitor.svg">
+              <img src="assets/concept-dual-monitor.svg" alt="Multi-Monitor Extended Mode &amp; 0px Edge Concept" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>Multi-Monitor Extended Mode (Zero Spillover)</h3>
+              <p>Strict hardware display boundaries guarantee zero edge bleed across monitors. Every monitor runs an independent coordinate lattice managed via COM <code>IVirtualDesktopManager</code> with 0px cloaking eliminating title bar slivers.</p>
+              <div class="gallery-tags">
+                <span class="tag">Strict 0px Margin</span>
+                <span class="tag">DWM Cloaked Boundary</span>
+                <span class="tag">Mixed DPI Awareness</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Niri Stacking & Tabs Concept -->
+        <div class="gallery-panel" id="tab-concept-stacking">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-cell-stacking.svg">
+              <img src="assets/concept-cell-stacking.svg" alt="Niri-Style Cell Stacking Concept" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>Niri-Style Stacking: Tabbed Deck vs Vertical Split</h3>
+              <p>Inside any lattice cell, press <code>Win+W</code> to seamlessly toggle between a 3D tabbed card deck (with background windows cloaked) and a 50/50 vertical split layout. Consume windows with <code>Win+,</code> and expel with <code>Win+.</code>.</p>
+              <div class="gallery-tags">
+                <span class="tag">Tabbed Card Deck</span>
+                <span class="tag">Vertical Split</span>
+                <span class="tag">Win+W Morph</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 6: 120Hz Spring Dynamics Concept -->
+        <div class="gallery-panel" id="tab-concept-springs">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-spring-physics.svg">
+              <img src="assets/concept-spring-physics.svg" alt="120Hz Spring Dynamics Concept" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>120Hz Underdamped Mass-Spring Physics</h3>
+              <p>Mechanical oscillator model ($m \ddot{x} + c \dot{x} + kx = 0$) synchronized to Windows DWM vsync. The underdamped harmonic wave ensures rapid sub-184ms settling without the perceptual lag of linear lerp.</p>
+              <div class="gallery-tags">
+                <span class="tag">Second-Order ODE</span>
+                <span class="tag">Sub-184ms Settle</span>
+                <span class="tag">Zero Jitter VSync</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 7: Layout Presets HUD Concept -->
+        <div class="gallery-panel" id="tab-concept-presets">
+          <div class="gallery-card">
+            <div class="gallery-img-wrapper" data-lightbox="assets/concept-layout-presets.svg">
+              <img src="assets/concept-layout-presets.svg" alt="Layout Presets HUD Concept" loading="lazy">
+              <div class="gallery-zoom-badge">🔍 Click to Expand Concept</div>
+            </div>
+            <div class="gallery-card-info">
+              <h3>Layout Preset Selector HUD Overlay</h3>
+              <p>On-the-fly topology switcher (<code>Win+Alt+L</code>) allowing immediate transition between 1D Column Ribbon, Balanced 2D Lattice, Focus Master (70% Hero), and Custom Hole-Preserving Sparse Grids.</p>
+              <div class="gallery-tags">
+                <span class="tag">Holographic HUD</span>
+                <span class="tag">4 Core Topologies</span>
+                <span class="tag">Immediate Relayout</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: FEATURE DEEP DIVE WITH 3D TILT CARDS -->
+    <section class="features-section" id="features">
+      <div class="section-header text-center">
+        <div class="section-tag">Core Innovations</div>
+        <h2 class="section-title">Engineered for Keyboard Power Users</h2>
+        <p class="section-subtitle">
+          Built from the ground up in native Rust with low-level Win32 hooks, COM virtual desktop integration, and zero electron bloat.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card tilt-target">
+          <div class="card-glow-layer"></div>
+          <div class="card-icon-box cyan-glow">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </div>
+          <h3 class="card-title">Infinite 2D Sparse Grid</h3>
+          <p class="card-text">
+            Never run out of screen space. Arrange your editors, terminals, browsers, and chats across unbounded <code>(col, row)</code> coordinates with neighbor edge peeking and hole-preserving navigation.
+          </p>
+          <ul class="card-bullets">
+            <li>5 configurable spawn modes (Right, Bottom, Smart)</li>
+            <li>Dynamic row/column hole preservation &amp; auto-compaction</li>
+            <li>Configurable <code>peek_x</code> and <code>peek_y</code> margins</li>
+          </ul>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card tilt-target">
+          <div class="card-glow-layer"></div>
+          <div class="card-icon-box purple-glow">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+          </div>
+          <h3 class="card-title">Live <code>Win+O</code> Overview Mode</h3>
+          <p class="card-text">
+            One keystroke pulls back the camera into an expansive acrylic bird's-eye canvas. See live DWM thumbnails of all open applications with bottom-centered identity icons.
+          </p>
+          <ul class="card-bullets">
+            <li>Drag &amp; drop to reorder grid positions</li>
+            <li>Drag onto another window to snap 50/50 side-by-side</li>
+            <li>Acrylic clear &amp; Gaussian wallpaper blur options</li>
+          </ul>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card tilt-target">
+          <div class="card-glow-layer"></div>
+          <div class="card-icon-box rust-glow">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+          <h3 class="card-title">120Hz Mass-Spring Physics</h3>
+          <p class="card-text">
+            No rigid, instant-cut teleportation or nausea-inducing linear animations. Camera flights and window swaps are paced by an underdamped second-order mass-spring differential system.
+          </p>
+          <ul class="card-bullets">
+            <li>Hardware-synchronized 120Hz DWM refresh loop</li>
+            <li>Sub-180ms settling time with natural momentum</li>
+            <li>Fully customizable stiffness and damping coefficients</li>
+          </ul>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card tilt-target">
+          <div class="card-glow-layer"></div>
+          <div class="card-icon-box green-glow">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </div>
+          <h3 class="card-title">Niri-Style Cell Stacking</h3>
+          <p class="card-text">
+            Need multiple windows in one cell? Consume (<code>Win+,</code>) and expel (<code>Win+.</code>) windows into tabbed stacks or split them vertically (<code>Win+W</code>) with seamless DWM cloaking.
+          </p>
+          <ul class="card-bullets">
+            <li>Vertical split vs tabbed stacks per cell</li>
+            <li>Instant focus cycling inside stacked columns</li>
+            <li>Automatic uncloaking and restacking on focus change</li>
+          </ul>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card tilt-target">
+          <div class="card-glow-layer"></div>
+          <div class="card-icon-box blue-glow">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <h3 class="card-title">Zero-Spillover Multi-Monitor</h3>
+          <p class="card-text">
+            0px edge peek margins guarantee that off-screen columns and rows are cleanly cloaked with zero leftover title bar slivers or edge artifacts across monitors or virtual desktops.
+          </p>
+          <ul class="card-bullets">
+            <li>Tracks Windows Virtual Desktops via COM</li>
+            <li>Independent scrolling workspace per monitor/desktop</li>
+            <li>Smart cross-monitor window drag &amp; throw</li>
+          </ul>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card tilt-target">
+          <div class="card-glow-layer"></div>
+          <div class="card-icon-box amber-glow">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <h3 class="card-title">Automatic UIPI Elevation</h3>
+          <p class="card-text">
+            Auto-requests Administrator elevation via Windows UAC on startup. High Integrity Level allows low-level keyboard hooks to intercept shortcuts across Task Manager, Administrator PowerShell, and Regedit.
+          </p>
+          <ul class="card-bullets">
+            <li>Never blocked by Windows User Interface Privilege Isolation</li>
+            <li>Native <code>WH_KEYBOARD_LL</code> Start-Menu suppression</li>
+            <li>Graceful exit uncloaks and restores all windows</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: 120HZ SPRING PHYSICS LAB -->
+    <section class="physics-section" id="physics-lab">
+      <div class="section-header text-center">
+        <div class="section-tag">Interactive Physics Lab</div>
+        <h2 class="section-title">The Science of 120Hz Mass-Spring Damping</h2>
+        <p class="section-subtitle">
+          Standard window managers either snap instantly (jarring) or use linear easing (sluggish). WinScroller 2D uses an underdamped harmonic oscillator.
+        </p>
+      </div>
+
+      <div class="physics-lab-grid">
+        <!-- Interactive Curve & Physics Playground -->
+        <div class="lab-canvas-card">
+          <div class="lab-card-header">
+            <div class="header-title">Live Harmonic Oscillator Curve (Real-time Canvas)</div>
+            <div class="curve-legend">
+              <span class="legend-color-line cyan"></span> <span>WinScroller 2D Curve</span>
+              <span class="legend-color-line gray"></span> <span>Linear Lerp (Standard WM)</span>
+            </div>
+          </div>
+          <div class="canvas-wrapper">
+            <canvas id="physics-canvas" width="600" height="240"></canvas>
+          </div>
+          <div class="physics-live-stats">
+            <div class="live-stat">
+              <span class="label">Settling Time:</span>
+              <strong id="stat-settle-time">184 ms</strong>
+            </div>
+            <div class="live-stat">
+              <span class="label">Damping Ratio (&zeta;):</span>
+              <strong id="stat-damping-ratio">0.68 (Underdamped)</strong>
+            </div>
+            <div class="live-stat">
+              <span class="label">Target Refresh:</span>
+              <strong>120.0 Hz</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls & Interactive Test Window -->
+        <div class="lab-controls-card">
+          <h3>Tune Your Spring Dynamics</h3>
+          <p>Tweak the parameters below to see the oscillator curve update in real time, or click "Trigger Spring Impulse" to watch the test window snap!</p>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="input-stiffness">Stiffness (k):</label>
+              <span class="slider-val" id="val-stiffness">380</span>
+            </div>
+            <input type="range" id="input-stiffness" min="100" max="800" value="380" step="10">
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="input-damping">Damping (c):</label>
+              <span class="slider-val" id="val-damping">24</span>
+            </div>
+            <input type="range" id="input-damping" min="5" max="60" value="24" step="1">
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="input-mass">Mass (m):</label>
+              <span class="slider-val" id="val-mass">1.0</span>
+            </div>
+            <input type="range" id="input-mass" min="0.5" max="3.0" value="1.0" step="0.1">
+          </div>
+
+          <div class="test-spring-box">
+            <div class="test-track">
+              <div class="test-target-marker">Target</div>
+              <div class="test-moving-window" id="spring-test-window">
+                <span class="win-icon">🪟</span>
+                <span>Active Window</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lab-action-row">
+            <button class="btn btn-primary btn-sm" id="btn-fire-impulse">⚡ Trigger Spring Impulse</button>
+            <button class="btn btn-glass btn-sm" id="btn-reset-physics">Reset Defaults</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: WIN+O OVERVIEW MODE SPOTLIGHT -->
+    <section class="overview-spotlight-section" id="overview-spotlight">
+      <div class="spotlight-container">
+        <div class="spotlight-text-col">
+          <div class="section-tag">Signature Feature</div>
+          <h2 class="spotlight-title">Instant Overview (<code>Win + O</code>)<br>with Drag-to-Split Snapping</h2>
+          <p class="spotlight-desc">
+            When you're running 15 windows across an infinite canvas, you need a quick mental map. Press <strong><code>Win + O</code></strong> to instantly zoom out over Windows 11 acrylic blur.
+          </p>
+
+          <div class="spotlight-features-list">
+            <div class="spotlight-feature-item">
+              <div class="feature-num">01</div>
+              <div>
+                <h4>Live Win32 DWM Thumbnails</h4>
+                <p>Not static screenshots. Every window in the overview displays real-time video, scrolling, and terminal updates through native DWM thumbnail handles.</p>
+              </div>
+            </div>
+
+            <div class="spotlight-feature-item">
+              <div class="feature-num">02</div>
+              <div>
+                <h4>Magnetic Drag-to-Snap Dual View</h4>
+                <p>Drag any thumbnail onto another window: they snap together into a 50% / 50% horizontal split cell, scrolling seamlessly as one unit.</p>
+              </div>
+            </div>
+
+            <div class="spotlight-feature-item">
+              <div class="feature-num">03</div>
+              <div>
+                <h4>Zero Corner Spillover Guarantee</h4>
+                <p>0px edge margins cloak all non-visible workspace columns so no leftover title bars or glow outlines clutter your edges.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="spotlight-btn-row">
+            <a href="#simulator" class="btn btn-primary">Try It in the Simulator</a>
+            <a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/blob/main/docs/src/overview-mode.md" target="_blank" rel="noopener noreferrer" class="btn btn-glass">Read Overview Docs →</a>
+          </div>
+        </div>
+
+        <div class="spotlight-visual-col">
+          <div class="spotlight-image-card" data-lightbox="assets/concept-overview.svg">
+            <div class="image-acrylic-glow"></div>
+            <img src="assets/concept-overview.svg" alt="WinScroller 2D Live Overview Mode Concept View" class="spotlight-main-img">
+            <div class="image-floating-badge top-right">
+              <span class="badge-dot pulse"></span> DWM Acrylic Active
+            </div>
+            <div class="image-floating-badge btm-left">
+              <span>Drag-to-Snap 50/50 Dual View</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: INTERACTIVE KEYBINDINGS STUDIO & SEARCH -->
+    <section class="keybindings-section" id="keybindings">
+      <div class="section-header text-center">
+        <div class="section-tag">Ergonomic Workflow</div>
+        <h2 class="section-title">Interactive Keybinding Studio</h2>
+        <p class="section-subtitle">
+          Designed for muscle memory. Search any command or filter by category to inspect default shortcuts.
+        </p>
+      </div>
+
+      <div class="keybindings-container">
+        <!-- Search & Filter Controls -->
+        <div class="kb-filter-bar">
+          <div class="kb-search-box">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="kb-search-input" placeholder="Search shortcut or action (e.g., 'overview', 'swap', 'split')...">
+          </div>
+
+          <div class="kb-categories" role="tablist">
+            <button class="kb-cat-btn active" data-category="all">All</button>
+            <button class="kb-cat-btn" data-category="nav">Navigation</button>
+            <button class="kb-cat-btn" data-category="window">Window Swapping</button>
+            <button class="kb-cat-btn" data-category="stack">Stack &amp; Split</button>
+            <button class="kb-cat-btn" data-category="size">Sizing</button>
+            <button class="kb-cat-btn" data-category="workspace">Workspaces &amp; Monitors</button>
+            <button class="kb-cat-btn" data-category="system">System</button>
+          </div>
+        </div>
+
+        <!-- Interactive Virtual Mini Keyboard -->
+        <div class="virtual-keyboard-wrapper">
+          <div class="virtual-keyboard" id="virtual-kb">
+            <div class="vk-row">
+              <div class="vk-key" data-key="Escape">Esc</div>
+              <div class="vk-key" data-key="F1">F1</div>
+              <div class="vk-key" data-key="F2">F2</div>
+              <div class="vk-key" data-key="F3">F3</div>
+              <div class="vk-key" data-key="F4">F4</div>
+              <div class="vk-key" data-key="F5">F5</div>
+              <div class="vk-key" data-key="F6">F6</div>
+              <div class="vk-key" data-key="F7">F7</div>
+              <div class="vk-key" data-key="F8">F8</div>
+              <div class="vk-key" data-key="F9">F9</div>
+              <div class="vk-key" data-key="F10">F10</div>
+              <div class="vk-key" data-key="F11">F11</div>
+              <div class="vk-key" data-key="F12">F12</div>
+            </div>
+            <div class="vk-row">
+              <div class="vk-key" data-key="Backquote">`</div>
+              <div class="vk-key" data-key="1">1</div>
+              <div class="vk-key" data-key="2">2</div>
+              <div class="vk-key" data-key="3">3</div>
+              <div class="vk-key" data-key="4">4</div>
+              <div class="vk-key" data-key="5">5</div>
+              <div class="vk-key" data-key="6">6</div>
+              <div class="vk-key" data-key="7">7</div>
+              <div class="vk-key" data-key="8">8</div>
+              <div class="vk-key" data-key="9">9</div>
+              <div class="vk-key" data-key="0">0</div>
+              <div class="vk-key" data-key="Minus">-</div>
+              <div class="vk-key" data-key="Equal">=</div>
+              <div class="vk-key wide" data-key="Backspace">⌫</div>
+            </div>
+            <div class="vk-row">
+              <div class="vk-key wide" data-key="Tab">Tab</div>
+              <div class="vk-key" data-key="Q">Q</div>
+              <div class="vk-key" data-key="W">W</div>
+              <div class="vk-key" data-key="E">E</div>
+              <div class="vk-key" data-key="R">R</div>
+              <div class="vk-key" data-key="T">T</div>
+              <div class="vk-key" data-key="Y">Y</div>
+              <div class="vk-key" data-key="U">U</div>
+              <div class="vk-key" data-key="I">I</div>
+              <div class="vk-key" data-key="O">O</div>
+              <div class="vk-key" data-key="P">P</div>
+              <div class="vk-key" data-key="BracketLeft">[</div>
+              <div class="vk-key" data-key="BracketRight">]</div>
+            </div>
+            <div class="vk-row">
+              <div class="vk-key wide" data-key="CapsLock">Caps</div>
+              <div class="vk-key" data-key="A">A</div>
+              <div class="vk-key" data-key="S">S</div>
+              <div class="vk-key" data-key="D">D</div>
+              <div class="vk-key" data-key="F">F</div>
+              <div class="vk-key" data-key="G">G</div>
+              <div class="vk-key" data-key="H">H</div>
+              <div class="vk-key" data-key="J">J</div>
+              <div class="vk-key" data-key="K">K</div>
+              <div class="vk-key" data-key="L">L</div>
+              <div class="vk-key" data-key="Semicolon">;</div>
+              <div class="vk-key wide" data-key="Enter">Enter</div>
+            </div>
+            <div class="vk-row">
+              <div class="vk-key wide mod-key" data-key="Shift">Shift</div>
+              <div class="vk-key" data-key="Z">Z</div>
+              <div class="vk-key" data-key="X">X</div>
+              <div class="vk-key" data-key="C">C</div>
+              <div class="vk-key" data-key="V">V</div>
+              <div class="vk-key" data-key="B">B</div>
+              <div class="vk-key" data-key="N">N</div>
+              <div class="vk-key" data-key="M">M</div>
+              <div class="vk-key" data-key="Comma">,</div>
+              <div class="vk-key" data-key="Period">.</div>
+              <div class="vk-key wide mod-key" data-key="ShiftRight">Shift</div>
+            </div>
+            <div class="vk-row">
+              <div class="vk-key mod-key" data-key="Ctrl">Ctrl</div>
+              <div class="vk-key mod-key win-accent" data-key="Win">Win ❖</div>
+              <div class="vk-key mod-key" data-key="Alt">Alt</div>
+              <div class="vk-key space-bar" data-key="Space">Space</div>
+              <div class="vk-key mod-key" data-key="Alt">Alt</div>
+              <div class="vk-key arrow-key" data-key="ArrowLeft">◀</div>
+              <div class="vk-key arrow-key" data-key="ArrowUp">▲</div>
+              <div class="vk-key arrow-key" data-key="ArrowDown">▼</div>
+              <div class="vk-key arrow-key" data-key="ArrowRight">▶</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keybinding Cards Grid -->
+        <div class="kb-grid" id="kb-cards-container">
+          <!-- Navigation -->
+          <div class="kb-card" data-cat="nav" data-keys="Win ArrowLeft ArrowRight ArrowUp ArrowDown">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">←</kbd> <kbd class="key">↑</kbd> <kbd class="key">→</kbd> <kbd class="key">↓</kbd>
+            </div>
+            <div class="kb-title">Focus Adjacent Cell</div>
+            <div class="kb-desc">Pans the camera smoothly in 2D space to focus neighboring application cell.</div>
+          </div>
+
+          <div class="kb-card" data-cat="nav" data-keys="Win Ctrl ArrowLeft ArrowRight ArrowUp ArrowDown">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">Ctrl</kbd> + <kbd class="key">Arrows</kbd>
+            </div>
+            <div class="kb-title">Pan Camera Independently</div>
+            <div class="kb-desc">Glide camera across 2D canvas without shifting keyboard focus from the active window.</div>
+          </div>
+
+          <div class="kb-card" data-cat="nav" data-keys="Win C">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">C</kbd>
+            </div>
+            <div class="kb-title">Center Camera on Focus</div>
+            <div class="kb-desc">Instantly spring-centers the camera directly over the currently focused window cell.</div>
+          </div>
+
+          <!-- Window Swapping -->
+          <div class="kb-card" data-cat="window" data-keys="Win Shift ArrowLeft ArrowRight ArrowUp ArrowDown">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">Shift</kbd> + <kbd class="key">Arrows</kbd>
+            </div>
+            <div class="kb-title">Move / Swap Window</div>
+            <div class="kb-desc">Swaps the focused window with the target cell or moves it into empty 2D coordinates.</div>
+          </div>
+
+          <div class="kb-card" data-cat="window" data-keys="Win F">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">F</kbd>
+            </div>
+            <div class="kb-title">Toggle Maximize Cell</div>
+            <div class="kb-desc">Expands the active cell to fill the monitor work area while maintaining tiling state.</div>
+          </div>
+
+          <div class="kb-card" data-cat="window" data-keys="Win Shift Space">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">Shift</kbd> + <kbd class="key">Space</kbd>
+            </div>
+            <div class="kb-title">Toggle Floating Window</div>
+            <div class="kb-desc">Toggles the focused window between floating mode and managed 2D tiling.</div>
+          </div>
+
+          <!-- Stacking & Splitting -->
+          <div class="kb-card" data-cat="stack" data-keys="Win Comma">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">,</kbd>
+            </div>
+            <div class="kb-title">Consume into Cell Stack</div>
+            <div class="kb-desc">Niri-style window absorption: pulls adjacent window into current cell as a tab/split.</div>
+          </div>
+
+          <div class="kb-card" data-cat="stack" data-keys="Win Period">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">.</kbd>
+            </div>
+            <div class="kb-title">Expel from Cell Stack</div>
+            <div class="kb-desc">Ejects top window from current cell stack out into its own independent grid column.</div>
+          </div>
+
+          <div class="kb-card" data-cat="stack" data-keys="Win W">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">W</kbd>
+            </div>
+            <div class="kb-title">Toggle Tabbed vs Split Stack</div>
+            <div class="kb-desc">Switches the cell layout between vertical split view and tabbed stacked view.</div>
+          </div>
+
+          <!-- Sizing -->
+          <div class="kb-card" data-cat="size" data-keys="Win Equal Minus">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">=</kbd> / <kbd class="key">-</kbd>
+            </div>
+            <div class="kb-title">Step Cell Width Preset</div>
+            <div class="kb-desc">Steps cell width through geometric presets (33%, 50%, 66%, 100% monitor width).</div>
+          </div>
+
+          <div class="kb-card" data-cat="size" data-keys="Win Shift Equal Minus">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">Shift</kbd> + <kbd class="key">=</kbd> / <kbd class="key">-</kbd>
+            </div>
+            <div class="kb-title">Step Cell Height Preset</div>
+            <div class="kb-desc">Steps cell height through geometric presets for vertical stacking.</div>
+          </div>
+
+          <!-- Overview -->
+          <div class="kb-card" data-cat="nav" data-keys="Win O">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">O</kbd>
+            </div>
+            <div class="kb-title">Toggle Live Overview</div>
+            <div class="kb-desc">Expands into 2D acrylic bird's-eye canvas with DWM thumbnails and drag-to-split.</div>
+          </div>
+
+          <!-- Workspaces & Monitors -->
+          <div class="kb-card" data-cat="workspace" data-keys="Win Alt 1 2 3 4 5 6 7 8 9">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">Alt</kbd> + <kbd class="key">1..9</kbd>
+            </div>
+            <div class="kb-title">Switch Virtual Workspace</div>
+            <div class="kb-desc">Switches to designated workspace canvas (add Shift to move active window).</div>
+          </div>
+
+          <div class="kb-card" data-cat="workspace" data-keys="Win Alt ArrowLeft ArrowRight">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">Alt</kbd> + <kbd class="key">←</kbd> / <kbd class="key">→</kbd>
+            </div>
+            <div class="kb-title">Focus Target Monitor</div>
+            <div class="kb-desc">Shifts camera focus across multi-monitor setup with zero edge spillover.</div>
+          </div>
+
+          <!-- System -->
+          <div class="kb-card" data-cat="system" data-keys="Win Shift P">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">Shift</kbd> + <kbd class="key">P</kbd>
+            </div>
+            <div class="kb-title">Pause / Resume Tiling</div>
+            <div class="kb-desc">Temporarily pauses tiling management (ideal for fullscreen games or video production).</div>
+          </div>
+
+          <div class="kb-card" data-cat="system" data-keys="Win Shift Escape">
+            <div class="kb-keys">
+              <kbd class="key win">Win</kbd> + <kbd class="key">Shift</kbd> + <kbd class="key">Esc</kbd>
+            </div>
+            <div class="kb-title">Graceful Exit &amp; Restore</div>
+            <div class="kb-desc">Exits daemon cleanly, uncloaks and centers all windows in their respective monitor work areas.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: LIVE CONFIGURATION GENERATOR STUDIO -->
+    <section class="config-section" id="config-studio">
+      <div class="section-header text-center">
+        <div class="section-tag">Visual Customizer</div>
+        <h2 class="section-title">Live <code>winscroller2d.toml</code> Studio</h2>
+        <p class="section-subtitle">
+          Configure your ideal window manager parameters visually and download the ready-to-use configuration file.
+        </p>
+      </div>
+
+      <div class="config-studio-grid">
+        <!-- Interactive Controls Column -->
+        <div class="config-controls-col">
+          <div class="preset-buttons-row">
+            <span class="preset-label">Quick Presets:</span>
+            <button class="preset-btn active" data-preset="balanced">Balanced 120Hz</button>
+            <button class="preset-btn" data-preset="gaming">High-Speed Gamer</button>
+            <button class="preset-btn" data-preset="ultrawide">Ultrawide Dev</button>
+            <button class="preset-btn" data-preset="minimal">Minimal Cloaked</button>
+          </div>
+
+          <div class="config-group">
+            <h4>Spring Physics Parameters</h4>
+            <div class="cfg-row">
+              <label for="cfg-stiffness">Spring Stiffness (k)</label>
+              <input type="range" id="cfg-stiffness" min="150" max="750" value="380">
+              <span class="cfg-val" id="cfg-val-stiffness">380</span>
+            </div>
+            <div class="cfg-row">
+              <label for="cfg-damping">Damping Ratio (&zeta;)</label>
+              <input type="range" id="cfg-damping" min="10" max="50" value="24">
+              <span class="cfg-val" id="cfg-val-damping">24</span>
+            </div>
+          </div>
+
+          <div class="config-group">
+            <h4>Edge Peeking &amp; Gaps</h4>
+            <div class="cfg-row">
+              <label for="cfg-peek-x">Horizontal Peek (<code>peek_x</code>)</label>
+              <input type="range" id="cfg-peek-x" min="0" max="180" value="64">
+              <span class="cfg-val" id="cfg-val-peek-x">64px</span>
+            </div>
+            <div class="cfg-row">
+              <label for="cfg-peek-y">Vertical Peek (<code>peek_y</code>)</label>
+              <input type="range" id="cfg-peek-y" min="0" max="180" value="48">
+              <span class="cfg-val" id="cfg-val-peek-y">48px</span>
+            </div>
+            <div class="cfg-row">
+              <label for="cfg-gap">Window Gap (Outer &amp; Inner)</label>
+              <input type="range" id="cfg-gap" min="0" max="32" value="8">
+              <span class="cfg-val" id="cfg-val-gap">8px</span>
+            </div>
+          </div>
+
+          <div class="config-group">
+            <h4>Overview &amp; Visual Aesthetics</h4>
+            <div class="cfg-row">
+              <label for="cfg-blur-mode">Overview Backdrop Blur</label>
+              <select id="cfg-blur-mode">
+                <option value="acrylic_clear" selected>acrylic_clear (Windows 11 Acrylic)</option>
+                <option value="pure_blur">pure_blur (Deep Gaussian Blur)</option>
+                <option value="disabled">disabled (Solid Dark Slate)</option>
+              </select>
+            </div>
+            <div class="cfg-row">
+              <label for="cfg-border-color">Active Border Color (DWMWA)</label>
+              <div class="color-picker-wrapper">
+                <input type="color" id="cfg-border-color" value="#00f5d4">
+                <span class="color-code" id="cfg-color-code">#00f5d4</span>
+              </div>
+            </div>
+            <div class="cfg-row checkbox-row">
+              <label for="cfg-zero-spill">Strict 0px Margin (Zero Edge Spillover)</label>
+              <input type="checkbox" id="cfg-zero-spill" checked>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live TOML Code Output Column -->
+        <div class="config-code-col">
+          <div class="code-card-header">
+            <span class="code-filename">%APPDATA%\WinScroller2D\winscroller2d.toml</span>
+            <div class="code-actions">
+              <button class="code-btn" id="btn-copy-toml" title="Copy to clipboard">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                </svg>
+                <span>Copy TOML</span>
+              </button>
+              <button class="code-btn" id="btn-download-toml" title="Download TOML file">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download</span>
+              </button>
+            </div>
+          </div>
+          <div class="code-card-body">
+            <pre><code id="live-toml-code"># Generated by WinScroller 2D Config Studio
+version = "0.1.0"
+
+[physics]
+stiffness = 380.0
+damping = 24.0
+mass = 1.0
+fps_target = 120
+
+[layout]
+peek_x = 64
+peek_y = 48
+gap = 8
+zero_spillover = true
+spawn_mode = "smart_nearest"
+
+[overview]
+blur_mode = "acrylic_clear"
+drag_to_split = true
+show_dwm_thumbnails = true
+badge_icons = true
+
+[theme]
+border_color = "#00f5d4"
+border_width = 2
+inactive_border_color = "#334155"</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: COMPARISON MATRIX -->
+    <section class="comparison-section" id="comparison">
+      <div class="section-header text-center">
+        <div class="section-tag">Comparison Benchmark</div>
+        <h2 class="section-title">How WinScroller 2D Compares</h2>
+        <p class="section-subtitle">
+          Engineered to give Windows power users the infinite spatial freedom of Wayland's Niri with native Windows 11 DWM integration.
+        </p>
+      </div>
+
+      <div class="table-container">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th class="th-feature">Capability</th>
+              <th class="th-winscroller highlight-col">WinScroller 2D</th>
+              <th>Komorebi</th>
+              <th>GlazeWM</th>
+              <th>Niri</th>
+              <th>Windows 11 Snap</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="feature-name">Target Platform</td>
+              <td class="highlight-col"><span class="badge badge-cyan">Windows 10 / 11</span></td>
+              <td>Windows 10 / 11</td>
+              <td>Windows 10 / 11</td>
+              <td>Linux (Wayland only)</td>
+              <td>Windows 11</td>
+            </tr>
+            <tr>
+              <td class="feature-name">Grid Topology</td>
+              <td class="highlight-col"><strong>Unbounded 2D Sparse Grid</strong></td>
+              <td>Screen-bound BSP</td>
+              <td>Screen-bound BSP</td>
+              <td>1D Ribbon (Horizontal)</td>
+              <td>2–4 Static Zones</td>
+            </tr>
+            <tr>
+              <td class="feature-name">Live Acrylic Overview</td>
+              <td class="highlight-col"><span class="check-icon">✓</span> <strong>Interactive Win+O</strong></td>
+              <td><span class="cross-icon">&times;</span> None</td>
+              <td><span class="cross-icon">&times;</span> None</td>
+              <td>Workspace Overview</td>
+              <td>Task View (Static)</td>
+            </tr>
+            <tr>
+              <td class="feature-name">Drag-to-Snap Dual View</td>
+              <td class="highlight-col"><span class="check-icon">✓</span> <strong>Drag onto window (50/50)</strong></td>
+              <td><span class="cross-icon">&times;</span> No (Keyboard only)</td>
+              <td><span class="cross-icon">&times;</span> No (Keyboard only)</td>
+              <td><span class="cross-icon">&times;</span> No</td>
+              <td>Static 2-split</td>
+            </tr>
+            <tr>
+              <td class="feature-name">Smooth Motion Physics</td>
+              <td class="highlight-col"><span class="check-icon">✓</span> <strong>120Hz Underdamped Springs</strong></td>
+              <td>Instant cut / lerp</td>
+              <td>Instant cut / lerp</td>
+              <td>Springs</td>
+              <td>Fixed OS transition</td>
+            </tr>
+            <tr>
+              <td class="feature-name">Automatic UIPI Elevation</td>
+              <td class="highlight-col"><span class="check-icon">✓</span> <strong>Auto-UAC High Integrity</strong></td>
+              <td>Requires service/task</td>
+              <td>Requires manual task</td>
+              <td>N/A (Linux Root/User)</td>
+              <td>Full OS Integration</td>
+            </tr>
+            <tr>
+              <td class="feature-name">Edge Margin Cloaking</td>
+              <td class="highlight-col"><span class="check-icon">✓</span> <strong>0px Margin (Zero Spillover)</strong></td>
+              <td>Edge adjustments</td>
+              <td>Edge adjustments</td>
+              <td>Native Wayland crop</td>
+              <td>Native OS crop</td>
+            </tr>
+            <tr>
+              <td class="feature-name">Runtime Architecture</td>
+              <td class="highlight-col"><strong>Single Standalone Rust .exe</strong></td>
+              <td>Multi-process + AHK</td>
+              <td>Standalone Rust</td>
+              <td>Wayland Compositor</td>
+              <td>Closed-source OS shell</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION: STEP-BY-STEP INSTALLATION & QUICK START -->
+    <section class="install-section" id="install">
+      <div class="section-header text-center">
+        <div class="section-tag">Quick Start</div>
+        <h2 class="section-title">Get Up and Running in 3 Minutes</h2>
+        <p class="section-subtitle">
+          From clean Windows 10/11 install to butter-smooth 2D tiling.
+        </p>
+      </div>
+
+      <div class="install-steps-container">
+        <!-- Step 1 -->
+        <div class="install-step">
+          <div class="step-badge">1</div>
+          <div class="step-body">
+            <h3>Prerequisites (Clean Windows 10 / 11)</h3>
+            <p>On a clean PC, open an <strong>Administrator PowerShell</strong> and run winget to install Git, Rust, and the MSVC C++ Build Tools:</p>
+            <div class="terminal-block">
+              <div class="term-header">
+                <span>PowerShell (Admin)</span>
+                <button class="copy-term-btn" data-copy="winget install --id Git.Git --accept-package-agreements --accept-source-agreements
+winget install --id Rustlang.Rustup --accept-package-agreements --accept-source-agreements
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override &quot;--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended&quot;">Copy</button>
+              </div>
+              <pre><code><span class="tok-comment"># 1. Install Git, Rust, and MSVC toolchain</span>
+winget install --id Git.Git --accept-package-agreements --accept-source-agreements
+winget install --id Rustlang.Rustup --accept-package-agreements --accept-source-agreements
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"</code></pre>
+            </div>
+            <div class="step-note">
+              <strong>Tip:</strong> Restart your PowerShell terminal after installation to refresh your environment PATH.
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="install-step">
+          <div class="step-badge">2</div>
+          <div class="step-body">
+            <h3>Clone Repository &amp; Build with Release Optimizations</h3>
+            <div class="terminal-block">
+              <div class="term-header">
+                <span>PowerShell</span>
+                <button class="copy-term-btn" data-copy="git clone https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager.git
+cd &quot;Rust-Window-Tiling-manager&quot;
+cargo build --release">Copy</button>
+              </div>
+              <pre><code><span class="tok-comment"># Clone the source repository</span>
+git clone https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager.git
+cd "Rust-Window-Tiling-manager"
+
+<span class="tok-comment"># Compile release binary with 120Hz optimizations</span>
+cargo build --release</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="install-step">
+          <div class="step-badge">3</div>
+          <div class="step-body">
+            <h3>Initialize Default Configuration &amp; Run</h3>
+            <div class="terminal-block">
+              <div class="term-header">
+                <span>PowerShell</span>
+                <button class="copy-term-btn" data-copy=".\target\release\winscroller2d.exe --init-config
+.\target\release\winscroller2d.exe">Copy</button>
+              </div>
+              <pre><code><span class="tok-comment"># Create default config at %APPDATA%\WinScroller2D\winscroller2d.toml</span>
+.\target\release\winscroller2d.exe --init-config
+
+<span class="tok-comment"># Launch WinScroller 2D (Accept UAC prompt for High Integrity Level)</span>
+.\target\release\winscroller2d.exe</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: FAQ ACCORDION -->
+    <section class="faq-section" id="faq">
+      <div class="section-header text-center">
+        <div class="section-tag">Common Questions</div>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+      </div>
+
+      <div class="faq-accordion-list">
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Why does WinScroller 2D prompt for Administrator elevation (UAC)?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Windows has a security subsystem called <strong>User Interface Privilege Isolation (UIPI)</strong>. Standard non-elevated applications are blocked from intercepting input or managing windows running at higher integrity levels (like Task Manager, Registry Editor, or Administrator PowerShell). WinScroller 2D runs at High Integrity Level so your keyboard navigation works uninterrupted across <em>every</em> window on your system.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How does the drag-to-snap dual view work in Overview mode?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Press <strong><code>Win + O</code></strong> to enter overview mode. Then click and drag any window thumbnail and drop it over another window thumbnail. WinScroller 2D will fuse both windows side-by-side into a single 50% / 50% horizontal split cell. When you scroll your 2D canvas, both applications move together smoothly!</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>What happens when I exit WinScroller 2D?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Exiting via <strong><code>Win + Shift + Escape</code></strong> or via tray menu executes a graceful cleanup routine: all off-screen cloaked windows are immediately uncloaked, restored to visible state, and centered cleanly in their monitor work area. Zero orphaned or hidden windows.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Does WinScroller 2D support multi-monitor and mixed DPI scaling?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Yes! Every connected physical monitor and Windows Virtual Desktop hosts its own isolated 2D coordinate lattice. Windows DPI awareness is fully enabled (Per-Monitor V2 DPI Awareness) so text and window frames remain razor-sharp across 100%, 150%, and 200% displays.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Can I control WinScroller 2D from scripts or external macros?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Yes. WinScroller 2D includes a high-speed Named Pipe IPC server. You can dispatch commands from PowerShell or scripts anytime with <code>winscroller2d.exe msg &lt;command&gt;</code> (e.g., <code>msg overview</code>, <code>msg retile</code>, <code>msg quit</code>).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- LIGHTBOX MODAL FOR IMAGES -->
+  <div class="lightbox-modal" id="lightbox-modal" aria-hidden="true">
+    <div class="lightbox-backdrop"></div>
+    <div class="lightbox-content">
+      <button class="lightbox-close" id="lightbox-close" aria-label="Close image">&times;</button>
+      <img src="" alt="Expanded Preview" id="lightbox-img">
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-brand-col">
+        <div class="brand-logo">
+          <div class="logo-mark mini">
+            <span class="grid-dot top-left"></span>
+            <span class="grid-dot top-right"></span>
+            <span class="grid-dot btm-left"></span>
+            <span class="grid-dot btm-right"></span>
+            <span class="logo-core">2D</span>
+          </div>
+          <span class="brand-name">WinScroller 2D</span>
+        </div>
+        <p class="footer-desc">
+          The infinite 2D scrolling and tiling window manager for Windows 10 &amp; 11. Built with speed, safety, and ergonomics in Rust.
+        </p>
+        <div class="footer-license">
+          Released under the open-source <a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>.
+        </div>
+      </div>
+
+      <div class="footer-links-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="#simulator">Live Simulator</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#overview-spotlight">Win+O Overview</a></li>
+          <li><a href="#physics-lab">120Hz Springs</a></li>
+          <li><a href="#keybindings">Keyboard Shortcuts</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links-col">
+        <h4>Documentation</h4>
+        <ul>
+          <li><a href="docs/">mdBook Manual</a></li>
+          <li><a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/blob/main/wiki/Home.md" target="_blank" rel="noopener noreferrer">Official Wiki</a></li>
+          <li><a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/blob/main/CONFIGURATION.md" target="_blank" rel="noopener noreferrer">Configuration Guide</a></li>
+          <li><a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/blob/main/USAGE.md" target="_blank" rel="noopener noreferrer">IPC &amp; CLI Usage</a></li>
+          <li><a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/blob/main/RELEASE_NOTES.md" target="_blank" rel="noopener noreferrer">Release Notes</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+          <li><a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/issues" target="_blank" rel="noopener noreferrer">Issue Tracker</a></li>
+          <li><a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing Guide</a></li>
+          <li><a href="https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener noreferrer">Code of Conduct</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-bottom-container">
+        <span>© 2024–2026 WinScroller 2D Contributors. Crafted for Windows power users.</span>
+        <a href="#hero" class="back-to-top" aria-label="Back to top">
+          <span>Back to Top</span>
+          <span class="arrow">↑</span>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

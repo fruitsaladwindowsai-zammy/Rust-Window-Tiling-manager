@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGlowVD" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#111827" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#090d16" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#05070c" stop-opacity="1"/>
+    </radialGradient>
+
+    <linearGradient id="vdGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#00f5d4"/>
+    </linearGradient>
+
+    <filter id="shadowVD" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes switchDesktop {
+      0%, 20% { transform: translateY(0); }
+      25%, 45% { transform: translateY(-80px); }
+      50%, 70% { transform: translateY(-160px); }
+      75%, 95% { transform: translateY(-240px); }
+      100% { transform: translateY(0); }
+    }
+    .anim-desk-stack { animation: switchDesktop 12s infinite cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+    text { font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif; }
+    .mono { font-family: 'Fira Code', monospace; }
+  </style>
+
+  <!-- Deep Obsidian Background -->
+  <rect width="1200" height="750" fill="url(#bgGlowVD)"/>
+
+  <!-- Top Title Badge -->
+  <g transform="translate(600, 42)">
+    <rect x="-320" y="-18" width="640" height="36" rx="18" fill="rgba(14, 20, 32, 0.95)" stroke="url(#vdGrad)" stroke-width="1.5" filter="url(#shadowVD)"/>
+    <circle cx="-290" cy="0" r="5" fill="#38bdf8"/>
+    <text x="-275" y="4" fill="#f8fafc" font-size="12" font-weight="700">Windows 10/11 Virtual Desktops Isolation (COM IVirtualDesktopManager)</text>
+    <text x="225" y="4" fill="#00f5d4" font-size="10" class="mono" font-weight="bold">Win+Alt+1..9</text>
+  </g>
+
+  <!-- Left: Architectural COM Routing Diagram -->
+  <g transform="translate(80, 105)" filter="url(#shadowVD)">
+    <rect width="400" height="520" rx="16" fill="#0c1220" stroke="rgba(255, 255, 255, 0.15)" stroke-width="2"/>
+    <rect x="15" y="15" width="370" height="32" rx="8" fill="#151e32"/>
+    <text x="25" y="36" fill="#38bdf8" font-size="12" font-weight="bold">COM VIRTUAL DESKTOP ENGINE</text>
+    <rect x="300" y="21" width="75" height="20" rx="10" fill="rgba(56, 189, 248, 0.15)"/>
+    <text x="337" y="35" fill="#38bdf8" font-size="9" class="mono" text-anchor="middle">ACTIVE</text>
+
+    <!-- Architecture Boxes -->
+    <g transform="translate(25, 70)">
+      <!-- Box 1: Windows OS Shell -->
+      <rect x="0" y="0" width="350" height="60" rx="8" fill="#141c2e" stroke="rgba(255,255,255,0.1)"/>
+      <text x="15" y="25" fill="#f8fafc" font-size="11" font-weight="bold">Windows Shell: explorer.exe</text>
+      <text x="15" y="45" fill="#64748b" font-size="9" class="mono">VirtualDesktopNotificationService</text>
+
+      <!-- Arrow down -->
+      <line x1="175" y1="60" x2="175" y2="90" stroke="#38bdf8" stroke-width="2"/>
+      <polygon points="175,95 170,85 180,85" fill="#38bdf8"/>
+
+      <!-- Box 2: COM Interface -->
+      <rect x="0" y="95" width="350" height="80" rx="8" fill="#0f192d" stroke="#38bdf8" stroke-width="2"/>
+      <text x="15" y="120" fill="#00f5d4" font-size="12" class="mono" font-weight="bold">IVirtualDesktopManager (COM)</text>
+      <text x="15" y="142" fill="#cbd5e1" font-size="10">IsWindowOnCurrentVirtualDesktop(HWND)</text>
+      <text x="15" y="160" fill="#10b981" font-size="9" class="mono">GetWindowDesktopId(HWND, GUID)</text>
+
+      <!-- Arrow down -->
+      <line x1="175" y1="175" x2="175" y2="205" stroke="#38bdf8" stroke-width="2"/>
+      <polygon points="175,210 170,200 180,200" fill="#38bdf8"/>
+
+      <!-- Box 3: WinScroller 2D Router -->
+      <rect x="0" y="210" width="350" height="90" rx="8" fill="#161f36" stroke="url(#vdGrad)" stroke-width="2"/>
+      <text x="15" y="235" fill="#f8fafc" font-size="12" font-weight="bold">WinScroller 2D Workspace Router</text>
+      <text x="15" y="255" fill="#a855f7" font-size="10" class="mono">HashMap&lt;(MonitorId, DesktopGuid), Canvas2D&gt;</text>
+      <text x="15" y="275" fill="#cbd5e1" font-size="10">Zero cross-desktop window leakage</text>
+
+      <!-- Benefits note -->
+      <rect x="0" y="320" width="350" height="100" rx="8" fill="rgba(0, 245, 212, 0.05)" stroke="rgba(0, 245, 212, 0.2)" stroke-width="1"/>
+      <text x="15" y="345" fill="#00f5d4" font-size="11" class="mono" font-weight="bold">✓ ISOLATED 2D LATTICES</text>
+      <text x="15" y="370" fill="#94a3b8" font-size="10">Switching desktops instantly shifts coordinates.</text>
+      <text x="15" y="390" fill="#94a3b8" font-size="10">Windows never lose their (col, row) when hidden.</text>
+    </g>
+  </g>
+
+  <!-- Right: 4 Layered Isometric Virtual Desktops -->
+  <g transform="translate(520, 105)" filter="url(#shadowVD)">
+    <rect width="600" height="520" rx="16" fill="#0c1220" stroke="rgba(255, 255, 255, 0.15)" stroke-width="2"/>
+    <rect x="20" y="20" width="560" height="36" rx="8" fill="#151e32"/>
+    <text x="35" y="42" fill="#00f5d4" font-size="12" font-weight="bold">ACTIVE VIRTUAL DESKTOP STACK</text>
+    <text x="560" y="42" fill="#64748b" font-size="10" class="mono" text-anchor="end">Win+Alt+1..4</text>
+
+    <!-- 4 Desktop Cards Preview -->
+    <g transform="translate(30, 80)">
+      <!-- Desktop 4: Media & Social (Top of stack in loop) -->
+      <g transform="translate(0, 0)">
+        <rect width="540" height="90" rx="10" fill="#101726" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+        <text x="20" y="32" fill="#c084fc" font-size="11" font-weight="bold">DESKTOP 4: MEDIA &amp; COMMUNICATION</text>
+        <text x="420" y="32" fill="#64748b" font-size="9" class="mono">[Win+Alt+4]</text>
+        <text x="20" y="55" fill="#94a3b8" font-size="10">Discord, Spotify, OBS Studio | 12 Windows | Independent 2D Canvas</text>
+        <rect x="20" y="65" width="280" height="10" rx="5" fill="rgba(192, 132, 252, 0.2)"/>
+      </g>
+
+      <!-- Desktop 3: DevOps & Containers -->
+      <g transform="translate(0, 105)">
+        <rect width="540" height="90" rx="10" fill="#101726" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+        <text x="20" y="32" fill="#ffaa00" font-size="11" font-weight="bold">DESKTOP 3: DEVOPS &amp; KUBERNETES</text>
+        <text x="420" y="32" fill="#64748b" font-size="9" class="mono">[Win+Alt+3]</text>
+        <text x="20" y="55" fill="#94a3b8" font-size="10">Docker Desktop, Portainer, K9s, AWS CLI | 16 Windows in 4×4 Grid</text>
+        <rect x="20" y="65" width="340" height="10" rx="5" fill="rgba(255, 170, 0, 0.2)"/>
+      </g>
+
+      <!-- Desktop 2: Research & Documentation -->
+      <g transform="translate(0, 210)">
+        <rect width="540" height="90" rx="10" fill="#101726" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+        <text x="20" y="32" fill="#38bdf8" font-size="11" font-weight="bold">DESKTOP 2: RESEARCH &amp; DOCUMENTATION</text>
+        <text x="420" y="32" fill="#64748b" font-size="9" class="mono">[Win+Alt+2]</text>
+        <text x="20" y="55" fill="#94a3b8" font-size="10">Arc Browser, Notion, DWM MSDN Docs | 20 Windows in 5×4 Grid</text>
+        <rect x="20" y="65" width="400" height="10" rx="5" fill="rgba(56, 189, 248, 0.2)"/>
+      </g>
+
+      <!-- Desktop 1: Rust Core Development (Focused) -->
+      <g transform="translate(0, 315)">
+        <rect width="540" height="95" rx="10" fill="#131e33" stroke="#00f5d4" stroke-width="2"/>
+        <text x="20" y="32" fill="#00f5d4" font-size="12" font-weight="bold">DESKTOP 1: RUST CORE DEVELOPMENT [CURRENT FOCUS]</text>
+        <text x="420" y="32" fill="#00f5d4" font-size="9" class="mono" font-weight="bold">[Win+Alt+1]</text>
+        <text x="20" y="55" fill="#cbd5e1" font-size="10">VS Code, Neovim, PowerShell, Test Runner | 50 Windows in 10×5 Grid</text>
+        <rect x="20" y="68" width="500" height="12" rx="6" fill="rgba(0, 245, 212, 0.25)"/>
+        <rect x="20" y="68" width="280" height="12" rx="6" fill="#00f5d4"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Annotation Bar -->
+  <g transform="translate(600, 680)">
+    <rect x="-300" y="-18" width="600" height="36" rx="8" fill="rgba(14, 20, 32, 0.9)" stroke="rgba(255, 255, 255, 0.1)"/>
+    <text x="0" y="4" fill="#94a3b8" font-size="11" class="mono" text-anchor="middle">
+      <tspan fill="#38bdf8" font-weight="bold">Virtual Desktop Engine:</tspan> Move active window to Desktop N with Win+Alt+Shift+1..9
+    </text>
+  </g>
+</svg>
