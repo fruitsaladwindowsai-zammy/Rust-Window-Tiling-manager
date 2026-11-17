@@ -46,6 +46,8 @@ WinScroller 2D uses low-level keyboard hooks (`WH_KEYBOARD_LL`) with Start-Menu 
 | `Win + Minus` (`-`) | `width shrink` | Step width to previous preset. |
 | `Win + Shift + Equal` | `height grow` | Step height to next vertical preset. |
 | `Win + Shift + Minus` | `height shrink` | Step height to previous vertical preset. |
+| `Win + Alt + R` | `cycle_width_preset` | Cycle through configured `width_steps`. |
+| `Win + Alt + Shift + R` | `cycle_height_preset` | Cycle through configured `height_steps`. |
 
 ---
 
@@ -59,7 +61,7 @@ WinScroller 2D uses low-level keyboard hooks (`WH_KEYBOARD_LL`) with Start-Menu 
 | `Win + F` | `maximize` | Toggle maximize cell (expands cell to fill work area). |
 | `Win + Shift + F` | `fullscreen` | Toggle true borderless fullscreen for the focused window. |
 | `Win + Shift + Space` | `float` | Toggle floating mode (detaches window from tiling grid). |
-| `Win + Shift + C` | `close` | Gracefully close the focused window. |
+| `Win + Shift + Q` | `close` | Gracefully close the focused window. |
 
 ---
 
@@ -80,8 +82,8 @@ WinScroller 2D uses low-level keyboard hooks (`WH_KEYBOARD_LL`) with Start-Menu 
 |------------|--------|-------------|
 | `Win + Alt + 1` .. `9` | `workspace 1..9` | Switch to workspace 1 through 9 on the active monitor. |
 | `Win + Alt + Shift + 1` .. `9` | `move-to-workspace 1..9` | Move focused window to workspace 1 through 9. |
-| `Win + PageDown` | `workspace next` | Cycle forward through active workspaces. |
-| `Win + PageUp` | `workspace prev` | Cycle backward through active workspaces. |
+| `Win + PageDown` | `switch_workspace_relative (+1)` | Cycle forward through active workspaces. |
+| `Win + PageUp` | `switch_workspace_relative (-1)` | Cycle backward through active workspaces. |
 | `Win + Alt + Left` | `focus-monitor left` | Move focus to adjacent left monitor. |
 | `Win + Alt + Right` | `focus-monitor right` | Move focus to adjacent right monitor. |
 | `Win + Alt + Shift + Left` | `move-to-monitor left` | Move focused window to adjacent left monitor. |

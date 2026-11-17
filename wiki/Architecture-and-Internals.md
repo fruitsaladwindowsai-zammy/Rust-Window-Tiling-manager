@@ -14,7 +14,7 @@ Rust-Window-Tiling-manager/
 │   │   ├── src/
 │   │   │   ├── grid.rs           # 2D sparse grid, cells, stacks, coordinate math
 │   │   │   ├── manager.rs        # WorkspaceManager state machine
-│   │   │   ├── spring.rs         # Underdamped harmonic oscillator
+│   │   │   ├── animation.rs      # Underdamped harmonic oscillator (Spring1D / CameraAnim)
 │   │   │   ├── config.rs         # Configuration parser and schema
 │   │   │   └── persist.rs        # State serialization
 │   │   └── tests/
@@ -31,7 +31,7 @@ Rust-Window-Tiling-manager/
 │       │       ├── overview.rs   # Win+O live overview GDI/DWM renderer
 │       │       ├── vdesktop.rs   # COM IVirtualDesktopManager interface
 │       │       ├── wallpaper.rs  # Acrylic Gaussian blur generator
-│       │       └── touchpad.rs   # Raw Input precision touch tracking
+│       │       └── gestures.rs   # Raw Input precision touch tracking
 └── wiki/                         # Comprehensive documentation
 ```
 
@@ -58,8 +58,8 @@ The host executable links native Windows subsystem components:
 * **Desktop Window Manager (DWM)**:
   * `DwmSetWindowAttribute(DWMWA_CLOAK)`: Completely halts GPU composition for offscreen windows.
   * `DwmRegisterThumbnail` & `DwmUpdateThumbnailProperties`: Streams live video surfaces for the `Win+O` overview.
-* **120 Hz VSync Animation Pacer**:
-  A dedicated background pacer thread utilizes high-resolution waitable timers (`CreateWaitableTimerExW`) to deliver smooth 120 FPS step ticks to the main message loop without spinning the CPU.
+* **120 Hz VSync Animation Pacer (`VsyncPacer`)**:
+  A dedicated background pacer thread synchronizes directly to DWM VSync via `DwmFlush()` (and parks on a `Condvar` at 0% CPU when idle) to deliver smooth animation ticks to the main message loop.
 
 ---
 

@@ -29,8 +29,9 @@ Rules evaluate case-insensitive substring matches against:
 
 ### Action Flags
 * `ignore = true`: WinScroller 2D completely ignores the window. Windows handles its placement without tiling.
-* `floating = true`: The window is tracked by WinScroller 2D but floats freely above the tiling grid.
+* `float = true`: The window is tracked by WinScroller 2D but floats freely above the tiling grid *(alias `floating = true` is also accepted)*.
 * `workspace = <number>`: Automatically routes the application to a specific workspace (1 through 9) when launched.
+* `width_step = <index>` / `height_step = <index>`: Optional 0-based initial width/height preset indices.
 
 ---
 
@@ -52,7 +53,7 @@ ignore = true
 [[rules]]
 exe = "obs64.exe"
 title = "Projector"
-floating = true
+float = true
 ```
 
 ### 2. Video Players & Picture-in-Picture
@@ -61,12 +62,12 @@ Allow mini players to float freely in the corner of your screen:
 ```toml
 [[rules]]
 title = "Picture in picture"
-floating = true
+float = true
 
 [[rules]]
 exe = "vlc.exe"
 title = "Adjustments and Effects"
-floating = true
+float = true
 ```
 
 ### 3. Gaming Platforms (Steam, Discord, Launchers)
@@ -76,11 +77,11 @@ Keep game launchers floating and let main game windows fullscreen naturally:
 [[rules]]
 exe = "steam.exe"
 title = "Friends List"
-floating = true
+float = true
 
 [[rules]]
 exe = "Battle.net.exe"
-floating = true
+float = true
 ```
 
 ### 4. Routing Development Applications to Workspaces

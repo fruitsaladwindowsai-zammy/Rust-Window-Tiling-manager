@@ -28,7 +28,7 @@ WinScroller 2D intercepts shortcuts with `WH_KEYBOARD_LL` and suppresses acciden
 |----------|--------|-------------|
 | `Win+Comma` | `consume_into_cell` | Consume neighboring right window into focused cell |
 | `Win+Period` | `expel_from_cell` | Expel active stacked window out to a neighbor cell |
-| `Win+W` | `toggle_cell_stack_mode` | Switch cell between vertical split and tabbed stacking |
+| `Win+W` | `toggle_cell_stack_mode` | Switch cell between horizontal side-by-side split and tabbed stacking |
 | `Win+F` | `toggle_maximize_cell` | Maximize/restore focused cell inside viewport |
 | `Win+Shift+F` | `toggle_fullscreen` | Toggle borderless fullscreen |
 | `Win+Shift+Space` | `toggle_floating` | Toggle floating vs. tiled mode |
@@ -51,6 +51,7 @@ WinScroller 2D intercepts shortcuts with `WH_KEYBOARD_LL` and suppresses acciden
 |----------|--------|-------------|
 | `Win+Alt+L` | `toggle_workspace_layout` | Toggle 2D lattice tiling vs. floating on current workspace |
 | `Win+Alt+S` | `open_settings` | Open the live Settings UI |
+| `Win+Shift+R` | `retile` | Retile and resync managed windows |
 | `Win+Shift+P` | `toggle_pause` | Pause/resume tiling and hotkeys |
 | `Win+Shift+Escape` | `quit` | Exit WinScroller 2D and restore managed windows |
 
@@ -61,8 +62,10 @@ WinScroller 2D intercepts shortcuts with `WH_KEYBOARD_LL` and suppresses acciden
 | **Hover card** | Highlight card and reveal red top-right `✕` close button |
 | **Click red `✕`** | Close that window directly |
 | **Left-click card** | Animate window to front and exit overview |
-| **Drag & Drop card** | Shrink layout, show drop grid slots, and move/swap window |
-| **`Shift` + Drag & Drop** | Stack dragged window into the target cell |
+| **Drag & Drop onto a window** | Snap both windows horizontally (50% / 50%) into one combined view |
+| **Drag & Drop onto an empty slot** | Move window into that coordinate as a standalone cell |
+| **`Shift` + Drag & Drop** | Swap the two windows' positions |
+| **`Ctrl` + Drag & Drop** | Stack dragged window into the target cell |
 | **Arrow keys + `Enter`** | Move highlight cursor and activate cell |
 | **`Esc` or Right-click** | Dismiss overview |
 

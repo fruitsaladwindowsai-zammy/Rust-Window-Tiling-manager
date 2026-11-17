@@ -19,7 +19,7 @@ WinScroller 2D merges **Niri-style** scrolling columns and cell stacks with **Hy
 ## Highlights
 
 - **Infinite 2D Sparse Grid** — Place, swap, and scroll across `(col, row)` coordinates with neighbor edge peeking and five placement strategies.
-- **Niri Cell Stacking** — Consume (`Win+Comma`), expel (`Win+Period`), and toggle vertical split vs. tabbed stacks (`Win+W`).
+- **Niri Cell Stacking** — Consume (`Win+Comma`), expel (`Win+Period`), and toggle horizontal split vs. tabbed stacks (`Win+W`).
 - **Dynamic `Win+O` Overview** — Automatically fits all active windows into the display view with live DWM thumbnails, Gaussian-blurred wallpaper, bottom-centered app icons, smooth front/back depth transitions, drag-and-drop reordering, and a spring-animated red top-right `✕` close button on the highlighted window.
 - **Drag-to-Snap Dual View** — Drag any window onto another in `Win+O` overview to fuse them into a 50/50 horizontal split cell that scrolls together as a unit.
 - **Hardware-Paced 120Hz Springs** — Underdamped mass-spring-damper camera dynamics with zero CPU spin when at rest.

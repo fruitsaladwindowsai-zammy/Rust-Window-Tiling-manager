@@ -536,12 +536,24 @@ unsafe extern "system" fn controller_wnd_proc(
                     && st.mgr.config.layout.overview_thumbnails
                     && st.mgr.config.layout.three_finger_pan;
                 let sens = st.mgr.config.layout.gesture_pan_sensitivity;
+                let inv_x = if st.mgr.config.layout.gesture_invert_x {
+                    -1.0
+                } else {
+                    1.0
+                };
+                let inv_y = if st.mgr.config.layout.gesture_invert_y {
+                    -1.0
+                } else {
+                    1.0
+                };
                 if let Some(ev) =
                     st.touchpad
                         .handle_raw_input(lparam, sens, can_desktop_pan || can_overview_pan)
                 {
                     match ev {
                         GestureEvent::PanDelta { dx, dy } => {
+                            let dx = dx * inv_x;
+                            let dy = dy * inv_y;
                             if can_desktop_pan {
                                 execute_action(st, hwnd, Action::PanPixels { dx, dy });
                             } else if can_overview_pan {
@@ -552,11 +564,21 @@ unsafe extern "system" fn controller_wnd_proc(
                         }
                         GestureEvent::PanCommit { vx, vy } => {
                             if can_desktop_pan {
-                                execute_action(st, hwnd, Action::PanCommit { vx, vy });
+                                execute_action(
+                                    st,
+                                    hwnd,
+                                    Action::PanCommit {
+                                        vx: vx * inv_x,
+                                        vy: vy * inv_y,
+                                    },
+                                );
                             }
                         }
                         GestureEvent::OverviewToggle { open } => {
-                            if !st.mgr.paused && open != st.mgr.overview_open {
+                            if !st.mgr.paused
+                                && st.mgr.config.layout.four_finger_overview
+                                && open != st.mgr.overview_open
+                            {
                                 execute_action(st, hwnd, Action::ToggleOverview);
                             }
                         }

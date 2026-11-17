@@ -1724,7 +1724,18 @@ unsafe extern "system" fn overview_wnd_proc(
                         if let Some(target) = hit_or_nearest_box(&st.boxes, sx, sy, mx, my) {
                             if let Some(target_win_id) = target.window_id {
                                 if target_win_id != drag.window_id {
-                                    if is_ctrl_down() || is_shift_down() {
+                                    if is_ctrl_down() {
+                                        return UpAction::Place(
+                                            st.controller_hwnd,
+                                            OverviewCommand::Place {
+                                                window_id: drag.window_id,
+                                                col: target.col,
+                                                row: target.row,
+                                                stack: true,
+                                            },
+                                        );
+                                    }
+                                    if is_shift_down() {
                                         return UpAction::Place(
                                             st.controller_hwnd,
                                             OverviewCommand::Place {

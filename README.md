@@ -58,7 +58,7 @@
 | 2D Infinite Sparse Lattice Navigation | Niri-Style Cell Stacking & Split |
 |:---:|:---:|
 | ![2D Tiling Navigation](docs/assets/concept-tiling-snap.svg) | ![Cell Stacking Dynamics](docs/assets/concept-cell-stacking.svg) |
-| *Unbounded $(X,Y)$ sparse matrix with neighbor peeking* | *Card deck tabs (`Win+W`) vs vertical split cells* |
+| *Unbounded $(X,Y)$ sparse matrix with neighbor peeking* | *Card deck tabs (`Win+W`) vs horizontal split cells* |
 
 | Live Acrylic `Win + O` Overview | Drag-to-Snap Horizontal Split |
 |:---:|:---:|
@@ -213,8 +213,8 @@ Remove-Item -Force "$env:APPDATA\WinScroller2D\state.json" -ErrorAction Silently
 ## Why WinScroller 2D?
 
 - **Infinite 2D Sparse Grid** – Organize windows across unbounded `(col, row)` coordinates with neighbor edge peeking (`peek_x`/`peek_y`), 5 spawn modes, hole preservation, and optional empty row/column compaction.
-- **Niri-Style Cell Stacking** – Consume (`Win+Comma`) or expel (`Win+Period`) windows inside a cell and toggle vertical split vs. tabbed stacks (`Win+W`) with DWM cloaking.
-- **Dynamic `Win+O` Overview with Drag Snapping** – Fits all active windows into the display view over Gaussian-blurred wallpaper (`pure_blur` / `acrylic_clear`), displays live DWM thumbnails with bottom-centered app icons, animates highlighted windows, supports drag-and-drop cell reordering, and lets you drag and drop any window onto another to snap them horizontally (50% / 50% width) side-by-side into one combined view with infinite scrolling between views.
+- **Niri-Style Cell Stacking** – Consume (`Win+Comma`) or expel (`Win+Period`) windows inside a cell and toggle horizontal split vs. tabbed stacks (`Win+W`) with DWM cloaking.
+- **Dynamic `Win+O` Overview with Drag Snapping** – Fits all active windows into the display view over Gaussian-blurred wallpaper (`pure_blur` / `acrylic_clear` / `none`), displays live DWM thumbnails with bottom-centered app icons, animates highlighted windows, supports drag-and-drop cell reordering (`Shift+Drag` to swap, `Ctrl+Drag` to stack), and lets you drag and drop any window onto another to snap them horizontally (50% / 50% width) side-by-side into one combined view with infinite scrolling between views.
 - **Clean Display Borders & Cloaking** – 0px edge peek margin guarantees that non-visible workspace columns and rows are cleanly cloaked with zero leftover title bar slivers or edge artifacts in screen corners.
 - **Clean Exit Centering** – Graceful exit (`Win+Shift+Escape` or system tray exit) cleanly uncloaks and centers all applications in the monitor work area.
 - **Dual Screen & Multi-Monitor Extended Mode** – Strict display boundaries with zero spillover across monitors or virtual desktops, smart cross-monitor drag transfer, and hardware edge clipping.
@@ -250,7 +250,7 @@ Remove-Item -Force "$env:APPDATA\WinScroller2D\state.json" -ErrorAction Silently
 | `Win+F` / `Win+Shift+F` / `Win+Shift+Space` | Maximize cell / Fullscreen / Float window |
 | `Win+Alt+1..9` / `Win+PageUp/PageDown` | Switch workspaces (`Win+Alt+Shift+1..9` moves window) |
 | `Win+Alt+Left/Right` | Focus monitor (`Win+Alt+Shift+Left/Right` moves window) |
-| `Win+Alt+S` / `Win+Alt+L` | Open Settings UI / Toggle workspace lattice mode |
+| `Win+Alt+S` / `Win+Alt+L` / `Win+Shift+R` | Open Settings UI / Toggle workspace lattice / Retile |
 | `Win+Shift+P` / `Win+Shift+Escape` | Pause-Resume tiling / Exit & restore windows |
 
 Complete keyboard, overview mouse/drag, Precision Touchpad, and tray reference: **[KEYBINDINGS.md](KEYBINDINGS.md)**.

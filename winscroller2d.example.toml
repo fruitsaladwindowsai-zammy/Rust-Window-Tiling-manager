@@ -15,7 +15,7 @@ focused_peek_y = 0
 gap_x = 8
 gap_y = 8
 
-# Gap between windows stacked vertically inside the same cell (Niri consume/expel mode).
+# Gap between windows split horizontally side-by-side inside the same cell.
 stack_gap = 8
 
 # Discrete width and height presets as fractions of (viewport - 2 * peek).
@@ -62,7 +62,10 @@ center_cursor_on_peek = false
 
 # Precision Touchpad continuous 2D panning (3-finger pan / 4-finger overview toggle).
 three_finger_pan = true
+four_finger_overview = true
 gesture_pan_sensitivity = 1.0
+gesture_invert_x = false
+gesture_invert_y = false
 
 # Persist workspace coordinates, cell presets, and per-workspace lattice toggles in state.json.
 persist_state = true
@@ -352,6 +355,10 @@ action = "toggle_workspace_layout"
 [[bindings]]
 keys = "Win+Alt+S"
 action = "open_settings"
+
+[[bindings]]
+keys = "Win+Shift+R"
+action = "retile"
 
 [[bindings]]
 keys = "Win+Shift+P"

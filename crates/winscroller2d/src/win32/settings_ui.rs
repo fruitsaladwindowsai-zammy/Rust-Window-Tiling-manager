@@ -407,12 +407,13 @@ fn apply_setting_action(st: &mut SettingsState, act: SettingAction) -> ActionOut
         SettingAction::ToggleBlurMode => {
             ap.blur_mode = match ap.blur_mode {
                 OverviewBlurMode::PureBlur => OverviewBlurMode::AcrylicClear,
-                OverviewBlurMode::AcrylicClear => OverviewBlurMode::PureBlur,
+                OverviewBlurMode::AcrylicClear => OverviewBlurMode::None,
+                OverviewBlurMode::None => OverviewBlurMode::PureBlur,
             };
-            ap.overview_alpha = if matches!(ap.blur_mode, OverviewBlurMode::PureBlur) {
-                0
-            } else {
+            ap.overview_alpha = if matches!(ap.blur_mode, OverviewBlurMode::AcrylicClear) {
                 10
+            } else {
+                0
             };
         }
         SettingAction::ToggleOverviewThumbs => l.overview_thumbnails = !l.overview_thumbnails,
@@ -831,6 +832,7 @@ unsafe fn paint_settings(hwnd: HWND) {
             let blur_label = match ap.blur_mode {
                 OverviewBlurMode::PureBlur => "Pure Blur",
                 OverviewBlurMode::AcrylicClear => "Light Frost",
+                OverviewBlurMode::None => "No Blur",
             };
 
             let rows = [

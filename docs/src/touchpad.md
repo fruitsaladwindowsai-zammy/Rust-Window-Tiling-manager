@@ -15,3 +15,18 @@ WinScroller 2D natively integrates with **Windows Precision Touchpad (PTP)** dev
 ### 2. Four-Finger Swipe for Overview
 * **Action**: Swipe up with four fingers on your touchpad to open **`Win + O` Overview**.
 * Swiping down closes Overview and zooms back into your active window.
+
+---
+
+## ⚙️ Configuration
+
+Configure touchpad options under `[layout]` in `%APPDATA%\WinScroller2D\winscroller2d.toml`:
+
+```toml
+[layout]
+three_finger_pan = true
+four_finger_overview = true
+gesture_pan_sensitivity = 1.0
+gesture_invert_x = false
+gesture_invert_y = false
+```

@@ -22,28 +22,22 @@ WinScroller 2D natively integrates with **Windows Precision Touchpad (PTP)** dev
 
 ## ⚙️ Configuration Settings
 
-Customize touchpad responsiveness in `%APPDATA%\WinScroller2D\winscroller2d.toml`:
+Customize touchpad responsiveness under `[layout]` in `%APPDATA%\WinScroller2D\winscroller2d.toml`:
 
 ```toml
-[touchpad]
-# Enable three-finger smooth panning
-enabled = true
+[layout]
+# Enable three-finger smooth 2D panning
+three_finger_pan = true
 
-# Enable four-finger swipe to toggle Overview
-swipe_overview = true
+# Enable four-finger swipe up/down to open/close Overview
+four_finger_overview = true
 
-# Pan sensitivity multiplier (default: 1.0)
-sensitivity = 1.0
+# Pan sensitivity multiplier (clamped: 0.2..=5.0, default: 1.0)
+gesture_pan_sensitivity = 1.0
 
-# Kinetic friction coefficient (default: 0.92, lower = more friction / stops faster)
-friction = 0.92
-
-# Velocity threshold required to trigger inertia flick (in pixels/sec)
-flick_threshold = 300.0
-
-# Invert scroll direction (natural scrolling)
-invert_x = false
-invert_y = false
+# Invert pan direction (natural vs. reverse scrolling)
+gesture_invert_x = false
+gesture_invert_y = false
 ```
 
 ---

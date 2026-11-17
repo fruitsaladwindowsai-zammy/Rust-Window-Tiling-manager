@@ -247,13 +247,13 @@ impl WallpaperCache {
             return;
         }
         let bt = blur_t.clamp(0.0, 1.0);
-        if bt <= 0.005 {
+        if bt <= 0.005 || matches!(mode, OverviewBlurMode::None) {
             dst[..len].copy_from_slice(&self.sharp[..len]);
             return;
         }
 
         let tint_alpha = match mode {
-            OverviewBlurMode::PureBlur => 0u32,
+            OverviewBlurMode::PureBlur | OverviewBlurMode::None => 0u32,
             OverviewBlurMode::AcrylicClear => (frost_alpha as u32).min(48),
         };
         let eff_tint = ((tint_alpha as f64) * bt).round() as u32;

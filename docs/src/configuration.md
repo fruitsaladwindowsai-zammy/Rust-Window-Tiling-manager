@@ -11,10 +11,10 @@ winscroller2d.exe --validate      # Validate syntax and constraints
 
 | Key | Default | Range / Values | Purpose |
 |-----|---------|----------------|---------|
-| `peek_x`, `peek_y` | `8`, `8` | `>= 0` | Edge peek padding (px) |
+| `peek_x`, `peek_y` | `0`, `0` | `>= 0` | Edge peek padding (px) |
 | `auto_expand_focused` | `false` | `bool` | Expand focused cell and shrink unfocused neighbors |
-| `focused_peek_x`, `focused_peek_y` | `8`, `8` | `>= 0` | Margin kept when `auto_expand_focused = true` |
-| `gap_x`, `gap_y`, `stack_gap` | `8`, `8`, `8` | `>= 0` | Cell gaps and vertical stack gap (px) |
+| `focused_peek_x`, `focused_peek_y` | `0`, `0` | `>= 0` | Margin kept when `auto_expand_focused = true` |
+| `gap_x`, `gap_y`, `stack_gap` | `8`, `8`, `8` | `>= 0` | Cell gaps and horizontal split stack gap (px) |
 | `width_steps`, `height_steps` | `[0.50, 0.67, 0.85, 1.00]` | `(0.05, 2.0]` | Discrete cell fraction presets |
 | `default_width_step`, `default_height_step` | `3`, `3` | valid indices | Default preset index (`1.00`) |
 | `new_window_placement` | `"right_of_focus"` | `"right_of_focus"`, `"below_focus"`, `"rightmost_in_row"`, `"stack_in_current_cell"`, `"neighbor_4way"` | New window insertion policy |
@@ -31,7 +31,9 @@ winscroller2d.exe --validate      # Validate syntax and constraints
 | `hover_focus_delay_ms` | `150` | `0..=2000` | Dwell delay (ms) before hover-focus triggers |
 | `center_cursor_on_peek` | `false` | `bool` | Center cursor inside focused window on hover/overview jump |
 | `three_finger_pan` | `true` | `bool` | Enable 3-finger Precision Touchpad 2D panning |
+| `four_finger_overview` | `true` | `bool` | Enable 4-finger swipe up/down overview toggle |
 | `gesture_pan_sensitivity` | `1.0` | `0.2..=5.0` | Touchpad pan sensitivity multiplier |
+| `gesture_invert_x`, `gesture_invert_y` | `false`, `false` | `bool` | Invert horizontal / vertical 3-finger pan direction |
 | `persist_state` | `true` | `bool` | Save window coordinates & snap state in `state.json` |
 | `restore_timeout_secs` | `45` | `5..=300` | Startup matching window for persisted windows |
 
@@ -53,7 +55,7 @@ winscroller2d.exe --validate      # Validate syntax and constraints
 | `enable_win11_border` | `true` | `bool` | Native `DWMWA_BORDER_COLOR` on Windows 11 |
 | `active_border_color` | `"#7AA2F7"` | `#RRGGBB`, `"default"`, `"none"` | Focused border color |
 | `inactive_border_color` | `"#2F334D"` | `#RRGGBB`, `"default"`, `"none"` | Unfocused border color |
-| `blur_mode` | `"pure_blur"` | `"pure_blur"`, `"acrylic_clear"` | **Win+O** wallpaper blur style |
+| `blur_mode` | `"pure_blur"` | `"pure_blur"`, `"acrylic_clear"`, `"none"` | **Win+O** wallpaper blur style |
 | `overview_alpha` | `0` | `0..=220` | Light frost alpha for `acrylic_clear` |
 
 ## `[workspaces]`, `[[rules]]`, `[[bindings]]`

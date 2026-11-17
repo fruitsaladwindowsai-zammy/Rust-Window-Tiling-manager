@@ -887,3 +887,41 @@ fn snapped_window_sizes_persist_across_sibling_snaps_overview_and_restart() {
     assert_eq!((r201.w, r201.h), (r101.w, r101.h));
     assert_eq!((r202.w, r202.h), (r102.w, r102.h));
 }
+
+#[test]
+fn config_supports_touchpad_options_blur_none_floating_alias_and_retile_binding() {
+    let custom = r#"
+[layout]
+three_finger_pan = true
+four_finger_overview = false
+gesture_pan_sensitivity = 1.5
+gesture_invert_x = true
+gesture_invert_y = true
+
+[appearance]
+blur_mode = "none"
+
+[[rules]]
+exe = "calc.exe"
+floating = true
+"#;
+    let cfg = Config::from_toml_str(custom).expect("custom config should parse");
+    assert!(cfg.layout.three_finger_pan);
+    assert!(!cfg.layout.four_finger_overview);
+    assert!(cfg.layout.gesture_invert_x);
+    assert!(cfg.layout.gesture_invert_y);
+    assert_eq!(
+        cfg.appearance.blur_mode,
+        winscroller2d_core::OverviewBlurMode::None
+    );
+    assert_eq!(cfg.rules.len(), 1);
+    assert!(cfg.rules[0].float);
+
+    let defaults = Config::default();
+    assert!(
+        defaults
+            .bindings
+            .iter()
+            .any(|b| b.keys == "Win+Shift+R" && b.action == Action::Retile)
+    );
+}

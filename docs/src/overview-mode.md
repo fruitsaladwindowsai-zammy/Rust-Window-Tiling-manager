@@ -39,9 +39,10 @@ The **Win+O** overview provides a live, interactive bird's-eye view of your enti
 ![Split Snapping Dynamics](../assets/concept-split-snap.svg)
 
 - **Interactive Dragging**: Dragging a window card shrinks surrounding tiles smoothly and reveals available target grid slots.
-- **Swap / Reorder**: Drop onto any occupied or empty coordinate to move or swap the window in the 2D lattice.
+- **Move to Empty Slot**: Drop onto any empty coordinate to move the window into that cell.
 - **Drag-to-Snap Horizontal Split**: Drop any window card directly onto another window to fuse both together side-by-side ($50\% / 50\%$ width) into a unified view with infinite scroll between views!
-- **Cell Stacking**: Hold **`Shift`** while dropping to stack the window into the target cell (Niri-style tabbed or split stack).
+- **Swap Windows (`Shift` + Drag)**: Hold **`Shift`** while dropping onto another window to swap their positions.
+- **Stack into Cell (`Ctrl` + Drag)**: Hold **`Ctrl`** while dropping onto another window to stack the window into the target cell.
 
 | Snapped Dual-App Horizontal Split View |
 |:---:|

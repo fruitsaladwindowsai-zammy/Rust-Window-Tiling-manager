@@ -24,8 +24,8 @@ Instead of snapping windows instantly across the screen with jarring jumps, WinS
   $$\mathbf{x}_{\text{target}} = \text{Cell Center}_X, \quad \mathbf{y}_{\text{target}} = \text{Cell Center}_Y$$
 * **Spring Dynamics**: An underdamped harmonic oscillator calculates camera movement:
   $$F = -k (\mathbf{x} - \mathbf{x}_{\text{target}}) - c \mathbf{v}$$
-  where $k$ is spring stiffness (default `320.0`), and $c$ is the damping ratio (default `0.84`).
-* **120 Hz Hardware Pacing**: The animation step loop is paced via a high-resolution waitable timer synchronized with DWM refresh cycles.
+  where $k$ is spring stiffness (`stiffness`, default `260.0`), and $c = 2\zeta\sqrt{k}$ is derived from the damping ratio (`damping_ratio`, default `0.72`).
+* **120 Hz Hardware Pacing**: The animation step loop (`VsyncPacer`) synchronizes directly to DWM VSync via `DwmFlush()` and sleeps at 0% CPU on a `Condvar` when idle.
 
 ---
 
@@ -39,8 +39,8 @@ Every coordinate `(col, row)` holds a **Cell**. A cell can contain:
    * They act as a unified dual-app view with infinite scroll between views.
 3. **Tabbed Stack**:
    * Windows are stacked on top of one another at the same coordinate.
-   * `Win + W` toggles between split and tabbed modes.
-   * In tabbed mode, non-active windows in the stack are automatically DWM-cloaked and switch instantly via `Win + PageUp` / `Win + PageDown` or `consume` / `expel`.
+   * `Win + W` toggles between horizontal split and tabbed modes.
+   * In tabbed mode, non-active windows in the stack are automatically DWM-cloaked and switch instantly via **`Win + Left` / `Win + Up`** and **`Win + Right` / `Win + Down`**.
 
 ---
 
@@ -61,4 +61,4 @@ To maintain clean aesthetics and optimal system performance:
 Each physical monitor maintains its own **independent** 2D workspace lattice:
 
 * Panning or navigating on Monitor 1 never shifts or scrolls the camera on Monitor 2.
-* When switching Windows 11 Virtual Desktops via native Windows gestures or `Win+Ctrl+Left/Right`, WinScroller 2D switches its active grid state to match the OS virtual desktop via COM `IVirtualDesktopManager`.
+* When switching Windows 11 Virtual Desktops via Task View (`Win+Tab`) or OS virtual desktop controls, WinScroller 2D switches its active grid state to match the OS virtual desktop via COM `IVirtualDesktopManager` (note: `Win+Ctrl+Left/Right` is bound to camera panning by default and can be customized in `winscroller2d.toml`).

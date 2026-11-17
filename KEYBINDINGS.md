@@ -48,7 +48,7 @@ WinScroller 2D uses a low-level Windows keyboard hook (`WH_KEYBOARD_LL`) so `Win
 |----------|--------|-------------|
 | `Win+Comma` (`Win+,`) | `consume_into_cell` (`right`) | Pull the neighboring right window into the focused cell stack |
 | `Win+Period` (`Win+.`) | `expel_from_cell` (`right`) | Expel the active stacked window out to a neighboring cell |
-| `Win+W` | `toggle_cell_stack_mode` | Toggle the focused cell between vertical split and tabbed stacking |
+| `Win+W` | `toggle_cell_stack_mode` | Toggle the focused cell between horizontal side-by-side split and tabbed stacking |
 
 ### Window & Cell Modes
 
@@ -79,6 +79,7 @@ WinScroller 2D uses a low-level Windows keyboard hook (`WH_KEYBOARD_LL`) so `Win
 |----------|--------|-------------|
 | `Win+Alt+L` | `toggle_workspace_layout` | Toggle tiling vs. floating layout for the current workspace |
 | `Win+Alt+S` | `open_settings` | Open the live **WinScroller 2D Settings** overlay window |
+| `Win+Shift+R` | `retile` | Retile and resync managed windows to default geometry |
 | `Win+Shift+P` | `toggle_pause` | Pause or resume tiling & hotkeys (only `Win+Shift+P` and `Win+Shift+Escape` stay active while paused) |
 | `Win+Shift+Escape` | `quit` | Gracefully exit WinScroller 2D and restore managed windows |
 
@@ -95,7 +96,8 @@ When the **Win+O** overview is open, all windows on the active workspace scale d
 | **Left-click** a window card | Animates the highlighted window to the front and exits overview |
 | **Drag & Drop** onto another window | **Snaps** the two windows horizontally (50% / 50% width, 100% height) into one combined view |
 | **Drag & Drop** onto an empty slot | Moves the window into that new coordinate as a standalone cell |
-| **`Shift` / `Ctrl` + Drag & Drop** onto a window | Swaps the two windows' positions |
+| **`Shift` + Drag & Drop** onto a window | Swaps the two windows' positions |
+| **`Ctrl` + Drag & Drop** onto a window | Stacks the dragged window into the target cell |
 | **Snapped views in overview** | Snapped views display both windows side-by-side as sub-cards with live thumbnails, icons, and individual close buttons |
 | **Left-click** an empty slot | Jumps camera/focus to that empty grid coordinate and closes overview |
 | `Left` / `Right` / `Up` / `Down` | Move overview highlight cursor across grid coordinates |

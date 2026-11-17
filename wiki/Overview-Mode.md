@@ -49,8 +49,9 @@ Overview mode includes full mouse interaction designed for effortless organizati
   * Dropping on the **left half** of the target window places the dragged app on the left.
   * Dropping on the **right half** places the dragged app on the right.
 
-### 3. Stacking & Grouping
-* Holding **`Shift`** or **`Ctrl`** while dropping a window stacks the application into a tabbed group.
+### 3. Swapping & Stacking
+* Hold **`Shift`** while dropping a window onto another window to **swap** their positions.
+* Hold **`Ctrl`** while dropping a window onto another window to **stack** the application into the target cell.
 
 ---
 

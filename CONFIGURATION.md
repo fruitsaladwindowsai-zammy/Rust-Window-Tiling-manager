@@ -22,11 +22,11 @@ You can also view the complete commented template in [`winscroller2d.example.tom
 
 | Key | Type | Default | Valid Range / Options | Description |
 |-----|------|---------|-----------------------|-------------|
-| `peek_x` | `i32` | `8` | `>= 0` | Horizontal outer margin / edge peek (px) around cells |
-| `peek_y` | `i32` | `8` | `>= 0` | Vertical outer margin / edge peek (px) around cells |
+| `peek_x` | `i32` | `0` | `>= 0` | Horizontal outer margin / edge peek (px) around cells |
+| `peek_y` | `i32` | `0` | `>= 0` | Vertical outer margin / edge peek (px) around cells |
 | `auto_expand_focused` | `bool` | `false` | `true \| false` | Expand focused cell toward full viewport and shrink unfocused neighbors back to presets |
-| `focused_peek_x` | `i32` | `8` | `>= 0` | Horizontal edge margin when `auto_expand_focused = true` |
-| `focused_peek_y` | `i32` | `8` | `>= 0` | Vertical edge margin when `auto_expand_focused = true` |
+| `focused_peek_x` | `i32` | `0` | `>= 0` | Horizontal edge margin when `auto_expand_focused = true` |
+| `focused_peek_y` | `i32` | `0` | `>= 0` | Vertical edge margin when `auto_expand_focused = true` |
 | `gap_x` | `i32` | `8` | `>= 0` | Horizontal gap between adjacent grid cells (px) |
 | `gap_y` | `i32` | `8` | `>= 0` | Vertical gap between adjacent grid cells (px) |
 | `stack_gap` | `i32` | `8` | `>= 0` | Gap between stacked windows inside the same cell (px) |
@@ -49,7 +49,10 @@ You can also view the complete commented template in [`winscroller2d.example.tom
 | `hover_focus_delay_ms` | `u64` | `150` | `0..=2000` | Dwell delay (ms) before hover-focus switches window (`0` = immediate) |
 | `center_cursor_on_peek` | `bool` | `false` | `true \| false` | Center cursor inside target window on hover-peek or overview selection |
 | `three_finger_pan` | `bool` | `true` | `true \| false` | Enable 1:1 continuous 2D 3-finger Precision Touchpad panning |
+| `four_finger_overview` | `bool` | `true` | `true \| false` | Enable 4-finger swipe up/down to open/close `Win+O` overview |
 | `gesture_pan_sensitivity` | `f64` | `1.0` | `0.2..=5.0` | Touchpad pan sensitivity multiplier |
+| `gesture_invert_x` | `bool` | `false` | `true \| false` | Invert horizontal 3-finger touchpad pan direction |
+| `gesture_invert_y` | `bool` | `false` | `true \| false` | Invert vertical 3-finger touchpad pan direction |
 | `persist_state` | `bool` | `true` | `true \| false` | Save grid coordinates, snap sizes, and workspace states in `state.json` |
 | `restore_timeout_secs` | `u64` | `45` | `5..=300` | Startup window-matching window (seconds) for restoring saved windows |
 
@@ -76,7 +79,7 @@ You can also view the complete commented template in [`winscroller2d.example.tom
 | `enable_win11_border` | `bool` | `true` | `true \| false` | Set native Windows 11 `DWMWA_BORDER_COLOR` on tiled windows |
 | `active_border_color` | `string` | `"#7AA2F7"` | `#RRGGBB`, `"default"`, `"none"` | Active/focused window border color |
 | `inactive_border_color` | `string` | `"#2F334D"` | `#RRGGBB`, `"default"`, `"none"` | Unfocused tiled window border color |
-| `blur_mode` | `string` | `"pure_blur"` | `"pure_blur"`, `"acrylic_clear"` | **Win+O** wallpaper blur style (`pure_blur` has zero dark/white veil) |
+| `blur_mode` | `string` | `"pure_blur"` | `"pure_blur"`, `"acrylic_clear"`, `"none"` | **Win+O** wallpaper blur style (`pure_blur` = Gaussian blur, `acrylic_clear` = blur + frost, `none` = sharp wallpaper) |
 | `overview_alpha` | `u8` | `0` | `0..=220` | Subtle light frost alpha when `blur_mode = "acrylic_clear"` |
 
 ---

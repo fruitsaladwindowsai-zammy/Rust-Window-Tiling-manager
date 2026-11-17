@@ -14,25 +14,26 @@ $$m \frac{d^2x}{dt^2} + c \frac{dx}{dt} + k(x - x_{\text{target}}) = 0$$
 
 Where:
 * $m$ = Virtual inertia / mass of the camera payload (normalized to $1.0$).
-* $k$ = Spring stiffness constant ($k = 180.0\text{ N/m}$).
-* $c$ = Damping coefficient ($c = 21.0\text{ N}\cdot\text{s/m}$).
+* $k$ = Spring stiffness constant (`stiffness`, default $k = 260.0$, clamped $40.0\text{..=}1500.0$).
+* $\zeta$ = Damping ratio (`damping_ratio`, default $\zeta = 0.72$, clamped $0.45\text{..=}2.0$).
+* $c = 2 \zeta \sqrt{k}$ = Derived damping coefficient ($\approx 23.22$ at defaults).
 * $x_{\text{target}}$ = Target coordinate of the newly focused window cell or pan offset.
 
 ---
 
 ## 📈 Harmonic Response Characteristics
 
-By tuning stiffness $k$ and damping $c$, WinScroller 2D achieves an **underdamped response**:
+By tuning `stiffness` ($k$) and `damping_ratio` ($\zeta$), WinScroller 2D achieves a crisp **underdamped response**:
 
-* **Natural Frequency**: $\omega_0 = \sqrt{\frac{k}{m}} \approx 13.42\text{ rad/s}$ ($f_0 \approx 2.14\text{ Hz}$).
-* **Damping Ratio**: $\zeta = \frac{c}{2\sqrt{km}} \approx 0.78$ ($0 < \zeta < 1 \implies$ underdamped).
-* **Overshoot**: A deliberate, buttery $\approx 2.5\%$ overshoot that cushions smoothly into the settled resting position, matching modern macOS and iOS tactile spring kinetics.
-* **Settling Time**: $t_s \approx 280\text{ ms}$ to within $\pm 0.5\text{px}$ deadband.
+* **Natural Frequency**: $\omega_0 = \sqrt{k} \approx 16.12\text{ rad/s}$ ($f_0 \approx 2.57\text{ Hz}$).
+* **Damping Ratio**: $\zeta = 0.72$ ($0 < \zeta < 1 \implies$ underdamped).
+* **Overshoot**: A deliberate, tactile overshoot ($\approx 3.8\%$) that cushions smoothly into the settled resting position.
+* **Settling Deadband**: Snaps cleanly once $|x - x_{\text{target}}| \le \epsilon$ (`snap_epsilon_px`, default `0.5` px) and $|v| \le 8\epsilon$.
 
 ```text
 Position x(t)
     ▲
-    │         ┌───── overshoot (~2.5%)
+    │         ┌───── subtle overshoot (~3.8%)
     │       /   \
 Target ────┼─────\─────────────────── Settled resting position
     │     /       \_________
@@ -47,18 +48,17 @@ Target ────┼─────\──────────────
 
 ## ⏱️ Hardware VSync Pacing & Zero CPU Spin
 
-Rather than spinning CPU cycles in a tight polling loop, `VsyncPacer` uses native Windows multimedia timers and DWM composition VSync notifications (`DwmGetCompositionTimingInfo`):
+Rather than spinning CPU cycles in a tight polling loop, `VsyncPacer` uses a condition variable (`Condvar`) paired with native DWM compositor VSync (`DwmFlush()`):
 
 1. **Active Motion Phase**:
-   - Updates camera coordinates at native display refresh rates ($60\text{ Hz}$, $120\text{ Hz}$, $144\text{ Hz}$, or $240\text{ Hz}$).
-   - Integrates velocity using semi-implicit Euler integration:
-     $$\Delta t = \min(t - t_{\text{prev}}, 33\text{ms})$$
-     $$v_{t+\Delta t} = v_t + \left(\frac{-k(x_t - x_{\text{target}}) - c \cdot v_t}{m}\right) \Delta t$$
-     $$x_{t+\Delta t} = x_t + v_{t+\Delta t} \Delta t$$
+   - Wakes on each DWM compositor VSync (`DwmFlush()`, with an `8 ms` fallback if DWM is unavailable) and posts `WM_APP_VSYNC_STEP`.
+   - Sub-steps semi-implicit Euler integration in `Spring1D::step` ($h \le 4\text{ ms}$, up to 16 substeps per frame) for unconditional numerical stability:
+     $$\Delta t = \text{clamp}(t - t_{\text{prev}}, 0.5\text{ms}, 50\text{ms})$$
+     $$v_{t+h} = v_t + \big(-k(x_t - x_{\text{target}}) - c \cdot v_t\big) h$$
+     $$x_{t+h} = x_t + v_{t+h} h$$
 2. **Resting Phase (Zero CPU)**:
-   - When $|x - x_{\text{target}}| < 0.5\text{px}$ and $|v| < 1.0\text{px/s}$, the spring enters the `Resting` state.
-   - The thread immediately sleeps on Windows message queues via `GetMessageW`.
-   - CPU utilization drops to **$0.0\%$**.
+   - When `is_active(snap_epsilon_px)` returns `false`, `VsyncPacer::set_active(false)` parks the background thread on its `Condvar`.
+   - The main thread sleeps on `GetMessageW` with **$0.0\%$ idle CPU**.
 
 ---
 
@@ -69,9 +69,11 @@ Spring parameters can be customized in `%APPDATA%\WinScroller2D\winscroller2d.to
 ```toml
 [animation]
 enabled = true
-spring_stiffness = 180.0    # Higher = faster, snappier snap (range: 50.0 - 500.0)
-spring_damping = 21.0       # Higher = less overshoot; Lower = more bounce (range: 5.0 - 50.0)
-min_frame_interval_ms = 8   # Clamps to max 125 FPS on high-refresh monitors
+animate_resize = true
+stiffness = 260.0        # Higher = faster, snappier snap (clamped: 40.0..=1500.0)
+damping_ratio = 0.72     # < 1.0 underdamped bounce; 1.0 critically damped (clamped: 0.45..=2.0)
+fps = 120                # Target animation refresh rate in Hz (clamped: 15..=240)
+snap_epsilon_px = 0.5    # Pixel threshold at which springs settle cleanly onto targets
 ```
 
 You can fine-tune stiffness and damping values interactively by pressing `Win+Alt+S` to open the Live Settings overlay.

@@ -86,10 +86,16 @@ pub struct LayoutConfig {
     pub hover_focus_delay_ms: u64,
     /// Center cursor inside target window when focus jumps via hover-peek or Win+O click.
     pub center_cursor_on_peek: bool,
-    /// Enable 1:1 continuous 2D touchpad panning (3-finger pan / 4-finger overview swipe).
+    /// Enable 1:1 continuous 2D touchpad panning (3-finger pan).
     pub three_finger_pan: bool,
+    /// Enable 4-finger swipe up/down to open/close the Win+O overview.
+    pub four_finger_overview: bool,
     /// Multiplier for touchpad pan delta sensitivity.
     pub gesture_pan_sensitivity: f64,
+    /// Invert horizontal 3-finger touchpad pan direction.
+    pub gesture_invert_x: bool,
+    /// Invert vertical 3-finger touchpad pan direction.
+    pub gesture_invert_y: bool,
     /// Persist workspace grids, sizes, and per-workspace lattice toggles across restarts.
     pub persist_state: bool,
     /// Seconds on startup to wait and match reopened windows to saved grid positions.
@@ -126,7 +132,10 @@ impl Default for LayoutConfig {
             hover_focus_delay_ms: 150,
             center_cursor_on_peek: false,
             three_finger_pan: true,
+            four_finger_overview: true,
             gesture_pan_sensitivity: 1.0,
+            gesture_invert_x: false,
+            gesture_invert_y: false,
             persist_state: true,
             restore_timeout_secs: 45,
         }
@@ -174,6 +183,8 @@ pub enum OverviewBlurMode {
     PureBlur,
     /// True Gaussian wallpaper blur with optional subtle light frost (`overview_alpha`).
     AcrylicClear,
+    /// Render sharp, unblurred desktop wallpaper behind overview thumbnails.
+    None,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,7 +196,7 @@ pub struct AppearanceConfig {
     pub active_border_color: String,
     /// Hex RGB color (`#RRGGBB`) for unfocused tiled window borders (or `"default"`).
     pub inactive_border_color: String,
-    /// Blur style for Win+O wallpaper overview (`"pure_blur"` | `"acrylic_clear"`).
+    /// Blur style for Win+O wallpaper overview (`"pure_blur"` | `"acrylic_clear"` | `"none"`).
     pub blur_mode: OverviewBlurMode,
     /// Subtle light frost opacity (`0..=48`) when `blur_mode = "acrylic_clear"` (`0` in `pure_blur`).
     pub overview_alpha: u8,
@@ -244,6 +255,7 @@ pub struct WindowRule {
     /// Completely ignore this window (do not manage or tile).
     pub ignore: bool,
     /// Start this window floating.
+    #[serde(alias = "floating")]
     pub float: bool,
     /// Optional workspace index (1-based) to route matching windows into.
     pub workspace: Option<usize>,
@@ -521,6 +533,7 @@ fn default_bindings() -> Vec<KeybindConfig> {
         // Control & safety
         bind("Win+Alt+L", Action::ToggleWorkspaceLayout),
         bind("Win+Alt+S", Action::OpenSettings),
+        bind("Win+Shift+R", Action::Retile),
         bind("Win+Shift+P", Action::TogglePause),
         bind("Win+Shift+Escape", Action::Quit),
     ];

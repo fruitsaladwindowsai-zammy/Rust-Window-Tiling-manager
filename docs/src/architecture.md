@@ -48,10 +48,10 @@ Each coordinate `(col, row)` in the 2D lattice contains a `Cell` that can host o
 1. **Mode A: Tabbed Cell Stack (`Win+W` toggle)**:
    - Windows form a card deck inside the cell.
    - Only the active card is uncloaked; inactive cards are hidden via DWM cloaking (`DWMWA_CLOAK`) so background windows consume zero GPU composition resources.
-   - Switch between stacked cards using `Win+BracketLeft` / `Win+BracketRight`.
-2. **Mode B: Vertical Split Stack**:
-   - Multiple windows share the cell height equally ($50\% / 50\%$ or $33.3\% \times 3$).
-   - Both windows receive full Win32 draw passes.
+   - Switch between stacked cards using **`Win+Left`/`Win+Up`** and **`Win+Right`/`Win+Down`**.
+2. **Mode B: Horizontal Split Stack**:
+   - Multiple windows share the cell width equally side-by-side ($50\% / 50\%$ or $33.3\% \times 3$).
+   - All visible split windows receive full Win32 draw passes.
 3. **Consume & Expel**:
    - `Win+Comma` (Consume): Slurps the neighbor window into the currently focused cell stack.
    - `Win+Period` (Expel): Ejects the focused window from the cell stack back into its own independent grid column.
