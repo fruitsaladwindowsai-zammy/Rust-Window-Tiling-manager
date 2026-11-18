@@ -1,9 +1,11 @@
 use crate::app;
+use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use windows_sys::Win32::Foundation::BOOL;
 use windows_sys::Win32::Graphics::Dwm::DwmIsCompositionEnabled;
 
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const PREREQ_MARKER_FILE: &str = ".prereqs_v1_ok";
 const VCREDIST_WINGET_ID: &str = "Microsoft.VCRedist.2015+.x64";
 const VCREDIST_DIRECT_URL: &str = "https://aka.ms/vs/17/release/vc_redist.x64.exe";
@@ -135,8 +137,12 @@ fn vcruntime_exists_under(system_root: &Path) -> bool {
 fn command_exists(cmd: &str) -> bool {
     Command::new("where")
         .arg(cmd)
-        .output()
-        .map(|o| o.status.success())
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map(|s| s.success())
         .unwrap_or(false)
 }
 
@@ -150,6 +156,10 @@ fn winget_install(package_id: &str) -> Result<(), String> {
             "--accept-package-agreements",
             "--accept-source-agreements",
         ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .status()
         .map_err(|e| format!("failed to launch winget: {e}"))?;
 
@@ -175,11 +185,17 @@ fn install_vcredist() -> Result<(), String> {
     let dl_status = Command::new("powershell")
         .args([
             "-NoProfile",
+            "-WindowStyle",
+            "Hidden",
             "-ExecutionPolicy",
             "Bypass",
             "-Command",
             &dl_script,
         ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .status()
         .map_err(|e| format!("failed to invoke PowerShell download: {e}"))?;
     if !dl_status.success() {
@@ -188,6 +204,10 @@ fn install_vcredist() -> Result<(), String> {
 
     let inst_status = Command::new(&installer)
         .args(["/install", "/quiet", "/norestart"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .status()
         .map_err(|e| format!("failed to execute vc_redist.x64.exe: {e}"))?;
     let _ = std::fs::remove_file(&installer);

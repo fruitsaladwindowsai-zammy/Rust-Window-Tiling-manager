@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), windows_subsystem = "windows")]
+
 mod app;
 mod ipc_pipe;
 mod prereqs;
@@ -8,18 +10,55 @@ use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
 use windows_sys::Win32::Security::{
     GetTokenInformation, TOKEN_ELEVATION, TOKEN_QUERY, TokenElevation,
 };
-use windows_sys::Win32::System::Threading::{
-    GetCurrentProcess, GetExitCodeProcess, INFINITE, OpenProcessToken, WaitForSingleObject,
-};
-use windows_sys::Win32::UI::Shell::{SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW, ShellExecuteExW};
-use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOW;
+use windows_sys::Win32::System::Console::{ATTACH_PARENT_PROCESS, AttachConsole};
+use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+use windows_sys::Win32::UI::Shell::{SHELLEXECUTEINFOW, ShellExecuteExW};
+use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBoxW, SW_HIDE};
 use winscroller2d_core::{Action, Direction, IpcRequest, IpcResponse};
+
+fn is_cli_oneshot(args: &[String]) -> bool {
+    args.iter().any(|a| {
+        matches!(
+            a.as_str(),
+            "-h" | "--help"
+                | "help"
+                | "-V"
+                | "--version"
+                | "--validate"
+                | "--init-config"
+                | "--check-prereqs"
+                | "--setup"
+                | "--install-prereqs"
+                | "msg"
+        )
+    })
+}
 
 fn main() {
     install_panic_hook();
     let args: Vec<String> = std::env::args().skip(1).collect();
+    let cli_mode = is_cli_oneshot(&args);
+    let attached_console = if cli_mode {
+        unsafe { AttachConsole(ATTACH_PARENT_PROCESS) != 0 }
+    } else {
+        false
+    };
+
     if let Err(err) = run_cli(&args) {
-        eprintln!("winscroller2d error: {err}");
+        if attached_console || cli_mode {
+            eprintln!("winscroller2d error: {err}");
+        } else if !err.contains("UAC prompt dismissed") {
+            let title_w = win32::to_wide("WinScroller 2D");
+            let msg_w = win32::to_wide(&err);
+            unsafe {
+                MessageBoxW(
+                    std::ptr::null_mut(),
+                    msg_w.as_ptr(),
+                    title_w.as_ptr(),
+                    MB_OK | MB_ICONERROR,
+                );
+            }
+        }
         std::process::exit(1);
     }
 }
@@ -208,7 +247,6 @@ fn relaunch_elevated(args: &[String]) -> Result<(), String> {
 
     let mut sei: SHELLEXECUTEINFOW = unsafe { std::mem::zeroed() };
     sei.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
-    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
     sei.lpVerb = verb_w.as_ptr();
     sei.lpFile = exe_w.as_ptr();
     sei.lpParameters = if param_str.is_empty() {
@@ -216,7 +254,7 @@ fn relaunch_elevated(args: &[String]) -> Result<(), String> {
     } else {
         params_w.as_ptr()
     };
-    sei.nShow = SW_SHOW;
+    sei.nShow = SW_HIDE;
 
     let ok = unsafe { ShellExecuteExW(&mut sei) };
     if ok == 0 {
@@ -229,17 +267,6 @@ fn relaunch_elevated(args: &[String]) -> Result<(), String> {
         ));
     }
 
-    if !sei.hProcess.is_null() {
-        unsafe {
-            WaitForSingleObject(sei.hProcess, INFINITE);
-            let mut code: u32 = 0;
-            GetExitCodeProcess(sei.hProcess, &mut code);
-            CloseHandle(sei.hProcess);
-            if code != 0 {
-                std::process::exit(code as i32);
-            }
-        }
-    }
     Ok(())
 }
 
