@@ -90,7 +90,27 @@
 
 ## Installation Guide (Step-by-Step)
 
-### 1. Prerequisites (Clean Windows 10 / 11 Machine)
+### Option 1: Direct Download — Latest Prebuilt `.exe` (Fastest, Zero Build Tools)
+Every push to `main` automatically builds and publishes the latest standalone, statically linked `winscroller2d.exe` on GitHub Releases:
+
+- **Direct EXE Download:** [**Download latest `winscroller2d.exe`**](https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/releases/download/latest/winscroller2d.exe)
+- **Full Bundle (.zip + docs + SHA256SUMS):** [**Latest Release Page**](https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/releases/tag/latest)
+
+Or download and run directly via PowerShell:
+```powershell
+Invoke-WebRequest -Uri "https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/releases/download/latest/winscroller2d.exe" -OutFile "$HOME\Downloads\winscroller2d.exe"
+& "$HOME\Downloads\winscroller2d.exe"
+```
+
+> [!TIP]
+> **Automated Prerequisite Check & First-Run Setup**:  
+> When `winscroller2d.exe` runs, it automatically checks Windows DWM composition, verifies/silently installs the Microsoft Visual C++ x64 Runtime if missing, initializes `%APPDATA%\WinScroller2D\winscroller2d.toml`, and requests UAC elevation. You can also run `winscroller2d.exe --setup` at any time to verify and install both runtime and optional developer prerequisites (`winget`).
+
+---
+
+### Option 2: Build from Source
+
+#### 1. Prerequisites (Clean Windows 10 / 11 Machine)
 Windows does **not** include Git or Rust by default. On a new or different PC, open an **Administrator PowerShell** prompt and run:
 
 ```powershell

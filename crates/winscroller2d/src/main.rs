@@ -1,5 +1,6 @@
 mod app;
 mod ipc_pipe;
+mod prereqs;
 mod win32;
 
 use std::path::PathBuf;
@@ -55,6 +56,9 @@ fn run_cli(args: &[String]) -> Result<(), String> {
     let mut mode_init = false;
     let mut mode_replace = false;
     let mut no_elevate = false;
+    let mut mode_check_prereqs = false;
+    let mut mode_setup = false;
+    let mut skip_prereqs = false;
 
     let mut i = 0;
     while i < args.len() {
@@ -87,6 +91,15 @@ fn run_cli(args: &[String]) -> Result<(), String> {
             "--init-config" => {
                 mode_init = true;
             }
+            "--check-prereqs" => {
+                mode_check_prereqs = true;
+            }
+            "--setup" | "--install-prereqs" => {
+                mode_setup = true;
+            }
+            "--skip-prereqs" => {
+                skip_prereqs = true;
+            }
             "msg" => {
                 return run_msg_command(&args[i + 1..]);
             }
@@ -106,6 +119,14 @@ fn run_cli(args: &[String]) -> Result<(), String> {
     if mode_validate {
         let _ = app::load_config_file(&path)?;
         println!("Config is valid: {}", path.display());
+        return Ok(());
+    }
+    if mode_check_prereqs {
+        prereqs::ensure_runtime_prerequisites(&path, true)?;
+        return Ok(());
+    }
+    if mode_setup {
+        prereqs::run_full_setup(&path)?;
         return Ok(());
     }
 
@@ -134,6 +155,10 @@ fn run_cli(args: &[String]) -> Result<(), String> {
     if !no_elevate && !is_elevated() {
         println!("[winscroller2d] elevating to administrator to manage all windows and hotkeys...");
         return relaunch_elevated(args);
+    }
+
+    if !skip_prereqs {
+        prereqs::ensure_runtime_prerequisites(&path, false)?;
     }
 
     app::run_daemon(path)
@@ -421,6 +446,9 @@ fn print_help() {
          \t-c, --config <PATH>   Use a custom winscroller2d.toml config path\n\
          \t-r, --replace         Replace running instance if already active\n\
          \t    --no-elevate      Run non-elevated (skip automatic Administrator elevation)\n\
+         \t    --check-prereqs   Verify and install required Windows runtime prerequisites\n\
+         \t    --setup           Install all runtime & optional source-build prerequisites\n\
+         \t    --skip-prereqs    Skip automatic prerequisite check on startup\n\
          \t    --init-config     Create the default winscroller2d.toml and exit\n\
          \t    --validate        Validate config syntax and exit\n\
          \t-V, --version         Print version\n\

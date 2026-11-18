@@ -122,6 +122,9 @@ winscroller2d msg <COMMAND> [ARGS...]
 | `-c`, `--config <PATH>` | Use a custom `winscroller2d.toml` path instead of `%APPDATA%\WinScroller2D\winscroller2d.toml` |
 | `-r`, `--replace` | Replace running instance if already active |
 | `--no-elevate` | Run non-elevated (skip automatic Administrator elevation) |
+| `--check-prereqs` | Verify and silently install required Windows runtime prerequisites, then exit |
+| `--setup`, `--install-prereqs` | Run full automated setup for runtime and optional developer prerequisites (`winget`) |
+| `--skip-prereqs` | Skip automatic prerequisite verification on startup |
 | `--init-config` | Write the default `winscroller2d.toml` (if missing) and exit |
 | `--validate` | Parse and normalize the configuration file, print validation result, and exit |
 | `-V`, `--version` | Print version (`WinScroller 2D (winscroller2d) 0.1.0`) |

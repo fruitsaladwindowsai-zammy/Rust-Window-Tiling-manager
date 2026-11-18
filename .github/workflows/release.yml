@@ -1,12 +1,19 @@
-name: Release Build
+name: Release Build & Auto-Publish EXE
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   publish-release:
@@ -14,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Rust stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -21,12 +30,14 @@ jobs:
       - name: Run workspace tests
         run: cargo test --workspace
 
-      - name: Build release binary
+      - name: Build statically linked release binary
         run: cargo build --release -p winscroller2d
 
-      - name: Package release archive
+      - name: Package release assets & SHA256 checksums
         shell: pwsh
         run: |
+          Copy-Item target\release\winscroller2d.exe .\winscroller2d.exe -Force
+
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Copy-Item target\release\winscroller2d.exe dist\
           Copy-Item winscroller2d.example.toml dist\
@@ -35,10 +46,52 @@ jobs:
           Copy-Item LICENSE dist\
           Compress-Archive -Path dist\* -DestinationPath winscroller2d-x86_64-pc-windows-msvc.zip -Force
 
-      - name: Create GitHub Release
+          $exeHash = (Get-FileHash .\winscroller2d.exe -Algorithm SHA256).Hash.ToLower()
+          $zipHash = (Get-FileHash .\winscroller2d-x86_64-pc-windows-msvc.zip -Algorithm SHA256).Hash.ToLower()
+          @(
+            "$exeHash  winscroller2d.exe"
+            "$zipHash  winscroller2d-x86_64-pc-windows-msvc.zip"
+          ) | Set-Content -Path SHA256SUMS.txt -Encoding ASCII
+
+      - name: Update rolling `latest` tag on main push
+        if: startsWith(github.ref, 'refs/heads/')
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f latest HEAD
+          git push origin refs/tags/latest --force
+
+      - name: Publish rolling `latest` Release (on push to main)
+        if: startsWith(github.ref, 'refs/heads/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: WinScroller 2D — Latest Build
+          body: |
+            Automated build published directly from commit `${{ github.sha }}` on `main`.
+
+            ### Quick Start (Zero Build Tools Required)
+            1. Download **`winscroller2d.exe`** below (or the full `.zip` bundle).
+            2. Double-click **`winscroller2d.exe`** — it automatically checks/installs Windows runtime prerequisites, initializes `%APPDATA%\WinScroller2D\winscroller2d.toml`, and requests UAC elevation.
+            3. Run `winscroller2d.exe --setup` anytime to verify all runtime and optional developer prerequisites.
+          files: |
+            winscroller2d.exe
+            winscroller2d-x86_64-pc-windows-msvc.zip
+            SHA256SUMS.txt
+          draft: false
+          prerelease: false
+          make_latest: true
+
+      - name: Publish versioned GitHub Release (on v* tag)
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           body_path: RELEASE_NOTES.md
-          files: winscroller2d-x86_64-pc-windows-msvc.zip
+          files: |
+            winscroller2d.exe
+            winscroller2d-x86_64-pc-windows-msvc.zip
+            SHA256SUMS.txt
           draft: false
           prerelease: false
+          make_latest: true
