@@ -11,6 +11,5 @@ build-dir = "book"
 [output.html]
 default-theme = "navy"
 preferred-dark-theme = "navy"
-# Set your GitHub repository URL after pushing to enable the top-right repo icon and edit links:
-# git-repository-url = "https://github.com/<your-username>/<your-repo>"
-# edit-url-template = "https://github.com/<your-username>/<your-repo>/edit/main/docs/{path}"
+git-repository-url = "https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D"
+edit-url-template = "https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/edit/main/docs/{path}"

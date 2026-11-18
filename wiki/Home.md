@@ -1,3 +1,5 @@
+![WinScroller 2D Brand Banner](assets/brand-banner.svg)
+
 # Welcome to the WinScroller 2D Wiki
 
 **WinScroller 2D** is an infinite 2D scrolling and tiling window manager for Windows 10 and 11. It brings the intuitive horizontal strip mechanics of [Niri](https://github.com/YaLTeR/niri) and [PaperWM](https://github.com/paperwm/PaperWM), the 2D infinite workspace lattice of [Hyprscroll2D](https://github.com/hyprwm), and a live visual `Win+O` Overview mode to power users and keyboard-driven developers on Windows.

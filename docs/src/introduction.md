@@ -1,8 +1,12 @@
+![WinScroller 2D Brand Banner](../assets/brand-banner.svg)
+
 # WinScroller 2D
 
 **A native, lightweight 2D scrolling and tiling window manager for Windows 10/11 written in Rust.**
 
 WinScroller 2D merges **Niri-style** scrolling columns and cell stacks with **Hyprscroll2D** infinite 2D grids and an interactive **Win+O dynamic overview** — powered directly by native Win32, DWM, and HID APIs.
+
+![WinScroller 2D 3D Canvas Showcase](../assets/concept-hero-3d.jpg)
 
 > 📖 **Official mdBook Documentation & Guides**:  
 > Read the complete interactive guides, multi-monitor configuration, and architecture internals:  

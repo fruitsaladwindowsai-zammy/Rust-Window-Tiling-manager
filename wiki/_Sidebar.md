@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" alt="WinScroller 2D Logo" width="56" />
+</p>
+
 ### [WinScroller 2D](Home)
 
 **Getting Started**

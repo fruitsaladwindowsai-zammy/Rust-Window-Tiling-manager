@@ -1,15 +1,45 @@
 use crate::win32::{WM_APP_TRAY, to_wide};
 use std::mem::{size_of, zeroed};
 use windows_sys::Win32::Foundation::{HWND, POINT};
+use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::Shell::{
     NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NOTIFYICONDATAW,
     Shell_NotifyIconW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    AppendMenuW, CreatePopupMenu, DestroyMenu, GetCursorPos, IDI_APPLICATION, LoadIconW,
-    MF_CHECKED, MF_SEPARATOR, MF_STRING, MF_UNCHECKED, SetForegroundWindow, TPM_BOTTOMALIGN,
-    TPM_LEFTALIGN, TPM_RETURNCMD, TrackPopupMenu, WM_LBUTTONDBLCLK, WM_RBUTTONUP,
+    AppendMenuW, CreatePopupMenu, DestroyMenu, GetCursorPos, GetSystemMetrics, HICON,
+    IDI_APPLICATION, IMAGE_ICON, LR_SHARED, LoadIconW, LoadImageW, MF_CHECKED, MF_SEPARATOR,
+    MF_STRING, MF_UNCHECKED, SM_CXICON, SM_CXSMICON, SM_CYICON, SM_CYSMICON, SetForegroundWindow,
+    TPM_BOTTOMALIGN, TPM_LEFTALIGN, TPM_RETURNCMD, TrackPopupMenu, WM_LBUTTONDBLCLK, WM_RBUTTONUP,
 };
+
+pub const APP_ICON_RES_ID: usize = 1;
+
+/// Loads the embedded WinScroller 2D brand icon (`winscroller2d.ico` resource ID 1),
+/// falling back to the standard Windows application icon if unavailable.
+pub fn load_brand_icon(small: bool) -> HICON {
+    unsafe {
+        let hinst = GetModuleHandleW(std::ptr::null());
+        let (cx, cy) = if small {
+            (GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON))
+        } else {
+            (GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON))
+        };
+        let handle = LoadImageW(
+            hinst,
+            APP_ICON_RES_ID as *const u16,
+            IMAGE_ICON,
+            cx,
+            cy,
+            LR_SHARED,
+        );
+        if !handle.is_null() {
+            handle as HICON
+        } else {
+            LoadIconW(std::ptr::null_mut(), IDI_APPLICATION)
+        }
+    }
+}
 
 pub const TRAY_CMD_OVERVIEW: usize = 1001;
 pub const TRAY_CMD_PAUSE: usize = 1002;
@@ -67,7 +97,11 @@ pub fn popup_tray_menu(
             },
             MF_STRING | if paused { MF_CHECKED } else { MF_UNCHECKED },
         );
-        append(TRAY_CMD_RETILE, "Retile / Sync Windows", MF_STRING);
+        append(
+            TRAY_CMD_RETILE,
+            "Retile / Sync Windows\tWin+Shift+R",
+            MF_STRING,
+        );
         AppendMenuW(menu, MF_SEPARATOR, 0, std::ptr::null());
         append(
             TRAY_CMD_OPEN_CONFIG,
@@ -111,7 +145,7 @@ impl TrayIcon {
         let mut data = tray.base_data("WinScroller 2D — Active");
         data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
         data.uCallbackMessage = WM_APP_TRAY;
-        data.hIcon = unsafe { LoadIconW(std::ptr::null_mut(), IDI_APPLICATION) };
+        data.hIcon = load_brand_icon(true);
         if unsafe { Shell_NotifyIconW(NIM_ADD, &data) } != 0 {
             tray.added = true;
         }

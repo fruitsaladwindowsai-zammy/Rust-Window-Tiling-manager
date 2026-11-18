@@ -157,12 +157,12 @@ impl SettingsWindow {
             cbClsExtra: 0,
             cbWndExtra: 0,
             hInstance: hinst,
-            hIcon: std::ptr::null_mut(),
+            hIcon: crate::win32::tray::load_brand_icon(false),
             hCursor: unsafe { LoadCursorW(std::ptr::null_mut(), IDC_ARROW) },
             hbrBackground: std::ptr::null_mut(),
             lpszMenuName: std::ptr::null(),
             lpszClassName: class_w.as_ptr(),
-            hIconSm: std::ptr::null_mut(),
+            hIconSm: crate::win32::tray::load_brand_icon(true),
         };
         unsafe {
             RegisterClassExW(&wc);
@@ -739,15 +739,15 @@ unsafe fn paint_settings(hwnd: HWND) {
                 (surf.scratch.w * surf.scratch.h) as usize,
             );
 
-            // Outer frame
+            // Outer frame (WinScroller 2D Obsidian + Electric Cyan accent border)
             draw_rounded_card(
                 pixels,
                 WIN_W,
                 WIN_H,
                 IRect::new(0, 0, WIN_W, WIN_H),
                 12,
-                (22, 25, 35, 255),
-                (72, 86, 122, 255),
+                (11, 17, 32, 255),
+                (0, 200, 180, 140),
                 1,
                 false,
             );
@@ -759,11 +759,58 @@ unsafe fn paint_settings(hwnd: HWND) {
                 WIN_H,
                 IRect::new(1, 1, WIN_W - 2, HEADER_H),
                 10,
-                (29, 34, 48, 255),
-                (44, 52, 74, 255),
+                (15, 23, 42, 255),
+                (30, 41, 59, 255),
                 1,
                 false,
             );
+
+            // Brand 3-tile logo mark (Obsidian + Cyan / Rust / Violet)
+            draw_rounded_card(
+                pixels,
+                WIN_W,
+                WIN_H,
+                IRect::new(14, 10, 22, 22),
+                5,
+                (7, 9, 14, 255),
+                (0, 245, 212, 130),
+                1,
+                false,
+            );
+            draw_rounded_card(
+                pixels,
+                WIN_W,
+                WIN_H,
+                IRect::new(17, 13, 7, 7),
+                2,
+                (0, 245, 212, 255),
+                (0, 245, 212, 255),
+                0,
+                false,
+            );
+            draw_rounded_card(
+                pixels,
+                WIN_W,
+                WIN_H,
+                IRect::new(17, 22, 7, 7),
+                2,
+                (247, 76, 0, 255),
+                (247, 76, 0, 255),
+                0,
+                false,
+            );
+            draw_rounded_card(
+                pixels,
+                WIN_W,
+                WIN_H,
+                IRect::new(26, 13, 7, 16),
+                2,
+                (168, 85, 247, 255),
+                (168, 85, 247, 255),
+                0,
+                false,
+            );
+
             draw_text_argb(
                 pixels,
                 WIN_W,
@@ -773,9 +820,9 @@ unsafe fn paint_settings(hwnd: HWND) {
                 surf.scratch.w,
                 surf.scratch.h,
                 surf.title_font,
-                IRect::new(16, 4, 300, HEADER_H - 8),
+                IRect::new(44, 4, 300, HEADER_H - 8),
                 "WinScroller 2D Settings",
-                (240, 245, 255),
+                (248, 250, 252),
                 255,
                 DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX,
             );

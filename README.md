@@ -1,17 +1,28 @@
-# WinScroller 2D
+<p align="center">
+  <img src="docs/assets/brand-banner.svg" alt="WinScroller 2D — Infinite 2D Scrolling & Tiling Window Manager for Windows" width="100%" />
+</p>
 
-**An infinite 2D scrolling & tiling window manager for Windows 10/11 — bringing Niri-style column stacks, Hyprscroll2D workspaces, and a live `Win+O` overview to keyboard-driven developers and power users.**
+<p align="center">
+  <strong>An infinite 2D scrolling &amp; tiling window manager for Windows 10/11 — bringing Niri-style column stacks, Hyprscroll2D workspaces, and a live <code>Win+O</code> overview to keyboard-driven developers and power users.</strong>
+</p>
 
-![Platform: Windows 10 / 11](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6?style=flat-square)
-![Rust Edition 2024](https://img.shields.io/badge/rust-Edition%202024-orange?style=flat-square)
-[![Windows CI](https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/fruitsaladwindowsai-zammy/Rust-Window-Tiling-manager/actions/workflows/ci.yml)
-[![Documentation](https://img.shields.io/badge/docs-mdBook%20Manual-00f5d4?style=flat-square&logo=gitbook&logoColor=black)](https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/)
-![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)
-![Architecture: Native Win32 + DWM](https://img.shields.io/badge/backend-Win32%20%2B%20DWM%20%2B%20HID-5C6BC0?style=flat-square)
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0f172a?style=flat-square&logo=windows&logoColor=00f5d4" alt="Platform: Windows 10 / 11" />
+  <img src="https://img.shields.io/badge/rust-Edition%202024-f74c00?style=flat-square&logo=rust&logoColor=white" alt="Rust Edition 2024" />
+  <a href="https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/actions/workflows/ci.yml"><img src="https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/actions/workflows/ci.yml/badge.svg" alt="Windows CI" /></a>
+  <a href="https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/"><img src="https://img.shields.io/badge/docs-mdBook%20Manual-00f5d4?style=flat-square&logo=gitbook&logoColor=0f172a" alt="Documentation" /></a>
+  <a href="https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/releases/latest"><img src="https://img.shields.io/badge/release-v0.1.0-7928ca?style=flat-square" alt="Release v0.1.0" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="License: MIT" />
+  <img src="https://img.shields.io/badge/backend-Win32%20%2B%20DWM%20%2B%20HID-0f172a?style=flat-square" alt="Architecture: Native Win32 + DWM" />
+</p>
 
 > 📖 **Official Documentation & Guides**:  
-> Read the complete interactive guides, multi-monitor configuration, and architecture internals:  
+> Read the complete guides, multi-monitor configuration, and architecture internals:  
 > [**fruitsaladwindowsai-zammy.github.io/Winscroller-2D**](https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/)
+
+<p align="center">
+  <img src="docs/assets/concept-hero-3d.jpg" alt="WinScroller 2D Infinite Canvas Showcase" width="92%" />
+</p>
 
 ```text
   ┌─────────────────── 2D Infinite Scrolling Workspace ───────────────────┐
