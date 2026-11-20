@@ -73,7 +73,7 @@ restore_timeout_secs = 45
 
 [animation]
 enabled = true
-animate_resize = true
+animate_resize = false
 stiffness = 260.0
 damping_ratio = 0.72
 fps = 120

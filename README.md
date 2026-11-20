@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/rust-Edition%202024-f74c00?style=flat-square&logo=rust&logoColor=white" alt="Rust Edition 2024" />
   <a href="https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/actions/workflows/ci.yml"><img src="https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/actions/workflows/ci.yml/badge.svg" alt="Windows CI" /></a>
   <a href="https://fruitsaladwindowsai-zammy.github.io/Winscroller-2D/"><img src="https://img.shields.io/badge/docs-mdBook%20Manual-00f5d4?style=flat-square&logo=gitbook&logoColor=0f172a" alt="Documentation" /></a>
-  <a href="https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/releases/latest"><img src="https://img.shields.io/badge/release-v0.1.0-7928ca?style=flat-square" alt="Release v0.1.0" /></a>
+  <a href="https://github.com/fruitsaladwindowsai-zammy/Winscroller-2D/releases/latest"><img src="https://img.shields.io/badge/release-v0.2.0-7928ca?style=flat-square" alt="Release v0.2.0" /></a>
   <img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="License: MIT" />
   <img src="https://img.shields.io/badge/backend-Win32%20%2B%20DWM%20%2B%20HID-0f172a?style=flat-square" alt="Architecture: Native Win32 + DWM" />
 </p>

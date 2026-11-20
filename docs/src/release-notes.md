@@ -1,3 +1,19 @@
+# Release Notes — WinScroller 2D v0.2.0
+
+**Release Date:** 2026-11-20  
+**Platform:** Windows 10 / Windows 11 (64-bit)  
+**Edition:** Rust 2024
+
+## Highlights in v0.2.0
+
+- **Fluid Bounce Animations (Static Window Geometry)**: Window dimensions remain static during scroll transitions (`animate_resize = false`); camera springs provide natural bounce deceleration without shrinking window frames.
+- **Strict Multi-Monitor Boundary Enforcement**: Scrolled-off windows on one monitor are parked offscreen at `(-32000, -32000)` and clipped against display bounds, preventing apps from spilling over across monitor borders in pan mode.
+- **Win+O Overview Overhaul**: Maintained DWM composition buffers during overview display to eliminate black/blank cards; substituted distorted low-res console thumbnails with centered high-res icons; enabled native launch and focus for elevated Administrator windows (Task Manager, PowerShell, Terminal).
+- **RAM and Stability Optimization**: Flushes blurred wallpaper cache and GDI/DIB surfaces immediately upon overview exit.
+- **Silent Background Execution**: Runs silently as a Windows subsystem process without persistent consoles.
+
+---
+
 # Release Notes — WinScroller 2D v0.1.0
 
 **Release Date:** 2026-11-12  

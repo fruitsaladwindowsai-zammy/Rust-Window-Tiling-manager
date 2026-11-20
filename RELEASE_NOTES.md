@@ -1,3 +1,36 @@
+# Release Notes — WinScroller 2D v0.2.0
+
+**Release Date:** 2026-11-20  
+**Target Platform:** Windows 10 / Windows 11 (64-bit)  
+**Toolchain:** Rust Edition 2024 (`winscroller2d` & `winscroller2d-core`)
+
+WinScroller 2D `v0.2.0` delivers major enhancements to navigation fluidness, multi-monitor boundary handling, `Win+O` live overview fidelity, memory management, and elevated Administrator process focus.
+
+---
+
+## What's New in v0.2.0
+
+### 🚀 Fluid Bounce Animations (Static Window Geometry)
+- **Static Window Dimensions**: Window sizes remain static during transitions (`animate_resize = false`), eliminating jarring window resizes during scroll.
+- **Fluid Camera Spring Physics**: Camera panning features natural underdamped spring physics with gentle bounce deceleration.
+
+### 🖥️ Multi-Monitor Boundary Enforcement
+- **Zero Cross-Monitor Bleed**: Scrolled windows on Monitor 1 are clipped to display work areas and parked offscreen at `(-32000, -32000)` when off-camera, preventing apps from spilling over onto Monitor 2 in pan or `Win + Arrow` mode.
+
+### 🖼️ Win+O Overview Overhaul & Live Preview Fixes
+- **No More Blank / Black Cards**: Fixed DWM composition buffer evictions during overview display so Electron, Chrome, Edge, and WPF windows render preview cards reliably.
+- **Crisp High-Res Icons for Console Apps**: PowerShell and command prompt windows that report tiny thumbnail sources are automatically rendered with crisp, centered high-res icons and soft drop shadows instead of distorted pixelated thumbnails.
+- **Elevated Administrator Application Support**: Elevated windows (Task Manager, elevated PowerShell, Windows Terminal) are properly cataloged, assigned titles, and natively brought to the foreground with keystroke unlock upon selection in `Win+O`.
+
+### ⚡ RAM & Resource Optimization
+- Overview wallpaper blur buffers and DIB surfaces are released immediately when `Win+O` closes, maintaining a minimal idle memory footprint (~15–25 MB).
+
+### 🛠️ Silent Background Execution & Auto-Setup
+- WinScroller 2D runs silently in the background as a Windows GUI subsystem application without persistent terminal consoles.
+- Automatic runtime prerequisite verification and installation.
+
+---
+
 # Release Notes — WinScroller 2D v0.1.0
 
 **Release Date:** 2026-11-12  

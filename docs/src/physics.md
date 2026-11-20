@@ -69,7 +69,7 @@ Spring parameters can be customized in `%APPDATA%\WinScroller2D\winscroller2d.to
 ```toml
 [animation]
 enabled = true
-animate_resize = true
+animate_resize = false   # Keep windows static; bounce physics applied purely to camera translation
 stiffness = 260.0        # Higher = faster, snappier snap (clamped: 40.0..=1500.0)
 damping_ratio = 0.72     # < 1.0 underdamped bounce; 1.0 critically damped (clamped: 0.45..=2.0)
 fps = 120                # Target animation refresh rate in Hz (clamped: 15..=240)

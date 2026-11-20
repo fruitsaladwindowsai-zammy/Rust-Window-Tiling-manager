@@ -4,6 +4,25 @@ All notable changes to **WinScroller 2D** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-11-20
+
+### Fixed & Enhanced
+- **Fluid Bounce Animations (Static Window Geometry)**:
+  - Windows maintain fixed, static dimensions during scrolling transitions (`animate_resize = false`).
+  - Fluid camera spring physics provide smooth underdamped bounce deceleration without shrinking or warping application window bounds.
+- **Strict Multi-Monitor Boundary Enforcement**:
+  - Scrolled-off windows on one monitor are parked offscreen at `(-32000, -32000)` and clipped against display bounds.
+  - Completely eliminated window spillover and bleed across monitor boundaries in pan mode and `Win + Arrow` navigation.
+- **Win+O Overview Overhaul**:
+  - Maintained DWM composition buffers during overview display, fixing black or blank preview cards for Chromium, Electron, and WPF applications.
+  - Distorted or low-resolution console thumbnails (PowerShell, CMD) are replaced with crisp, centered high-res application icons and soft drop shadows.
+  - Added dedicated support and title extraction for elevated Administrator applications (`Taskmgr.exe`, `powershell.exe`, Windows Terminal), enabling them to appear and focus cleanly on click with simulated keystroke foreground unlock.
+- **RAM and Stability Optimization**:
+  - Overview blurred wallpaper caches and DIB surfaces are immediately purged on overview close, keeping idle memory footprint low (~15–25 MB).
+- **Silent Background Execution & Auto-Elevation**:
+  - Configured subsystem to run silently in the background without persistent console windows.
+  - Automated prerequisite detection and silent installation on startup.
+
 ## [0.1.0] - 2026-11-12
 
 ### Added
