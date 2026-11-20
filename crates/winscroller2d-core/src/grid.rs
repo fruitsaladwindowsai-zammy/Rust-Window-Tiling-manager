@@ -75,6 +75,13 @@ impl IRect {
     pub fn center(self) -> (i32, i32) {
         (self.x + self.w / 2, self.y + self.h / 2)
     }
+
+    pub fn contains_rect(self, other: Self) -> bool {
+        other.x >= self.x
+            && other.y >= self.y
+            && other.right() <= self.right()
+            && other.bottom() <= self.bottom()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -1701,25 +1708,21 @@ impl GridWorkspace {
             let cell_y = (screen_cy - ch / 2.0).round() as i32;
             let cell_w = cw.round() as i32;
             let cell_h = ch.round() as i32;
-            let mut cell_rect = IRect::new(cell_x, cell_y, cell_w.max(1), cell_h.max(1));
+            let cell_rect = IRect::new(cell_x, cell_y, cell_w.max(1), cell_h.max(1));
             self.last_cell_rects.insert(coord, cell_rect);
 
             let cell_visible = cell_rect.intersects(area);
             let overlaps_other = !other_monitors.is_empty()
                 && other_monitors.iter().any(|m| cell_rect.intersects(*m));
-            let clip_to = if config.clip_cross_monitor_edges && cell_visible && overlaps_other {
+            let straddles_monitor_edge = !area.contains_rect(cell_rect);
+            let clip_to = if config.clip_cross_monitor_edges
+                && cell_visible
+                && (overlaps_other || straddles_monitor_edge)
+            {
                 Some(area)
             } else {
                 None
             };
-
-            // When bordering adjacent displays in extend mode, clamp target rect strictly within
-            // this display's work area so that coordinates NEVER spill over onto the other monitor.
-            if clip_to.is_some() {
-                if let Some(inter) = cell_rect.intersection(area) {
-                    cell_rect = inter;
-                }
-            }
 
             let stack_len = cell.windows.len();
             match cell.stack_mode {
@@ -1747,14 +1750,16 @@ impl GridWorkspace {
                     for (idx, &win_id) in cell.windows.iter().enumerate() {
                         let extra = if (idx as i32) < rem_w { 1 } else { 0 };
                         let win_w = (base_w + extra).max(1);
-                        let mut win_rect = IRect::new(cur_x, cell_rect.y, win_w, cell_rect.h);
+                        let win_rect = IRect::new(cur_x, cell_rect.y, win_w, cell_rect.h);
                         let win_visible = win_rect.intersects(area);
-                        let win_clip = clip_to;
-                        if win_clip.is_some() {
-                            if let Some(inter) = win_rect.intersection(area) {
-                                win_rect = inter;
-                            }
-                        }
+                        let win_clip = if config.clip_cross_monitor_edges
+                            && win_visible
+                            && (overlaps_other || !area.contains_rect(win_rect))
+                        {
+                            Some(area)
+                        } else {
+                            None
+                        };
                         placements.push(WindowPlacement {
                             window_id: win_id,
                             rect: win_rect,

@@ -14,18 +14,17 @@ use windows_sys::Win32::Graphics::Gdi::{
     MonitorFromWindow, SetWindowRgn,
 };
 use windows_sys::Win32::System::Threading::{
-    AttachThreadInput, GetCurrentThreadId, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
-    QueryFullProcessImageNameW,
+    OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION, QueryFullProcessImageNameW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     ASFW_ANY, AllowSetForegroundWindow, BeginDeferWindowPos, BringWindowToTop, DeferWindowPos,
     EndDeferWindowPos, EnumWindows, GA_ROOT, GW_OWNER, GWL_EXSTYLE, GWL_STYLE, GetAncestor,
     GetClassNameW, GetForegroundWindow, GetWindow, GetWindowLongPtrW, GetWindowPlacement,
     GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, HDWP, IsIconic, IsWindow,
-    IsWindowVisible, IsZoomed, PostMessageW, SW_RESTORE, SWP_ASYNCWINDOWPOS, SWP_FRAMECHANGED,
-    SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, SetCursorPos, SetForegroundWindow,
-    SetWindowPos, ShowWindow, WINDOWPLACEMENT, WM_CLOSE, WS_CAPTION, WS_CHILD, WS_EX_APPWINDOW,
-    WS_EX_TOOLWINDOW, WS_THICKFRAME,
+    IsWindowVisible, IsZoomed, PostMessageW, SW_RESTORE, SW_SHOW, SWP_ASYNCWINDOWPOS,
+    SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, SetCursorPos,
+    SetForegroundWindow, SetWindowPos, ShowWindow, WINDOWPLACEMENT, WM_CLOSE, WS_CAPTION, WS_CHILD,
+    WS_EX_APPWINDOW, WS_EX_TOOLWINDOW, WS_THICKFRAME,
 };
 use winscroller2d_core::{IRect, WindowCommand, WindowId, WindowInfo};
 
@@ -82,6 +81,11 @@ pub fn get_foreground_window_id() -> Option<WindowId> {
     }
 }
 
+#[link(name = "user32")]
+unsafe extern "system" {
+    fn SwitchToThisWindow(hwnd: HWND, f_alt_tab: BOOL);
+}
+
 pub fn focus_os_window(id: WindowId) {
     let hwnd = id_to_hwnd(id);
     unsafe {
@@ -90,35 +94,28 @@ pub fn focus_os_window(id: WindowId) {
         }
         if IsIconic(hwnd) != 0 {
             ShowWindow(hwnd, SW_RESTORE);
+        } else {
+            ShowWindow(hwnd, SW_SHOW);
         }
+
+        // Release Windows foreground restriction lock via synthetic Alt key tap
+        windows_sys::Win32::UI::Input::KeyboardAndMouse::keybd_event(
+            windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_MENU as u8,
+            0,
+            0,
+            0,
+        );
+        windows_sys::Win32::UI::Input::KeyboardAndMouse::keybd_event(
+            windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_MENU as u8,
+            0,
+            windows_sys::Win32::UI::Input::KeyboardAndMouse::KEYEVENTF_KEYUP,
+            0,
+        );
+
         AllowSetForegroundWindow(ASFW_ANY);
         BringWindowToTop(hwnd);
-        if SetForegroundWindow(hwnd) == 0 {
-            let fg = GetForegroundWindow();
-            let fg_tid = if !fg.is_null() {
-                GetWindowThreadProcessId(fg, std::ptr::null_mut())
-            } else {
-                0
-            };
-            let target_tid = GetWindowThreadProcessId(hwnd, std::ptr::null_mut());
-            let cur_tid = GetCurrentThreadId();
-            let attach_fg = fg_tid != 0 && fg_tid != cur_tid;
-            let attach_target = target_tid != 0 && target_tid != cur_tid && target_tid != fg_tid;
-            if attach_fg {
-                AttachThreadInput(cur_tid, fg_tid, 1);
-            }
-            if attach_target {
-                AttachThreadInput(cur_tid, target_tid, 1);
-            }
-            BringWindowToTop(hwnd);
-            SetForegroundWindow(hwnd);
-            if attach_target {
-                AttachThreadInput(cur_tid, target_tid, 0);
-            }
-            if attach_fg {
-                AttachThreadInput(cur_tid, fg_tid, 0);
-            }
-        }
+        SetForegroundWindow(hwnd);
+        SwitchToThisWindow(hwnd, 1);
     }
 }
 
@@ -235,8 +232,22 @@ pub fn is_manageable_window(hwnd: HWND, own_pid: u32, already_cloaked_by_wm: boo
             return false;
         }
 
+        let class_name = read_class_name(hwnd);
+        if IGNORED_CLASSES.iter().any(|c| *c == class_name) {
+            return false;
+        }
+
+        let proc_name = read_process_name(hwnd);
+        let is_known_app = proc_name.eq_ignore_ascii_case("Taskmgr.exe")
+            || proc_name.eq_ignore_ascii_case("powershell.exe")
+            || proc_name.eq_ignore_ascii_case("cmd.exe")
+            || proc_name.eq_ignore_ascii_case("WindowsTerminal.exe")
+            || class_name.contains("TaskManager")
+            || class_name == "ConsoleWindowClass"
+            || class_name == "CASCADIA_HOSTING_WINDOW_CLASS";
+
         let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE) as u32;
-        let is_app_window = (ex_style & WS_EX_APPWINDOW) != 0;
+        let is_app_window = (ex_style & WS_EX_APPWINDOW) != 0 || is_known_app;
         if !is_app_window {
             if (ex_style & WS_EX_TOOLWINDOW) != 0 {
                 return false;
@@ -252,12 +263,6 @@ pub fn is_manageable_window(hwnd: HWND, own_pid: u32, already_cloaked_by_wm: boo
             }
         }
 
-        let class_name = read_class_name(hwnd);
-        if IGNORED_CLASSES.iter().any(|c| *c == class_name) {
-            return false;
-        }
-
-        let proc_name = read_process_name(hwnd);
         if proc_name.eq_ignore_ascii_case("ScreenClippingHost.exe") {
             return false;
         }
@@ -344,12 +349,27 @@ pub fn read_window_info(hwnd: HWND) -> Option<WindowInfo> {
             }
         }
 
+        let class_name = read_class_name(hwnd);
+        let proc_name = read_process_name(hwnd);
+        let mut title = read_window_title(hwnd);
+        if title.is_empty() {
+            if proc_name.eq_ignore_ascii_case("Taskmgr.exe") || class_name.contains("TaskManager") {
+                title = "Task Manager".to_string();
+            } else if proc_name.eq_ignore_ascii_case("powershell.exe") {
+                title = "PowerShell".to_string();
+            } else if proc_name.eq_ignore_ascii_case("WindowsTerminal.exe") {
+                title = "Terminal".to_string();
+            } else if proc_name.eq_ignore_ascii_case("cmd.exe") {
+                title = "Command Prompt".to_string();
+            }
+        }
+
         let hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
         Some(WindowInfo {
             id: hwnd_to_id(hwnd),
-            title: read_window_title(hwnd),
-            process_name: read_process_name(hwnd),
-            class_name: read_class_name(hwnd),
+            title,
+            process_name: proc_name,
+            class_name,
             rect: IRect::new(x, y, w.max(40), h.max(40)),
             monitor_id: (!hmon.is_null()).then_some(hmon as usize as u64),
             desktop_id: None,
@@ -569,6 +589,17 @@ impl WindowApplier {
                         state.cloaked = true;
                         cloak_updates.push((cmd.window_id, true));
                     }
+                    // Park completely offscreen so off-screen windows on one monitor never spill onto another.
+                    SetWindowPos(
+                        hwnd,
+                        std::ptr::null_mut(),
+                        -32000,
+                        -32000,
+                        0,
+                        0,
+                        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE | SWP_ASYNCWINDOWPOS,
+                    );
+                    state.rect = None;
                     continue;
                 }
 
@@ -591,24 +622,12 @@ impl WindowApplier {
                     } else {
                         FrameMargins::default()
                     };
-                    let mut actual = IRect::new(
+                    let actual = IRect::new(
                         target.x - m.left,
                         target.y - m.top,
                         (target.w + m.left + m.right).max(1),
                         (target.h + m.top + m.bottom).max(1),
                     );
-                    if let Some(clip_screen) = cmd.clip_to {
-                        let eff_x = (target.x - m.left).max(clip_screen.x);
-                        let eff_y = (target.y - m.top).max(clip_screen.y);
-                        let eff_r = (target.right() + m.right).min(clip_screen.right());
-                        let eff_b = (target.bottom() + m.bottom).min(clip_screen.bottom());
-                        actual = IRect::new(
-                            eff_x,
-                            eff_y,
-                            (eff_r - eff_x).max(1),
-                            (eff_b - eff_y).max(1),
-                        );
-                    }
 
                     let needs_move = state.rect != Some(actual);
                     if needs_move {
@@ -706,10 +725,8 @@ impl WindowApplier {
             }
 
             // Verify post-positioning bounds against clip_to.
-            // On Windows 10/11 DWM, DirectComposition applications (Chrome, Edge, VS Code, Discord, etc.)
-            // bypass SetWindowRgn. If an application's WM_GETMINMAXINFO minimum track size forces it to
-            // spill over the monitor boundary into an adjacent display, cloak it immediately so it NEVER
-            // bleeds onto the adjacent monitor.
+            // If an offscreen placement has fully drifted outside its display area,
+            // cloak and park it so it NEVER bleeds onto any neighboring monitor.
             for cmd in commands {
                 if !cmd.visible || cmd.rect.is_none() {
                     continue;
@@ -718,11 +735,11 @@ impl WindowApplier {
                     let hwnd = id_to_hwnd(cmd.window_id);
                     let mut post_rc: RECT = zeroed();
                     if GetWindowRect(hwnd, &mut post_rc) != 0 {
-                        let spills = post_rc.right > clip_screen.right() + 8
-                            || post_rc.left < clip_screen.x - 8
-                            || post_rc.bottom > clip_screen.bottom() + 8
-                            || post_rc.top < clip_screen.y - 8;
-                        if spills {
+                        let completely_offscreen = post_rc.right <= clip_screen.x
+                            || post_rc.left >= clip_screen.right()
+                            || post_rc.bottom <= clip_screen.y
+                            || post_rc.top >= clip_screen.bottom();
+                        if completely_offscreen {
                             set_cloak(hwnd, true);
                             if let Some(state) = self.states.get_mut(&cmd.window_id) {
                                 state.cloaked = true;

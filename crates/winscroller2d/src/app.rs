@@ -499,7 +499,9 @@ unsafe extern "system" fn controller_wnd_proc(
                             close_os_window(window_id);
                         }
                         OverviewCommand::FinishClose { jump } => {
-                            if let Some((col, row, window_id)) = jump {
+                            st.mgr.overview_open = false;
+                            st.hover.reset();
+                            let target_win = if let Some((col, row, window_id)) = jump {
                                 execute_action(
                                     st,
                                     hwnd,
@@ -509,15 +511,14 @@ unsafe extern "system" fn controller_wnd_proc(
                                         window_id,
                                     },
                                 );
+                                window_id.or_else(|| st.mgr.snapshot().focused_window_id)
                             } else {
-                                st.mgr.overview_open = false;
-                                st.hover.reset();
-                                // Uncloak and position tiles before hiding overview & restoring focus.
-                                apply_frame_now(st, hwnd, true);
-                                sync_overview(st, false);
-                                if let Some(fid) = st.mgr.snapshot().focused_window_id {
-                                    focus_os_window(fid);
-                                }
+                                st.mgr.snapshot().focused_window_id
+                            };
+                            apply_frame_now(st, hwnd, true);
+                            sync_overview(st, false);
+                            if let Some(target) = target_win {
+                                focus_os_window(target);
                             }
                         }
                     }

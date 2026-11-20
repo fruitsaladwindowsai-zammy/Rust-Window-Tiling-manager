@@ -165,7 +165,7 @@ impl Default for AnimationConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            animate_resize: true,
+            animate_resize: false,
             stiffness: 260.0,
             damping_ratio: 0.72,
             speed: 16.0,

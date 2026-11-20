@@ -1606,7 +1606,7 @@ impl WorkspaceManager {
                         plan.commands.push(WindowCommand {
                             window_id: win_id,
                             rect: (win_id == fs_id).then_some(full_bounds),
-                            visible: !self.overview_open && win_id == fs_id,
+                            visible: win_id == fs_id,
                             clip_to: None,
                             is_focused: focused_win == Some(win_id),
                             is_floating: ws.floating.contains(&win_id),
@@ -1632,7 +1632,7 @@ impl WorkspaceManager {
                     plan.commands.push(WindowCommand {
                         window_id: p.window_id,
                         rect: Some(p.rect),
-                        visible: !self.overview_open && p.visible,
+                        visible: p.visible,
                         clip_to: p.clip_to,
                         is_focused: focused_win == Some(p.window_id),
                         is_floating: false,
@@ -1643,7 +1643,7 @@ impl WorkspaceManager {
                     plan.commands.push(WindowCommand {
                         window_id: fid,
                         rect: None,
-                        visible: !self.overview_open,
+                        visible: true,
                         clip_to: None,
                         is_focused: focused_win == Some(fid),
                         is_floating: true,

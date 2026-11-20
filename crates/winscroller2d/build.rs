@@ -40,8 +40,12 @@ fn main() {
         Ok("gnu") => {
             let rc_path = out_dir.join("winscroller2d.rc");
             let obj_path = out_dir.join("winscroller2d_res.o");
+            let manifest_path = out_dir.join("winscroller2d.manifest");
+            let manifest_escaped = manifest_path.to_string_lossy().replace('\\', "/");
+            fs::write(&manifest_path, APP_MANIFEST).expect("write manifest");
+
             let escaped = ico_path.to_string_lossy().replace('\\', "/");
-            let rc_text = format!("1 ICON \"{escaped}\"\n");
+            let rc_text = format!("1 ICON \"{escaped}\"\n1 24 \"{manifest_escaped}\"\n");
             fs::write(&rc_path, rc_text).expect("write winscroller2d.rc");
 
             let status = Command::new("windres")
@@ -139,5 +143,33 @@ fn build_icon_res(ico: &[u8]) -> Option<Vec<u8>> {
     }
 
     push_res_entry(&mut res, RT_GROUP_ICON, 1, &group);
+
+    const RT_MANIFEST: u16 = 24;
+    push_res_entry(&mut res, RT_MANIFEST, 1, APP_MANIFEST.as_bytes());
+
     Some(res)
 }
+
+const APP_MANIFEST: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2,PerMonitor</dpiAwareness>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+  <compatibility xmlns="urn:schemas-microsoft-com:asm.v1">
+    <application>
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
+    </application>
+  </compatibility>
+</assembly>
+"#;

@@ -208,6 +208,17 @@ impl Default for WallpaperCache {
 }
 
 impl WallpaperCache {
+    pub fn clear(&mut self) {
+        self.sharp.clear();
+        self.sharp.shrink_to_fit();
+        self.blur.clear();
+        self.blur.shrink_to_fit();
+        self.w = 0;
+        self.h = 0;
+        self.path = None;
+        self.mtime = None;
+    }
+
     pub fn ensure(&mut self, w: i32, h: i32) {
         let w = w.max(1);
         let h = h.max(1);

@@ -682,6 +682,13 @@ impl OverviewWindow {
                 st.closing_jump = None;
                 st.pacer.set_active(false);
                 clear_thumbnails(st);
+                st.surface = None;
+                st.icon_surface = None;
+                st.wallpaper.clear();
+                st.icons.clear();
+                st.card_springs.clear();
+                st.hover_springs.clear();
+                st.close_springs.clear();
             });
             unsafe {
                 ReleaseCapture();
@@ -874,14 +881,22 @@ fn register_one_thumbnail(st: &mut OverviewState, win_id: u64) -> Option<isize> 
     if hr != 0 || thumb == 0 {
         return None;
     }
-    st.thumbs.insert(win_id, thumb);
     let mut src_size: SIZE = unsafe { zeroed() };
-    if unsafe { DwmQueryThumbnailSourceSize(thumb, &mut src_size) } == 0
-        && src_size.cx > 0
-        && src_size.cy > 0
-    {
-        st.thumb_sizes.insert(win_id, src_size);
+    if unsafe { DwmQueryThumbnailSourceSize(thumb, &mut src_size) } == 0 {
+        // If the window source size is smaller than a typical minimal window (e.g. iconic or tiny placeholder),
+        // do not register thumbnail to avoid stretching a 32x32 icon across the whole overview card.
+        if src_size.cx >= 120 && src_size.cy >= 80 {
+            st.thumb_sizes.insert(win_id, src_size);
+            st.thumbs.insert(win_id, thumb);
+            return Some(thumb);
+        } else {
+            unsafe {
+                DwmUnregisterThumbnail(thumb);
+            }
+            return None;
+        }
     }
+    st.thumbs.insert(win_id, thumb);
     Some(thumb)
 }
 
@@ -2604,12 +2619,25 @@ unsafe fn paint_icon_layer(
             }
 
             if !is_drop_target && icon_alpha > 4 {
-                let icon_sz = (dest_r.w.min(dest_r.h) / 5).clamp(24, 44);
+                let has_thumb = st.thumbs.contains_key(&win_id);
                 let cx = dest_r.x + dest_r.w / 2;
-                let ix = (cx - icon_sz / 2).clamp(2, (w - icon_sz - 2).max(2));
-                let iy = (dest_r.bottom() - icon_sz * 3 / 4)
-                    .min(h - icon_sz - 6)
-                    .max(dest_r.y + 4);
+                let (icon_sz, ix, iy) = if has_thumb {
+                    let sz = (dest_r.w.min(dest_r.h) / 5).clamp(24, 44);
+                    let ix = (cx - sz / 2).clamp(2, (w - sz - 2).max(2));
+                    let iy = (dest_r.bottom() - sz * 3 / 4)
+                        .min(h - sz - 6)
+                        .max(dest_r.y + 4);
+                    (sz, ix, iy)
+                } else {
+                    // Windows without live thumbnail (e.g. PowerShell, Task Manager, or minimized)
+                    // receive a centered, prominent app icon.
+                    let sz = (dest_r.w.min(dest_r.h) * 36 / 100).clamp(44, 72);
+                    let cy = dest_r.y + dest_r.h / 2;
+                    let ix = (cx - sz / 2).clamp(2, (w - sz - 2).max(2));
+                    let iy = (cy - sz / 2).clamp(2, (h - sz - 2).max(2));
+                    (sz, ix, iy)
+                };
+
                 draw_soft_shadow_circle(
                     pixels,
                     w,
