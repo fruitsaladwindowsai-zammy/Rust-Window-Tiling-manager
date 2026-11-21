@@ -64,7 +64,7 @@ jobs:
 
       - name: Publish rolling `latest` Release (on push to main)
         if: startsWith(github.ref, 'refs/heads/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: latest
           name: WinScroller 2D — Latest Build
@@ -85,7 +85,7 @@ jobs:
 
       - name: Publish versioned GitHub Release (on v* tag)
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: WinScroller 2D ${{ github.ref_name }} — Live View Overview Thumbnails Fix
           body_path: RELEASE_NOTES.md
