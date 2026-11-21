@@ -4,6 +4,15 @@ All notable changes to **WinScroller 2D** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-11-21
+
+### Fixed
+- **Win+O Overview Live Status for All Applications**:
+  - Resolved blank/black live preview cards for Google Chrome, Microsoft Edge, and Electron applications. Off-camera windows in the active workspace are now cleanly uncloaked (`visible: true`) and kept at their natural full tiled dimensions clamped within the active monitor's `work_area` behind the topmost overview window. This prevents Chromium/DirectComposition occlusion and `(-32000, -32000)` minimization detection from evicting swapchains, while strictly preventing multi-monitor display bleed.
+  - Resolved partial/cut-off window previews (e.g., Antigravity IDE and code editors) by clearing `SetWindowRgn` edge clipping (`clip_to: None`) during overview mode, allowing DWM to compose the complete window surface rather than just peeking edge strips.
+  - Enhanced DWM thumbnail registration resilience: non-iconic windows with transient 0x0 source sizes on the first frame remain registered and are dynamically queried on subsequent vsync ticks as composition surfaces settle. Truly minimized windows (`IsIconic`) display the prominent centered app icon.
+  - Ensured the overview backdrop window is shown immediately upon activation with `SWP_NOACTIVATE | SWP_SHOWWINDOW` so desktop window repositioning and uncloaking are fully obscured behind blurred wallpaper with zero flicker.
+
 ## [0.2.0] - 2026-11-20
 
 ### Fixed & Enhanced

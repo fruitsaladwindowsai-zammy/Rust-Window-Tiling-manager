@@ -1,3 +1,23 @@
+# Release Notes — WinScroller 2D v0.2.1
+
+**Release Date:** 2026-11-21  
+**Target Platform:** Windows 10 / Windows 11 (64-bit)  
+**Toolchain:** Rust Edition 2024 (`winscroller2d` & `winscroller2d-core`)
+
+WinScroller 2D `v0.2.1` resolves the live view status issue in the `Win+O` overview where certain applications (Google Chrome, Microsoft Edge, Antigravity/VS Code) showed blank/black cards or partially clipped previews.
+
+---
+
+## What's New in v0.2.1
+
+### 🖼️ Complete Win+O Overview Live Status Fix
+- **Live Previews for Chrome, Edge & Electron**: Fixed blank or solid black thumbnail cards for Chromium and DirectComposition apps. Off-camera workspace windows are now automatically uncloaked (`visible: true`) and positioned at their full natural tiled size within the active monitor's `work_area` behind the topmost overview window. This prevents Chromium from detecting `(-32000, -32000)` minimization or occlusion and dropping swapchains, while strictly preventing multi-monitor display bleed.
+- **Full Window Previews (No Peeking Cut-Offs)**: Edge-peeking windows previously had GDI region clipping (`SetWindowRgn`) applied, causing DWM to only render the 20% peek strip with the remaining 80% black. All region clipping is now cleanly cleared (`clip_to: None`) during overview mode so the full window surface renders.
+- **Dynamic DWM Thumbnail Recovery**: If DWM reports an asynchronous `0x0` thumbnail source size on the initial frame, non-iconic windows remain registered and are dynamically queried on subsequent vsync frames as DWM finishes composition. Truly minimized windows (`IsIconic`) display the prominent centered app icon.
+- **Flicker-Free Activation**: The overview backdrop window is placed topmost and shown immediately on activation, ensuring background window uncloaking and clamping happen completely invisibly behind blurred wallpaper.
+
+---
+
 # Release Notes — WinScroller 2D v0.2.0
 
 **Release Date:** 2026-11-20  

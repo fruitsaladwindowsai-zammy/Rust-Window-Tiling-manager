@@ -1,3 +1,18 @@
+# Release Notes — WinScroller 2D v0.2.1
+
+**Release Date:** 2026-11-21  
+**Platform:** Windows 10 / Windows 11 (64-bit)  
+**Edition:** Rust 2024
+
+## Highlights in v0.2.1
+
+- **Win+O Overview Live Status for All Applications**: Fixed blank or solid black live preview cards for Google Chrome, Microsoft Edge, and Electron apps by uncloaking off-camera windows and clamping them within the active monitor's `work_area` behind the topmost overview window.
+- **Unclipped Previews for Peeking Windows**: Cleared `SetWindowRgn` edge clipping during overview mode so editors and peeking windows render completely rather than showing a 20% strip with 80% black.
+- **Dynamic DWM Thumbnail Recovery**: Non-iconic windows with transient 0x0 size on frame 0 remain registered and are dynamically sized on subsequent vsync frames.
+- **Flicker-Free Activation**: Displays overview topmost immediately to hide background window repositioning.
+
+---
+
 # Release Notes — WinScroller 2D v0.2.0
 
 **Release Date:** 2026-11-20  
