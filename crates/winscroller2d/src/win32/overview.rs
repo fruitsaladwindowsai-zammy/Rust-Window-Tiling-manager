@@ -32,8 +32,8 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     BringWindowToTop, CreateWindowExW, DefWindowProcW, DestroyWindow, GetForegroundWindow,
     GetWindowRect, GetWindowThreadProcessId, HWND_TOPMOST, IDC_ARROW, IsIconic, IsWindow,
-    LoadCursorW, PostMessageW, RegisterClassExW, SW_HIDE, SW_SHOW, SWP_NOACTIVATE,
-    SWP_SHOWWINDOW, SetForegroundWindow, SetWindowPos, ShowWindow, ULW_ALPHA, UpdateLayeredWindow,
+    LoadCursorW, PostMessageW, RegisterClassExW, SW_HIDE, SW_SHOW, SWP_NOACTIVATE, SWP_SHOWWINDOW,
+    SetForegroundWindow, SetWindowPos, ShowWindow, ULW_ALPHA, UpdateLayeredWindow,
     WM_CAPTURECHANGED, WM_ERASEBKGND, WM_KEYDOWN, WM_KILLFOCUS, WM_LBUTTONDOWN, WM_LBUTTONUP,
     WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_PAINT, WM_RBUTTONDOWN, WNDCLASSEXW,
     WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
@@ -1058,7 +1058,8 @@ fn update_animated_thumbnails(st: &mut OverviewState) {
         if unsafe { DwmQueryThumbnailSourceSize(thumb, &mut src_size) } == 0 {
             if src_size.cx >= 120 && src_size.cy >= 80 {
                 st.thumb_sizes.insert(win_id, src_size);
-            } else if src_size.cx > 0 && src_size.cy > 0 && (src_size.cx < 120 || src_size.cy < 80) {
+            } else if src_size.cx > 0 && src_size.cy > 0 && (src_size.cx < 120 || src_size.cy < 80)
+            {
                 if let Some(t) = st.thumbs.remove(&win_id) {
                     unsafe {
                         DwmUnregisterThumbnail(t);

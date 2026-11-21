@@ -4,3 +4,5 @@ Cargo.lock
 /docs/book/
 *.log
 /website/
+winscroller2d.exe
+

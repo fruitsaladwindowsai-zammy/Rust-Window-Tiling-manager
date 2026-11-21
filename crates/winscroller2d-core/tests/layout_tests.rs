@@ -985,17 +985,34 @@ fn overview_live_thumbnails_uncloaks_all_windows_unclips_and_clamps_inside_work_
         window_id: Some(1),
     });
     let normal_plan = mgr.compute_frame(0.016);
-    let cmd4 = normal_plan.commands.iter().find(|c| c.window_id == 4).unwrap();
-    assert!(!cmd4.visible, "offscreen window 4 must be cloaked in normal tiling");
+    let cmd4 = normal_plan
+        .commands
+        .iter()
+        .find(|c| c.window_id == 4)
+        .unwrap();
+    assert!(
+        !cmd4.visible,
+        "offscreen window 4 must be cloaked in normal tiling"
+    );
 
     mgr.dispatch(Action::ToggleOverview);
     assert!(mgr.overview_open);
 
     let ov_plan = mgr.compute_frame(0.016);
     for id in 1..=4 {
-        let cmd = ov_plan.commands.iter().find(|c| c.window_id == id).expect("command for window");
-        assert!(cmd.visible, "window {id} must be visible (uncloaked) in overview for live preview");
-        assert_eq!(cmd.clip_to, None, "window {id} must have no region clipping in overview");
+        let cmd = ov_plan
+            .commands
+            .iter()
+            .find(|c| c.window_id == id)
+            .expect("command for window");
+        assert!(
+            cmd.visible,
+            "window {id} must be visible (uncloaked) in overview for live preview"
+        );
+        assert_eq!(
+            cmd.clip_to, None,
+            "window {id} must have no region clipping in overview"
+        );
         let r = cmd.rect.expect("rect must be present");
         assert!(
             mon.work_area.contains_rect(r),
@@ -1007,6 +1024,13 @@ fn overview_live_thumbnails_uncloaks_all_windows_unclips_and_clamps_inside_work_
     mgr.dispatch(Action::ToggleOverview);
     assert!(!mgr.overview_open);
     let close_plan = mgr.compute_frame(0.016);
-    let cmd4_after = close_plan.commands.iter().find(|c| c.window_id == 4).unwrap();
-    assert!(!cmd4_after.visible, "offscreen window 4 must return to cloaked after overview closes");
+    let cmd4_after = close_plan
+        .commands
+        .iter()
+        .find(|c| c.window_id == 4)
+        .unwrap();
+    assert!(
+        !cmd4_after.visible,
+        "offscreen window 4 must return to cloaked after overview closes"
+    );
 }
