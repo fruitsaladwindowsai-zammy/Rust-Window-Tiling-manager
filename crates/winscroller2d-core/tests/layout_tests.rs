@@ -925,3 +925,88 @@ floating = true
             .any(|b| b.keys == "Win+Shift+R" && b.action == Action::Retile)
     );
 }
+
+#[test]
+fn overview_live_thumbnails_uncloaks_all_windows_unclips_and_clamps_inside_work_area() {
+    let mut cfg = Config::default();
+    cfg.layout.overview_thumbnails = true;
+    cfg.layout.auto_expand_focused = false;
+    cfg.animation.enabled = false;
+    cfg.layout.peek_x = 48;
+    cfg.layout.peek_y = 48;
+
+    let mon = MonitorInfo {
+        id: 1,
+        name: "DISP1".into(),
+        work_area: area_1080p(),
+        bounds: IRect::new(0, 0, 1920, 1080),
+    };
+
+    let mut mgr = WorkspaceManager::new(cfg, vec![mon.clone()]);
+    for id in 1..=4 {
+        mgr.add_window(WindowInfo {
+            id,
+            title: format!("App {id}"),
+            process_name: format!("app{id}.exe"),
+            class_name: "TestClass".into(),
+            rect: IRect::new(0, 0, 800, 600),
+            monitor_id: None,
+            desktop_id: None,
+        });
+    }
+    mgr.dispatch(Action::PlaceWindowAt {
+        window_id: 1,
+        col: 0,
+        row: 0,
+        stack: false,
+    });
+    mgr.dispatch(Action::PlaceWindowAt {
+        window_id: 2,
+        col: 1,
+        row: 0,
+        stack: false,
+    });
+    mgr.dispatch(Action::PlaceWindowAt {
+        window_id: 3,
+        col: 0,
+        row: 1,
+        stack: false,
+    });
+    mgr.dispatch(Action::PlaceWindowAt {
+        window_id: 4,
+        col: 2,
+        row: 2,
+        stack: false,
+    });
+
+    mgr.dispatch(Action::JumpToCell {
+        col: 0,
+        row: 0,
+        window_id: Some(1),
+    });
+    let normal_plan = mgr.compute_frame(0.016);
+    let cmd4 = normal_plan.commands.iter().find(|c| c.window_id == 4).unwrap();
+    assert!(!cmd4.visible, "offscreen window 4 must be cloaked in normal tiling");
+
+    mgr.dispatch(Action::ToggleOverview);
+    assert!(mgr.overview_open);
+
+    let ov_plan = mgr.compute_frame(0.016);
+    for id in 1..=4 {
+        let cmd = ov_plan.commands.iter().find(|c| c.window_id == id).expect("command for window");
+        assert!(cmd.visible, "window {id} must be visible (uncloaked) in overview for live preview");
+        assert_eq!(cmd.clip_to, None, "window {id} must have no region clipping in overview");
+        let r = cmd.rect.expect("rect must be present");
+        assert!(
+            mon.work_area.contains_rect(r),
+            "window {id} rect {r:?} must be fully clamped inside work area {:?}",
+            mon.work_area
+        );
+    }
+
+    mgr.dispatch(Action::ToggleOverview);
+    assert!(!mgr.overview_open);
+    let close_plan = mgr.compute_frame(0.016);
+    let cmd4_after = close_plan.commands.iter().find(|c| c.window_id == 4).unwrap();
+    assert!(!cmd4_after.visible, "offscreen window 4 must return to cloaked after overview closes");
+}

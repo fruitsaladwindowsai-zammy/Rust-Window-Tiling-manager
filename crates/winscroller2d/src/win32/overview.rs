@@ -31,9 +31,9 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     BringWindowToTop, CreateWindowExW, DefWindowProcW, DestroyWindow, GetForegroundWindow,
-    GetWindowRect, GetWindowThreadProcessId, HWND_TOPMOST, IDC_ARROW, IsWindow, LoadCursorW,
-    PostMessageW, RegisterClassExW, SW_HIDE, SW_SHOW, SWP_NOACTIVATE, SWP_SHOWWINDOW,
-    SetForegroundWindow, SetWindowPos, ShowWindow, ULW_ALPHA, UpdateLayeredWindow,
+    GetWindowRect, GetWindowThreadProcessId, HWND_TOPMOST, IDC_ARROW, IsIconic, IsWindow,
+    LoadCursorW, PostMessageW, RegisterClassExW, SW_HIDE, SW_SHOW, SWP_NOACTIVATE,
+    SWP_SHOWWINDOW, SetForegroundWindow, SetWindowPos, ShowWindow, ULW_ALPHA, UpdateLayeredWindow,
     WM_CAPTURECHANGED, WM_ERASEBKGND, WM_KEYDOWN, WM_KILLFOCUS, WM_LBUTTONDOWN, WM_LBUTTONUP,
     WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_PAINT, WM_RBUTTONDOWN, WNDCLASSEXW,
     WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
@@ -559,14 +559,29 @@ impl OverviewWindow {
             sync_thumbnails(st);
             update_animated_thumbnails(st);
         });
+        unsafe {
+            // Position self.hwnd over the monitor bounds immediately with SWP_NOACTIVATE | SWP_SHOWWINDOW
+            // so desktop apps uncloaking in apply_frame_now are completely obscured behind Overview.
+            SetWindowPos(
+                self.hwnd,
+                HWND_TOPMOST,
+                monitor_bounds.x,
+                monitor_bounds.y,
+                monitor_bounds.w,
+                monitor_bounds.h,
+                SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            );
+        }
     }
 
-    /// Phase 2: Show the blurred wallpaper overview AFTER desktop apps have been cloaked.
+    /// Phase 2: Show the blurred wallpaper overview AFTER desktop apps have been positioned.
     pub fn reveal(&mut self, monitor_bounds: IRect) {
         with_overview(|st| {
             st.wallpaper.ensure(monitor_bounds.w, monitor_bounds.h);
             st.last_tick = Instant::now();
             st.pacer.set_active(true);
+            sync_thumbnails(st);
+            update_animated_thumbnails(st);
         });
         unsafe {
             let _ = DwmFlush();
@@ -876,6 +891,11 @@ fn register_one_thumbnail(st: &mut OverviewState, win_id: u64) -> Option<isize> 
     if unsafe { IsWindow(src_hwnd) == 0 } {
         return None;
     }
+    // Do not register thumbnails for truly minimized (iconic) windows:
+    // iconic windows show an ugly 32x32 stretched icon in DWM, so they receive the prominent app icon instead.
+    if unsafe { IsIconic(src_hwnd) != 0 } {
+        return None;
+    }
     let mut thumb: isize = 0;
     let hr = unsafe { DwmRegisterThumbnail(dest_hwnd, src_hwnd, &mut thumb) };
     if hr != 0 || thumb == 0 {
@@ -883,18 +903,17 @@ fn register_one_thumbnail(st: &mut OverviewState, win_id: u64) -> Option<isize> 
     }
     let mut src_size: SIZE = unsafe { zeroed() };
     if unsafe { DwmQueryThumbnailSourceSize(thumb, &mut src_size) } == 0 {
-        // If the window source size is smaller than a typical minimal window (e.g. iconic or tiny placeholder),
-        // do not register thumbnail to avoid stretching a 32x32 icon across the whole overview card.
         if src_size.cx >= 120 && src_size.cy >= 80 {
             st.thumb_sizes.insert(win_id, src_size);
-            st.thumbs.insert(win_id, thumb);
-            return Some(thumb);
-        } else {
+        } else if src_size.cx > 0 && src_size.cy > 0 && (src_size.cx < 120 || src_size.cy < 80) {
+            // Truly tiny placeholder or helper window - unregister to avoid stretching
             unsafe {
                 DwmUnregisterThumbnail(thumb);
             }
             return None;
         }
+        // If src_size is (0, 0), DWM is still asynchronously generating the thumbnail source:
+        // keep the thumbnail registered and query src_size on subsequent frames in update_animated_thumbnails.
     }
     st.thumbs.insert(win_id, thumb);
     Some(thumb)
@@ -1017,6 +1036,37 @@ fn update_animated_thumbnails(st: &mut OverviewState) {
     let t = st.open_spring.current.clamp(0.0, 1.0);
     let active_drag = st.drag.as_ref().filter(|d| d.active).cloned();
     let is_closing = st.closing_jump.is_some();
+
+    let missing_ids: Vec<u64> = st
+        .boxes
+        .iter()
+        .filter_map(|b| b.window_id)
+        .filter(|id| !st.thumbs.contains_key(id))
+        .collect();
+    for id in missing_ids {
+        register_one_thumbnail(st, id);
+    }
+
+    let unqueried: Vec<(u64, isize)> = st
+        .thumbs
+        .iter()
+        .filter(|(wid, _)| !st.thumb_sizes.contains_key(wid))
+        .map(|(&wid, &t)| (wid, t))
+        .collect();
+    for (win_id, thumb) in unqueried {
+        let mut src_size: SIZE = unsafe { zeroed() };
+        if unsafe { DwmQueryThumbnailSourceSize(thumb, &mut src_size) } == 0 {
+            if src_size.cx >= 120 && src_size.cy >= 80 {
+                st.thumb_sizes.insert(win_id, src_size);
+            } else if src_size.cx > 0 && src_size.cy > 0 && (src_size.cx < 120 || src_size.cy < 80) {
+                if let Some(t) = st.thumbs.remove(&win_id) {
+                    unsafe {
+                        DwmUnregisterThumbnail(t);
+                    }
+                }
+            }
+        }
+    }
 
     for b in &st.boxes {
         let Some(win_id) = b.window_id else {

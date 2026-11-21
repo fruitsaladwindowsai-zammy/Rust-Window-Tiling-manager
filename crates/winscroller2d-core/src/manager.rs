@@ -1562,6 +1562,7 @@ impl WorkspaceManager {
         let anim_cfg = self.config.animation.clone();
         let focused_win = self.focused_window_id;
         let active_desktop = self.active_os_desktop.clone();
+        let cur_ws_id = self.current_workspace_id();
 
         for ws in &mut self.workspaces {
             if self
@@ -1573,7 +1574,10 @@ impl WorkspaceManager {
                 continue;
             }
             if let Some(&(work_area, full_bounds, ref others)) = active_map.get(&ws.index) {
-                if self.overview_open && !layout_cfg.overview_thumbnails {
+                let is_overview_target_ws = self.overview_open
+                    && cur_ws_id.map_or_else(|| active_map.len() == 1, |id| id == ws.index);
+
+                if is_overview_target_ws && !layout_cfg.overview_thumbnails {
                     for p in ws.compute_overview_resize_placements(work_area, &layout_cfg) {
                         plan.commands.push(WindowCommand {
                             window_id: p.window_id,
@@ -1582,6 +1586,58 @@ impl WorkspaceManager {
                             clip_to: None,
                             is_focused: focused_win == Some(p.window_id),
                             is_floating: false,
+                        });
+                    }
+                    continue;
+                }
+
+                if is_overview_target_ws && layout_cfg.overview_thumbnails {
+                    // In DWM live thumbnail overview mode:
+                    // All windows in the overview workspace must:
+                    // 1. Be uncloaked (`visible: true`), so DWM maintains their composition surfaces.
+                    // 2. Have clipping removed (`clip_to: None`), so SetWindowRgn does not cut off peek areas.
+                    // 3. Be positioned at their natural full tiled size clamped inside the active monitor's
+                    //    work_area. This prevents DirectComposition / Chromium apps (Chrome, Edge, VS Code)
+                    //    from detecting (-32000, -32000) or off-screen bounds and discarding their swapchains,
+                    //    while guaranteeing they never bleed across multi-monitor display boundaries.
+                    let (placements, _) = ws.compute_placements(
+                        work_area,
+                        others,
+                        &layout_cfg,
+                        false,
+                        false,
+                        dt_secs,
+                        anim_cfg.stiffness,
+                        anim_cfg.damping_ratio,
+                        anim_cfg.snap_epsilon_px,
+                    );
+                    for p in placements {
+                        let eff_w = p.rect.w.min(work_area.w).max(40);
+                        let eff_h = p.rect.h.min(work_area.h).max(40);
+                        let max_x = (work_area.right() - eff_w).max(work_area.x);
+                        let max_y = (work_area.bottom() - eff_h).max(work_area.y);
+                        let eff_x = p.rect.x.clamp(work_area.x, max_x);
+                        let eff_y = p.rect.y.clamp(work_area.y, max_y);
+                        let clamped_rect = IRect::new(eff_x, eff_y, eff_w, eff_h);
+
+                        plan.commands.push(WindowCommand {
+                            window_id: p.window_id,
+                            rect: Some(clamped_rect),
+                            visible: true,
+                            clip_to: None,
+                            is_focused: focused_win == Some(p.window_id),
+                            is_floating: false,
+                        });
+                    }
+
+                    for &fid in &ws.floating {
+                        plan.commands.push(WindowCommand {
+                            window_id: fid,
+                            rect: None,
+                            visible: true,
+                            clip_to: None,
+                            is_focused: focused_win == Some(fid),
+                            is_floating: true,
                         });
                     }
                     continue;
